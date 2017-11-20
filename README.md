@@ -6,7 +6,7 @@
 
 *Cryptocurrency for gamers, by gamers.*
 
-These are the official Ethereum smart contracts for the Wyvern ERC20 token (WYV), the Wyvern Exchange, and Wyvern DAO. For general information on the Wyvern project, please see [the official website](https://projectwyvern.com).
+These are the official Ethereum smart contracts for the Wyvern ERC20 token (WYV), the Wyvern Exchange, and the Wyvern DAO. For general information on the Wyvern project, please see [the official website](https://projectwyvern.com).
 
 ### Development Information
 
