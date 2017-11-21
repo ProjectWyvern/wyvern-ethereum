@@ -2,11 +2,21 @@
 
   << Project Wyvern DAO >>
 
-  Based on the Shareholder Association example from https://ethereum.org/dao, although modified.
+  Delegated self-upgrading shareholders association.
+
+  Originally based on the Shareholder Association example from https://ethereum.org/dao, although substantially modified.
 
 */
 
-pragma solidity ^0.4.16;
+/*
+
+  TODO: 
+    - Add delegation    ("delegate my address X to address Y until I undelegate")
+    - Add upgradability ("redirect all calls except core voting to address X") - will this allow new function declarations in future versions?
+
+*/
+
+pragma solidity ^0.4.15;
 
 import 'zeppelin-solidity/contracts/token/ERC20.sol';
 import './tokenRecipient.sol';

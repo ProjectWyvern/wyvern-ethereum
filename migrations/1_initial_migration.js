@@ -1,5 +1,8 @@
-var Migrations = artifacts.require("./Migrations.sol");
+const Migrations  = artifacts.require('./Migrations.sol');
+const WYVToken    = artifacts.require('./WYVToken.sol');
 
-module.exports = function(deployer) {
+
+module.exports = (deployer) => {
   deployer.deploy(Migrations);
+  deployer.deploy(WYVToken);
 };
