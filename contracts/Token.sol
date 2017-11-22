@@ -44,7 +44,7 @@ contract WYVToken is StandardToken, BurnableToken {
 
     - Order of events: deploy token with block state, deploy DAO associated to token, mint DAO tokens (once only).
 
-    - Look at how *Bitcoin* implements address signature verification (they don't know pubkey either?)
+    - Look at how *Bitcoin* implements address signature verification (they don't know pubkey either?) >= pubkey from ecrecover (duh). Just add command to wyvernd.
 
     - Testsuite (including order of events!)
 

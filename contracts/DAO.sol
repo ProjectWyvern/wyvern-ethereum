@@ -4,15 +4,14 @@
 
   Delegated self-upgrading shareholders association.
 
-  Originally based on the Shareholder Association example from https://ethereum.org/dao, although substantially modified.
+  Originally based on the Shareholder Association example from https://ethereum.org/dao. Modified to support vote delegation and self-ownership and to prevent a few majority attacks?
 
 */
 
 /*
 
   TODO: 
-    - Add delegation    ("delegate my address X to address Y until I undelegate")
-    - Add upgradability ("redirect all calls except core voting to address X") - will this allow new function declarations in future versions?
+    - Add upgradability ("redirect all calls except core voting to address X") - will this allow new function declarations in future versions? - by set delegatecall?
 
 */
 
@@ -31,10 +30,24 @@ contract DAO is tokenRecipient {
     uint public numProposals;
     ERC20 public sharesTokenAddress;
 
+    /*
+      Strategy: keep delegate mappings, prevent spam by locking tokens?
+      Prevent transfer out by the DAO of the locked tokens.
+      To further investigate...
+    */
+
+    mapping (address => address) public delegatesByDelegator;
+    mapping (address => uint) public lockedDelegatingTokens;
+    mapping (address => uint) public delegatedAmountsByDelegate;
+    uint public totalLockedTokens;
+
     event ProposalAdded(uint proposalID, address recipient, uint amount, string description);
     event Voted(uint proposalID, bool position, address voter);
     event ProposalTallied(uint proposalID, uint result, uint quorum, bool active);
     event ChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes, address newSharesTokenAddress);
+
+    event TokensDelegated(address delegator, uint numberOfTokens, address delegate);
+    event TokensUndelegated(address delegator, uint numberOfTokens, address delegate);
 
     struct Proposal {
         address recipient;
@@ -66,9 +79,42 @@ contract DAO is tokenRecipient {
         _;
     }
 
+    /* Only a shareholder who has *not* delegated his vote can execute a function with this modifier. */
+    modifier onlyUndelegated {
+        require(delegatesByDelegator[msg.sender] == address(0));
+        _;
+    }
+
+    /* Only a shareholder who has delegated his vote can execute a function with this modifier. */
+    modifier onlyDelegated {
+        require(delegatesByDelegator[msg.sender] != address(0));
+        _;
+    }
+
     /* Initial setup: set the voting token and voting rules. */
     function DAO(ERC20 sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) payable {
-        changeVotingRules(sharesAddress, minimumSharesToPassAVote, minutesForDebate);
+        sharesTokenAddress = sharesAddress;
+        changeVotingRules(minimumSharesToPassAVote, minutesForDebate);
+    }
+
+    /* Set the delegate address for a specified number of tokens belonging to the sending address, locking the tokens. */
+    function setDelegateAndLockTokens(uint tokensToLock, address delegate) onlyUndelegated {
+      ERC20(sharesTokenAddress).transferFrom(msg.sender, address(this), tokensToLock);
+      lockedDelegatingTokens[msg.sender] = tokensToLock;
+      delegatedAmountsByDelegate[delegate] = tokensToLock;
+      totalLockedTokens += tokensToLock;
+      TokensDelegated(msg.sender, tokensToLock, delegate);
+    }
+
+    /* Clear the delegate address for all tokens delegated by the sending address, unlocking the locked tokens. */
+    function clearDelegateAndUnlockTokens() onlyDelegated {
+      address delegate  = delegatesByDelegator[msg.sender];
+      uint lockedTokens = lockedDelegatingTokens[msg.sender];
+      lockedDelegatingTokens[msg.sender] = 0;
+      delegatedAmountsByDelegate[delegate] -= lockedTokens;
+      totalLockedTokens -= lockedTokens;
+      ERC20(sharesTokenAddress).transfer(msg.sender, lockedTokens);
+      TokensUndelegated(msg.sender, lockedTokens, delegate);
     }
 
     /**
@@ -77,12 +123,10 @@ contract DAO is tokenRecipient {
      * Make so that proposals need tobe discussed for at least `minutesForDebate/60` hours
      * and all voters combined must own more than `minimumSharesToPassAVote` shares of token `sharesAddress` to be executed
      *
-     * @param sharesAddress token address
      * @param minimumSharesToPassAVote proposal can vote only if the sum of shares held by all voters exceed this number
      * @param minutesForDebate the minimum amount of delay between when a proposal is made and when it can be executed
      */
-    function changeVotingRules(ERC20 sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) onlySelf {
-        sharesTokenAddress = ERC20(sharesAddress);
+    function changeVotingRules(uint minimumSharesToPassAVote, uint minutesForDebate) onlySelf {
         if (minimumSharesToPassAVote == 0 ) minimumSharesToPassAVote = 1;
         minimumQuorum = minimumSharesToPassAVote;
         debatingPeriodInMinutes = minutesForDebate;
@@ -217,7 +261,7 @@ contract DAO is tokenRecipient {
 
         for (uint i = 0; i <  p.votes.length; ++i) {
             Vote storage v = p.votes[i];
-            uint voteWeight = sharesTokenAddress.balanceOf(v.voter);
+            uint voteWeight = sharesTokenAddress.balanceOf(v.voter) + delegatedAmountsByDelegate[v.voter];
             quorum += voteWeight;
             if (v.inSupport) {
                 yea += voteWeight;
@@ -226,13 +270,17 @@ contract DAO is tokenRecipient {
             }
         }
 
-        require(quorum >= minimumQuorum); // Check if a minimum quorum has been reached
+        /* Assert that a minimum quorum has been reached. */
+        require(quorum >= minimumQuorum);
 
         if (yea > nay) {
             // Proposal passed; execute the transaction
 
             p.executed = true;
             require(p.recipient.call.value(p.amount)(transactionBytecode));
+
+            /* Prevent the DAO from sending the locked shares tokens (and thus potentially being unable to release locked tokens to delegating shareholders). */
+            require(ERC20(sharesTokenAddress).balanceOf(address(this)) >= totalLockedTokens);
 
             p.proposalPassed = true;
         } else {
