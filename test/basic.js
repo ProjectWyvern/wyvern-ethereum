@@ -1,12 +1,12 @@
 const bitcoin   = require('bitcoinjs-lib');
 const web3      = require('web3');
 
-const WYVToken  = artifacts.require('WYVToken');
+const WyvernToken  = artifacts.require('WyvernToken');
 
-contract('WYVToken', (accounts) => {
+contract('WyvernToken', (accounts) => {
 
   it('should be deployed', () => {
-    return WYVToken
+    return WyvernToken
       .deployed()
       .then(instance => {
         return 0;
@@ -30,7 +30,7 @@ contract('WYVToken', (accounts) => {
     const hash = '0x' + hashBuf.toString('hex');
     const pubKey = '0x' + keyPair.getPublicKeyBuffer().toString('hex').slice(2);
   
-    return WYVToken
+    return WyvernToken
       .deployed()
       .then(instance => {
         return instance.ecdsaVerify.call('Test Message', pubKey, v, r, s);
@@ -54,7 +54,7 @@ contract('WYVToken', (accounts) => {
     const hash = '0x' + hashBuf.toString('hex');
     const pubKey = '0x' + keyPair.getPublicKeyBuffer().toString('hex').slice(2);
   
-    return WYVToken
+    return WyvernToken
       .deployed()
       .then(instance => {
         return instance.ecdsaVerify.call('Test Message 2', pubKey, v, r, s);

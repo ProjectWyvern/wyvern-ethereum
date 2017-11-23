@@ -2,7 +2,7 @@
 
   << Project Wyvern Exchange >>
 
-  Abstract trustless digital good exchange.
+  Abstract trustless exchange for digital goods.
 
   Written from scratch.
 
@@ -40,42 +40,60 @@ contract Exchange is Ownable {
   /* The fee required to buy an item. */
   uint public feeBuy;
 
-  /* The time δ before automatic escrow release to seller with hash proof (seconds). */
-  uint public automaticReleaseTime;
- 
   /* The token used to pay exchange fees. */
   ERC20 public exchangeTokenAddress;
 
-  /* All items that have ever been listed. */
-  mapping(bytes32 => Item) public items; 
+  /* All sales that have ever been listed. */
+  mapping(bytes32 => Sale) public sales; 
 
-  /* Item IDs, stored for accessor convenience. */
-  bytes32[] public itemIDs;
+  /* Sale IDs, stored for accessor convenience. */
+  bytes32[] public saleIDs;
 
   /* Kind of item being sold - either a secret key (e.g. gift card redemption code) or a smart contract. */
   enum ItemKind { Secret, Contract }
 
-  struct Item {
-    ItemKind kind;
-    bytes32 secretHashOrContractAddress;
-  }
-
   /* Kind of sale - fixed price or auction. */
   enum SaleKind { FixedPrice, EnglishAuction, DutchAuction }
 
+  /* An item listed for sale on the exchange. */
   struct Sale {
-    Item item;
-    SaleKind kind;
-    ERC20 token;
+    /* The kind of item. */
+    ItemKind itemKind;
+    /* Item data; see documentation. */
+    bytes32 itemData;
+    /* Item metadata - hash of IPFS file and kind of hash used. */
+    bytes32 itemMetadataHash;
+    uint8 itemMetadataKind;
+    uint8 itemMetadataSize;
+    /* TODO: Hash to link to encrypted secret after sale completed. */
+    /* The kind of sale. */
+    SaleKind saleKind;
+    /* Token used to pay for the item. */
+    ERC20 paymentToken;
+    /* Price of the item (tokens). */
     uint price;
+    /* Listing timestamp. */
     uint listingTime;
+    /* Expiration timestamp - 0 for no expiry. */
     uint expirationTime;
-    /* The escrow arbiter address, which is paid a fee to arbitrage escrow disputes and must provide (TODO) specific functions. 0 for no escrow? */
+    /* Decay factor, see documentation. 0 for linear Dutch auction / no decay standard. */
+    uint decayFactor;
+    /* The escrow arbiter address, which is paid a fee to arbitrage escrow disputes and must provide (TODO) specific functions. 0 for no escrow. */
     address escrowArbiter;
+    /* Whether or not the item has been sold. */
+    bool saleCompleted;
   }
 
-  function Exchange(ERC20 tokenAddress) {
-    exchangeTokenAddress = tokenAddress;
-  }
+  /* Order of events
+
+    - Item listed
+    - Item purchased / auction finished
+    - { time period one }
+    - buyer releases escrow / buyer does not, this is managed by escrow contracts
+    - feedback?
+
+    TODO figure out escrow provider interface
+
+  */ 
 
 }

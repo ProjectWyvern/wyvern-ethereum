@@ -1,7 +1,5 @@
 /*
 
-  << Project Wyvern DAO >>
-
   Delegated self-upgrading shareholders association.
 
   Originally based on the Shareholder Association example from https://ethereum.org/dao. Modified to support vote delegation and self-ownership and to prevent a few majority attacks?
@@ -18,11 +16,9 @@
 pragma solidity ^0.4.15;
 
 import 'zeppelin-solidity/contracts/token/ERC20.sol';
-import './tokenRecipient.sol';
+import '../common/TokenRecipient.sol';
 
-contract DAO is tokenRecipient {
-
-    string public constant name = "Project Wyvern DAO";
+contract DelegatedShareholderAssociation is TokenRecipient {
 
     uint public minimumQuorum;
     uint public debatingPeriodInMinutes;
@@ -92,7 +88,7 @@ contract DAO is tokenRecipient {
     }
 
     /* Initial setup: set the voting token and voting rules. */
-    function DAO(ERC20 sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) payable {
+    function DelegatedShareholderAssocation(ERC20 sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) payable {
         sharesTokenAddress = sharesAddress;
         changeVotingRules(minimumSharesToPassAVote, minutesForDebate);
     }
