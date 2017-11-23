@@ -1,10 +1,12 @@
+![Project Wyvern Logo](https://media.githubusercontent.com/media/protinam/wyvern-branding/master/logo/logo-square-red-transparent-200x200.png?raw=true "Project Wyvern Logo")
+
 ## Project Wyvern Ethereum Smart Contracts
 
 [![https://badges.frapsoft.com/os/mit/mit.svg?v=102](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://opensource.org/licenses/MIT) [![Build Status](https://travis-ci.org/protinam/wyvern-ethereum.svg?branch=master)](https://travis-ci.org/protinam/wyvern-ethereum)
 
 ### Synopsis
 
-*Cryptocurrency for gamers, by gamers.*
+*Autonomously governed trustless digital item exchange.*
 
 These are the official Ethereum smart contracts for the Wyvern ERC20 token (WYV), the Wyvern Exchange, and the Wyvern DAO. For general information on the Wyvern project, please see [the official website](https://projectwyvern.com).
 
