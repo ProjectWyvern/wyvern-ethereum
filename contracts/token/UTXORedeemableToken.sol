@@ -1,11 +1,15 @@
 pragma solidity ^0.4.15;
 
 import 'zeppelin-solidity/contracts/token/StandardToken.sol';
+import 'zeppelin-solidity/contracts/MerkleProof.sol';
 
 contract UTXORedeemableToken is StandardToken {
 
   /* UTXO set at creation. */
-  mapping(bytes20 => uint) utxoSet;
+  mapping(bytes20 => uint64) utxoSet;
+
+  /* Root hash of the UTXO Merkle tree. */
+  uint public rootUTXOMerkleTreeHash;
 
   /* Multiplier - tokens per Satoshi. */
   uint public multiplier;
@@ -58,7 +62,7 @@ contract UTXORedeemableToken is StandardToken {
 
     require(utxoSet[originalAddress] != 0);
     
-    tokensRedeemed = utxoSet[originalAddress] * multiplier;
+    tokensRedeemed = uint(utxoSet[originalAddress]) * multiplier;
     utxoSet[originalAddress] = 0;
     balances[msg.sender] += tokensRedeemed;   
     return tokensRedeemed;
