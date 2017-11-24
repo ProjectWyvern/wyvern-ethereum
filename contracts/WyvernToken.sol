@@ -9,8 +9,9 @@ pragma solidity ^0.4.15;
 import 'zeppelin-solidity/contracts/token/BurnableToken.sol';
 
 import './token/UTXORedeemableToken.sol';
+import './token/DelayedReleaseToken.sol';
 
-contract WyvernToken is UTXORedeemableToken, BurnableToken {
+contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken {
 
   uint constant public decimals     = 18;
   string constant public name       = "Project Wyvern Token";
@@ -22,7 +23,6 @@ contract WyvernToken is UTXORedeemableToken, BurnableToken {
     startingByte = 0x49;
     totalSupply = MINT_AMOUNT;
     multiplier = 10 * (10 ** decimals) / (10 ** 8);
-    balances[msg.sender] = totalSupply;
   }
 
 }
