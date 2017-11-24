@@ -12,9 +12,9 @@ contract WyvernExchange is Exchange {
 
   string public constant name = "Project Wyvern Exchange";
 
-  function WyvernExchange (ERC20 tokenAddress, uint sellFee, uint bidFee, uint buyFee) {
+  function WyvernExchange (ERC20 tokenAddress, uint listFee, uint bidFee, uint buyFee) {
     exchangeTokenAddress = tokenAddress;
-    feeSell = sellFee;
+    feeList = listFee;
     feeBid = bidFee;
     feeBuy = buyFee;
   }

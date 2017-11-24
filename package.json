@@ -18,6 +18,7 @@
     "cli-width": "^1.1.1",
     "code-point-at": "^1.1.0",
     "core-js": "^2.5.1",
+    "coveralls": "^3.0.0",
     "escape-string-regexp": "^1.0.5",
     "ethereumjs-testrpc": "^6.0.3",
     "exit-hook": "^1.1.1",
@@ -40,6 +41,7 @@
     "restore-cursor": "^1.0.1",
     "run-async": "^0.1.0",
     "rx-lite": "^3.1.2",
+    "solidity-coverage": "https://github.com/sc-forks/solidity-coverage.git#7ae7f54ba4f9e5abfd59f1891d2c107da106d987",
     "solium": "^1.0.5",
     "string-width": "^1.0.2",
     "strip-ansi": "^3.0.1",
@@ -54,9 +56,11 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "truffle test",
-    "compile": "rm -rf build/contracts; truffle compile",
-    "testrpc": "testrpc --networkId 50"
+    "test": "scripts/test.sh",
+    "compile": "scripts/compile.sh",
+    "testrpc": "scripts/testrpc.sh",
+    "lint": "scripts/lint.sh",
+    "coverage": "scripts/coverage.sh"
   },
   "repository": {
     "type": "git",
@@ -64,9 +68,9 @@
   },
   "keywords": [
     "wyvern",
+    "exchange",
     "ethereum",
     "cryptocurrency",
-    "gaming",
     "token"
   ],
   "author": "Project Wyvern Developers",
