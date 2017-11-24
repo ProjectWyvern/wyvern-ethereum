@@ -27,19 +27,19 @@ yarn
 Start Ethereum's testrpc tool to provide a Web3 interface (leave this running):
 
 ```bash
-yarn run testrpc
+yarn testrpc
 ```
 
 Compile the latest smart contracts:
 
 ```bash
-yarn run compile
+yarn compile
 ```
 
 Run the testsuite against the simulated network:
 
 ```bash
-yarn run test
+yarn test
 ```
 
 #### Contributing

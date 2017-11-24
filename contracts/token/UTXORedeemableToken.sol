@@ -4,10 +4,14 @@ import 'zeppelin-solidity/contracts/token/StandardToken.sol';
 
 contract UTXORedeemableToken is StandardToken {
 
+  /* UTXO set at creation. */
   mapping(bytes20 => uint) utxoSet;
-  uint public multiplier;
 
-  bytes1 public startingByte; // = 0x04 for Bitcoin;
+  /* Multiplier - tokens per Satoshi. */
+  uint public multiplier;
+ 
+  /* Starting byte of addresses - e.g. 0x04 for Bitcoin. */
+  bytes1 public startingByte;
 
   /* Validate that a provided ECSDA signature was signed by the specified address. */
   function validateSignature (bytes32 hash, uint8 v, bytes32 r, bytes32 s, address expected) constant returns (bool) {
@@ -45,7 +49,7 @@ contract UTXORedeemableToken is StandardToken {
   */
 
   /* Claim a UTXO. */
-  function claimUTXO (bytes pubKey, uint8 v, bytes32 r, bytes32 s) {
+  function claimUTXO (bytes pubKey, uint8 v, bytes32 r, bytes32 s) returns (uint tokensRedeemed) {
     /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
     require(ecdsaVerify(addressToBytes(msg.sender), pubKey, v, r, s));
 
@@ -54,10 +58,10 @@ contract UTXORedeemableToken is StandardToken {
 
     require(utxoSet[originalAddress] != 0);
     
-    // TODO Mint function instead?
-    uint tokensToMint = utxoSet[originalAddress] * multiplier;
+    tokensRedeemed = utxoSet[originalAddress] * multiplier;
     utxoSet[originalAddress] = 0;
-    balances[msg.sender] += tokensToMint;   
+    balances[msg.sender] += tokensRedeemed;   
+    return tokensRedeemed;
   }
 
 }
@@ -67,7 +71,6 @@ contract UTXORedeemableToken is StandardToken {
   TODO:
     - Merkle tree for all UXTOs in final block (instead of storing balances), keep record of redeemed UXTOs. (??)
 
-    - Caller must prove (a) existence of UXTO and (b) ownership of address.
     - Immediate release of remaining supply to Wyvern DAO. (phases?)
 
     - Invariant cap on total redeemable UXTOs (of known supply at block).

@@ -16,11 +16,12 @@ contract WyvernToken is UTXORedeemableToken, BurnableToken {
   string constant public name       = "Project Wyvern Token";
   string constant public symbol     = "WYV";
 
-  uint constant public MINT_AMOUNT  = 2000000 * (10 ** decimals);
+  uint constant public MINT_AMOUNT  = 20000000 * (10 ** decimals);
 
   function WyvernToken () {
     startingByte = 0x49;
     totalSupply = MINT_AMOUNT;
+    multiplier = 10 * (10 ** decimals) / (10 ** 8);
     balances[msg.sender] = totalSupply;
   }
 
