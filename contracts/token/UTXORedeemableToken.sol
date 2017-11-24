@@ -34,8 +34,8 @@ contract UTXORedeemableToken is StandardToken {
   }
 
   /* Validate that the hash of a provided message was signed by the ECDSA public key associated with the specified Ethereum address. */
-  function ecdsaVerify (bytes message, address addr, uint8 v, bytes32 r, bytes32 s) constant returns (bool) {
-    return validateSignature(sha256(message), v, r, s, addr);
+  function ecdsaVerify (bytes message, bytes pubKey, uint8 v, bytes32 r, bytes32 s) constant returns (bool) {
+    return validateSignature(sha256(message), v, r, s, pubKeyToEthereumAddress(pubKey));
   }
 
   /* Source: https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity */
@@ -59,9 +59,6 @@ contract UTXORedeemableToken is StandardToken {
     /* Calculate original Bitcoin-style address associated with the provided public key. */
     bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey);
 
-    /* Calculate Ethereum-style address associated with the provided public key. */
-    address ethereumAddress = pubKeyToEthereumAddress(pubKey);
-
     /* Calculate the hash of the Merkle leaf associated with this UTXO. */
     bytes32 merkleLeafHash = keccak256(txid, originalAddress, outputIndex, satoshis);
 
@@ -72,7 +69,7 @@ contract UTXORedeemableToken is StandardToken {
     require(MerkleProof.verifyProof(proof, rootUTXOMerkleTreeHash, merkleLeafHash));
 
     /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
-    require(ecdsaVerify(addressToBytes(msg.sender), ethereumAddress, v, r, s));
+    require(ecdsaVerify(addressToBytes(msg.sender), pubKey, v, r, s));
 
     /* Mark the UTXO as redeemed. */
     redeemedUTXOs[merkleLeafHash] = true;
