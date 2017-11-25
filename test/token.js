@@ -3,6 +3,7 @@ const web3        = require('web3');
 const MerkleTree  = require('../utxo-merkle-proof/index.js');
 const fs          = require('fs');
 const { sha3 }    = require('ethereumjs-util');
+const bs58check   = require('bs58check');
 
 const WyvernToken     = artifacts.require('WyvernToken');
 const MerkleProof     = artifacts.require('MerkleProof');
@@ -17,6 +18,16 @@ const usStart         = Date.now() / 1000;
 const utxoSet         = JSON.parse(fs.readFileSync('utxo-merkle-proof/data/utxos.json'));
 const usEnd           = Date.now() / 1000;
 console.log('Loaded complete UTXO set in ' + (usEnd - usStart) + 's - total UTXOs: ' + utxoSet.length);
+
+const hashUTXO = (utxo) => {
+  const rawAddr = bs58check.decode(utxo.address).slice(0, 20).toString('hex');
+  return web3.utils.soliditySha3(
+    {type: 'bytes32', value: '0x' + utxo.txid},
+    {type: 'bytes20', value: '0x' + rawAddr},
+    {type: 'uint8', value: utxo.outputIndex},
+    {type: 'uint', value: utxo.satoshis}
+  );
+};
 
 contract('WyvernToken', (accounts) => {
 
@@ -33,14 +44,13 @@ contract('WyvernToken', (accounts) => {
 
   it('should accept valid Merkle proof', () => {
     const utxo = utxoSet[1238];
-    const hash = sha3(sha3(utxo.txid + utxo.address + utxo.outputIndex + utxo.satoshis));
-    const hashHex = '0x' + hash.toString('hex');
-    const proof = utxoMerkleTree.getHexProof(hash);
+    const hash = hashUTXO(utxo);
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
 
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.verifyProof.call(proof, hashHex);
+        return instance.verifyProof.call(proof, hash);
       })
       .then(valid => {
         assert.equal(valid, true, 'Proof was not accepted');
@@ -49,20 +59,51 @@ contract('WyvernToken', (accounts) => {
 
   it('should reject invalid Merkle proof', () => {
     const utxo = utxoSet[11];
-    const hash = sha3(sha3(utxo.txid + utxo.address + utxo.outputIndex + utxo.satoshis));
-    const hashHex = '0x' + hash.toString('hex');
-    var proof = utxoMerkleTree.getHexProof(hash);
+    const hash = hashUTXO(utxo);
+    var proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
     proof = proof.slice(32, proof.length - 32);
 
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.verifyProof.call(proof, hashHex);
+        return instance.verifyProof.call(proof, hash);
       })
       .then(valid => {
         assert.equal(valid, false, 'Proof was not rejected');
       });
   });
+
+  it('should accept valid UTXO', () => {
+    const utxo = utxoSet[1234];
+    const hash = hashUTXO(utxo);
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
+    const rawAddr = bs58check.decode(utxo.address).slice(0, 20).toString('hex');
+    
+    return WyvernToken
+      .deployed()
+      .then(instance => {
+        return instance.verifyUTXO('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis, proof);
+      })
+      .then(valid => {
+        assert.equal(valid, true, 'UTXO was not accepted');
+      });
+  })
+
+  it('should reject invalid UTXO', () => {
+    const utxo = utxoSet[1234];
+    const hash = hashUTXO(utxo);
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
+    const rawAddr = bs58check.decode(utxo.address).slice(0, 20).toString('hex');
+
+    return WyvernToken
+      .deployed()
+      .then(instance => {
+        return instance.verifyUTXO('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis + 1, proof);
+      })
+      .then(valid => {
+        assert.equal(valid, false, 'UTXO was not rejected');
+      });
+  })
 
   it('should verify valid signature', () => {
     const rng = () => Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz');

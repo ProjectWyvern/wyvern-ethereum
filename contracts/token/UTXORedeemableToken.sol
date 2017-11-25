@@ -57,20 +57,34 @@ contract UTXORedeemableToken is StandardToken {
     return MerkleProof.verifyProof(proof, rootUTXOMerkleTreeHash, merkleLeafHash);
   }
 
+  function calculateUTXOMerkleLeafHash(bytes32 txid, bytes20 originalAddress, uint8 outputIndex, uint satoshis) constant returns (bytes32) {
+    return sha3(txid, originalAddress, outputIndex, satoshis);
+  }
+
+  function verifyUTXO(bytes32 txid, bytes20 originalAddress, uint8 outputIndex, uint satoshis, bytes proof) constant returns (bool) {
+    /* Calculate the hash of the Merkle leaf associated with this UTXO. */
+    bytes32 merkleLeafHash = keccak256(txid, originalAddress, outputIndex, satoshis);
+
+    /* Require that the UTXO has not yet been redeemed and that it exists in the Merkle tree. */
+    return (
+      (redeemedUTXOs[merkleLeafHash] == false) &&
+      verifyProof(proof, merkleLeafHash)
+      );
+    
+    return true;
+  }
+
   /* Redeem a UTXO. */
   function redeemUTXO (bytes32 txid, uint8 outputIndex, uint satoshis, bytes proof, bytes pubKey, uint8 v, bytes32 r, bytes32 s) returns (uint tokensRedeemed) {
 
     /* Calculate original Bitcoin-style address associated with the provided public key. */
     bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey);
 
-    /* Calculate the hash of the Merkle leaf associated with this UTXO. */
+    /* Calculate the UTXO Merkle leaf hash. */
     bytes32 merkleLeafHash = keccak256(txid, originalAddress, outputIndex, satoshis);
 
-    /* Require that the UTXO has not yet been redeemed. */
-    require(redeemedUTXOs[merkleLeafHash] == false);
-
-    /* Require that the UTXO exists using a Merkle tree proof. */
-    require(verifyProof(proof, merkleLeafHash));
+    /* Verify that the UTXO can be redeemed. */
+    require(verifyUTXO(txid, originalAddress, outputIndex, satoshis, proof));
 
     /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
     require(ecdsaVerify(addressToBytes(msg.sender), pubKey, v, r, s));
