@@ -19,7 +19,8 @@ contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken 
 
   uint constant public MINT_AMOUNT  = 20000000 * (10 ** decimals);
 
-  function WyvernToken () {
+  function WyvernToken (bytes32 merkleRoot) {
+    rootUTXOMerkleTreeHash = merkleRoot;
     startingByte = 0x49;
     totalSupply = MINT_AMOUNT;
     multiplier = 10 * (10 ** decimals) / (10 ** 8);

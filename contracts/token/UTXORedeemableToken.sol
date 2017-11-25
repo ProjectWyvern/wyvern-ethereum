@@ -53,6 +53,10 @@ contract UTXORedeemableToken is StandardToken {
     return ripemd160(sha256(startingByte, pubKey));
   }
 
+  function verifyProof(bytes proof, bytes32 merkleLeafHash) returns (bool) {
+    return MerkleProof.verifyProof(proof, rootUTXOMerkleTreeHash, merkleLeafHash);
+  }
+
   /* Redeem a UTXO. */
   function redeemUTXO (bytes32 txid, uint8 outputIndex, uint satoshis, bytes proof, bytes pubKey, uint8 v, bytes32 r, bytes32 s) returns (uint tokensRedeemed) {
 
@@ -66,7 +70,7 @@ contract UTXORedeemableToken is StandardToken {
     require(redeemedUTXOs[merkleLeafHash] == false);
 
     /* Require that the UTXO exists using a Merkle tree proof. */
-    require(MerkleProof.verifyProof(proof, rootUTXOMerkleTreeHash, merkleLeafHash));
+    require(verifyProof(proof, merkleLeafHash));
 
     /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
     require(ecdsaVerify(addressToBytes(msg.sender), pubKey, v, r, s));

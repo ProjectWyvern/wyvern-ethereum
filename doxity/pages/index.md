@@ -42,6 +42,16 @@ Run the testsuite against the simulated network:
 yarn test
 ```
 
+#### Generating Documentation
+
+Autogenerate documentation from Ethereum Natspec using [Doxity](https://github.com/DigixGlobal/doxity):
+
+```bash
+yarn doc
+```
+
+Final output will be written to [docs](docs), which will be automatically published on push to GitHub Pages at [docs.projectwyvern.com](https://docs.projectwyvern.com).
+
 #### Contributing
 
 Contributions welcome! Please use GitHub issues for suggestions/concerns - if you prefer to express your intentions in code, feel free to submit a pull request.
