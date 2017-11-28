@@ -44,6 +44,14 @@ yarn test
 
 #### Generating Documentation
 
+Install the depedencies:
+
+```bash
+cd doxity
+yarn
+cd ..
+```
+
 Autogenerate documentation from Ethereum Natspec using [Doxity](https://github.com/DigixGlobal/doxity):
 
 ```bash
