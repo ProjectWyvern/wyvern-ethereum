@@ -44,7 +44,7 @@ yarn test
 
 #### Generating Documentation
 
-Install the depedencies:
+Install the dependencies:
 
 ```bash
 cd doxity
