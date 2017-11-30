@@ -12,7 +12,9 @@ contract WyvernDAO is DelegatedShareholderAssociation {
 
   string public constant name = "Project Wyvern DAO";
 
-  function WyvernDAO () {
+  function WyvernDAO (ERC20 sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) {
+    sharesTokenAddress = sharesAddress;
+    changeVotingRules(minimumSharesToPassAVote, minutesForDebate); 
   }
 
 }

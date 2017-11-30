@@ -2,14 +2,32 @@
 
   Delegated self-upgrading shareholders association.
 
-  Originally based on the Shareholder Association example from https://ethereum.org/dao. Modified to support vote delegation and self-ownership and to prevent a few majority attacks?
+  Originally based on the Shareholder Association example from https://ethereum.org/dao.
+  
+  Modified to support vote delegation and self-ownership - modifications in detail:
 
-*/
+    Delegation
 
-/*
+      Overview
 
-  TODO: 
-    - Add upgradability ("redirect all calls except core voting to address X") - will this allow new function declarations in future versions? - by set delegatecall?
+        Any shareholder in the DAO (which is anyone who holds the associated token) can voluntarily delegate any portion of their tokens to another address.
+        They do so by sending the tokens which they wish to delegate to the DAO, which locks them until the user undelegates their tokens (at which point the DAO returns the tokens to the user).
+        While locked, these tokens count as extra votes for the address to whom the user delegated their tokens.
+        Tokens can be unlocked at any time, and once unlocked no longer count as delegated votes in this manner.
+
+      Notes
+
+        - Delegated votes are counted when a proposal is finalized and executed (or not) - there's no way to move tokens around to create more votes than tokens and/or cause any tokens to count twice.
+        - The DAO is prevented from spending these locked tokens in the executeProposal function, so users who lock tokens are guaranteed the ability to withdraw them whenever they choose (no reserve banking).
+
+    Self-Ownership
+
+      Only the DAO itself can change its own voting rules (not an owning address). 
+
+  TODO
+
+    - Convenience constant function for vote tallying
+    - Clarify some documentation
 
 */
 
@@ -25,12 +43,6 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     Proposal[] public proposals;
     uint public numProposals;
     ERC20 public sharesTokenAddress;
-
-    /*
-      Strategy: keep delegate mappings, prevent spam by locking tokens?
-      Prevent transfer out by the DAO of the locked tokens.
-      To further investigate...
-    */
 
     mapping (address => address) public delegatesByDelegator;
     mapping (address => uint) public lockedDelegatingTokens;
@@ -87,29 +99,31 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         _;
     }
 
-    /* Initial setup: set the voting token and voting rules. */
-    function DelegatedShareholderAssocation(ERC20 sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) payable {
-        sharesTokenAddress = sharesAddress;
-        changeVotingRules(minimumSharesToPassAVote, minutesForDebate);
-    }
-
-    /* Set the delegate address for a specified number of tokens belonging to the sending address, locking the tokens. */
+    /** 
+      * @notice Set the delegate address for a specified number of tokens belonging to the sending address, locking the tokens.
+      * @dev An address holding tokens (shares) may only delegate some portion of their vote to one delegate at any one time
+      * @param tokensToLock number of tokens to be locked (sending address must have at least this many tokens)
+      * @param delegate the address to which votes equal to the number of tokens locked will be delegated
+      */
     function setDelegateAndLockTokens(uint tokensToLock, address delegate) onlyUndelegated {
-      ERC20(sharesTokenAddress).transferFrom(msg.sender, address(this), tokensToLock);
+      require(ERC20(sharesTokenAddress).transferFrom(msg.sender, address(this), tokensToLock));
       lockedDelegatingTokens[msg.sender] = tokensToLock;
       delegatedAmountsByDelegate[delegate] = tokensToLock;
       totalLockedTokens += tokensToLock;
       TokensDelegated(msg.sender, tokensToLock, delegate);
     }
 
-    /* Clear the delegate address for all tokens delegated by the sending address, unlocking the locked tokens. */
+    /** 
+     * @notice Clear the delegate address for all tokens delegated by the sending address, unlocking the locked tokens.
+     * @dev Can only be called by a sending address currently delegating tokens, will transfer all locked tokens back to the sender
+     */
     function clearDelegateAndUnlockTokens() onlyDelegated {
       address delegate  = delegatesByDelegator[msg.sender];
       uint lockedTokens = lockedDelegatingTokens[msg.sender];
       lockedDelegatingTokens[msg.sender] = 0;
       delegatedAmountsByDelegate[delegate] -= lockedTokens;
       totalLockedTokens -= lockedTokens;
-      ERC20(sharesTokenAddress).transfer(msg.sender, lockedTokens);
+      require(ERC20(sharesTokenAddress).transfer(msg.sender, lockedTokens));
       TokensUndelegated(msg.sender, lockedTokens, delegate);
     }
 
