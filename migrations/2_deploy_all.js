@@ -14,7 +14,9 @@ console.log('Loaded UTXO merkle tree in ' + (mtEnd - mtStart) + 's - tree root: 
 module.exports = (deployer) => {
   deployer.deploy(MerkleProof);
   deployer.link(MerkleProof, WyvernToken);
-  deployer.deploy(WyvernToken, utxoMerkleRoot);
-  deployer.deploy(WyvernDAO);
+  deployer.deploy(WyvernToken, utxoMerkleRoot)
+    .then(() => {
+      deployer.deploy(WyvernDAO, WyvernToken.address, 1, 1);
+    });
   deployer.deploy(WyvernExchange);
 };
