@@ -20,7 +20,7 @@ const usEnd           = Date.now() / 1000;
 console.log('Loaded complete UTXO set in ' + (usEnd - usStart) + 's - total UTXOs: ' + utxoSet.length);
 
 const hashUTXO = (utxo) => {
-  const rawAddr = bs58check.decode(utxo.address).slice(0, 20).toString('hex');
+  const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
   return web3.utils.soliditySha3(
     {type: 'bytes32', value: '0x' + utxo.txid},
     {type: 'bytes20', value: '0x' + rawAddr},
@@ -28,6 +28,17 @@ const hashUTXO = (utxo) => {
     {type: 'uint', value: utxo.satoshis}
   );
 };
+
+const network = {
+  messagePrefix: '\x18Wyvern Signed Message:\n',
+  bip32: {
+    public: 0x0488b21e,
+    private: 0x0488ade4
+  },
+  pubKeyHash: 73,
+  scriptHash: 43,
+  wif: 0xc9
+}
 
 contract('WyvernToken', (accounts) => {
 
@@ -77,7 +88,7 @@ contract('WyvernToken', (accounts) => {
     const utxo = utxoSet[1234];
     const hash = hashUTXO(utxo);
     const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
-    const rawAddr = bs58check.decode(utxo.address).slice(0, 20).toString('hex');
+    const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
     
     return WyvernToken
       .deployed()
@@ -93,7 +104,7 @@ contract('WyvernToken', (accounts) => {
     const utxo = utxoSet[1234];
     const hash = hashUTXO(utxo);
     const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
-    const rawAddr = bs58check.decode(utxo.address).slice(0, 20).toString('hex');
+    const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
 
     return WyvernToken
       .deployed()
@@ -105,9 +116,35 @@ contract('WyvernToken', (accounts) => {
       });
   })
 
+  it('should credit valid UTXO', () => {
+    const utxo = utxoSet[35997];
+    const hash = hashUTXO(utxo);
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
+    const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
+    const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network);
+    const ethAddr = accounts[0].slice(2);
+    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'));
+    const signature = keyPair.sign(hashBuf);
+    const compressed = signature.toCompact(0); // ARGH FIXME
+    const v = compressed.readUInt8(0);
+    const r = '0x' + compressed.slice(1, 33).toString('hex');
+    const s = '0x' + compressed.slice(33, 65).toString('hex');
+    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex');
+
+    return WyvernToken
+      .deployed(utxoMerkleRoot)
+      .then(instance => {
+        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, v, r, s);
+      })
+      .then(amount => {
+        amount = amount.toNumber();
+        assert.equal(amount, utxo.satoshis * 10 * (10 ** 10), 'UTXO was not credited correctly!');
+      });
+  });
+
   it('should verify valid signature', () => {
     const rng = () => Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz');
-    const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: false });
+    const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: true });
     // const keyPair = bitcoin.ECPair.makeRandom({ compressed: false });
     const address = keyPair.getAddress();
     const hashBuf = bitcoin.crypto.sha256('Test Message');
@@ -117,7 +154,8 @@ contract('WyvernToken', (accounts) => {
     const r = '0x' + compressed.slice(1, 33).toString('hex');
     const s = '0x' + compressed.slice(33, 65).toString('hex');
     const hash = '0x' + hashBuf.toString('hex');
-    const pubKey = '0x' + keyPair.getPublicKeyBuffer().toString('hex').slice(2);
+    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex');
+    // const pubKey = '0x' + keyPair.getPublicKeyBuffer().toString('hex').slice(2);
   
     return WyvernToken
       .deployed(utxoMerkleRoot)

@@ -35,8 +35,9 @@ contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken 
 
     /* Configure UTXORedeemableToken. */
     rootUTXOMerkleTreeHash = merkleRoot;
-    startingByte = 0x49;
+    // startingByte = 0x02;
     totalSupply = MINT_AMOUNT;
+    maximumRedeemable = UTXO_AMOUNT;
     multiplier = MULTIPLIER * (10 ** decimals) / (10 ** 8);
   }
 
