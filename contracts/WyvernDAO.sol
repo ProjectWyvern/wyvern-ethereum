@@ -14,7 +14,8 @@ contract WyvernDAO is DelegatedShareholderAssociation {
 
   function WyvernDAO (ERC20 sharesAddress, uint minimumSharesToPassAVote, uint minutesForDebate) {
     sharesTokenAddress = sharesAddress;
-    changeVotingRules(minimumSharesToPassAVote, minutesForDebate); 
+    minimumQuorum = minimumSharesToPassAVote;
+    debatingPeriodInMinutes = minutesForDebate;
   }
 
 }

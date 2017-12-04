@@ -1,34 +1,34 @@
-const bitcoin     = require('bitcoinjs-lib');
-const web3        = require('web3');
-const MerkleTree  = require('../utxo-merkle-proof/index.js');
-const fs          = require('fs');
-const { sha3 }    = require('ethereumjs-util');
-const bs58check   = require('bs58check');
+/* global artifacts:false, it:false, contract:false, assert:false */
 
-const WyvernToken     = artifacts.require('WyvernToken');
-const MerkleProof     = artifacts.require('MerkleProof');
+const bitcoin = require('bitcoinjs-lib')
+const web3 = require('web3')
+const MerkleTree = require('../utxo-merkle-proof/index.js')
+const fs = require('fs')
+const bs58check = require('bs58check')
 
-const mtStart         = Date.now() / 1000;
-const utxoMerkleTree  = MerkleTree.fromJSON(JSON.parse(fs.readFileSync('utxo-merkle-proof/data/merkleTree.json')));
-const utxoMerkleRoot  = utxoMerkleTree.getHexRoot();
-const mtEnd           = Date.now() / 1000;
-console.log('Loaded UTXO merkle tree in ' + (mtEnd - mtStart) + 's - tree root: ' + utxoMerkleTree.getHexRoot());
+const WyvernToken = artifacts.require('WyvernToken')
 
-const usStart         = Date.now() / 1000;
-const utxoSet         = JSON.parse(fs.readFileSync('utxo-merkle-proof/data/utxos.json'));
-const usEnd           = Date.now() / 1000;
-const utxoAmount      = utxoSet.reduce((x, y) => x + y.satoshis, 0); 
-console.log('Loaded complete UTXO set in ' + (usEnd - usStart) + 's - total UTXOs: ' + utxoSet.length + ', total amount (Satoshis): ' + utxoAmount);
+const mtStart = Date.now() / 1000
+const utxoMerkleTree = MerkleTree.fromJSON(JSON.parse(fs.readFileSync('utxo-merkle-proof/data/merkleTree.json')))
+const utxoMerkleRoot = utxoMerkleTree.getHexRoot()
+const mtEnd = Date.now() / 1000
+console.log('Loaded UTXO merkle tree in ' + (mtEnd - mtStart) + 's - tree root: ' + utxoMerkleTree.getHexRoot())
+
+const usStart = Date.now() / 1000
+const utxoSet = JSON.parse(fs.readFileSync('utxo-merkle-proof/data/utxos.json'))
+const usEnd = Date.now() / 1000
+const utxoAmount = utxoSet.reduce((x, y) => x + y.satoshis, 0)
+console.log('Loaded complete UTXO set in ' + (usEnd - usStart) + 's - total UTXOs: ' + utxoSet.length + ', total amount (Satoshis): ' + utxoAmount)
 
 const hashUTXO = (utxo) => {
-  const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
+  const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex')
   return web3.utils.soliditySha3(
     {type: 'bytes32', value: '0x' + utxo.txid},
     {type: 'bytes20', value: '0x' + rawAddr},
     {type: 'uint8', value: utxo.outputIndex},
     {type: 'uint', value: utxo.satoshis}
-  );
-};
+  )
+}
 
 const network = {
   messagePrefix: '\x18Wyvern Signed Message:\n',
@@ -42,167 +42,192 @@ const network = {
 }
 
 contract('WyvernToken', (accounts) => {
-
   it('should deploy with zero tokens redeemed', () => {
     return WyvernToken
       .deployed(utxoMerkleTree.getHexRoot())
       .then(instance => {
-        return instance.totalRedeemed.call();
+        return instance.totalRedeemed.call()
       })
       .then(total => {
-        assert.equal(0, total, 'Total was nonzero!');
-      });
-  });
+        assert.equal(0, total, 'Total was nonzero!')
+      })
+  })
 
   it('should deploy with correct redeemable', () => {
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.maximumRedeemable();
+        return instance.maximumRedeemable.call()
       })
       .then(redeemable => {
-        redeemable = redeemable.div(Math.pow(10, 11)).toNumber();
-        assert.equal(redeemable, utxoAmount, 'Redeemable was incorrect!');
-      });
-  });
+        redeemable = redeemable.div(Math.pow(10, 11)).toNumber()
+        assert.equal(redeemable, utxoAmount, 'Redeemable was incorrect!')
+      })
+  })
 
   it('should accept valid Merkle proof', () => {
-    const utxo = utxoSet[1238];
-    const hash = hashUTXO(utxo);
-    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
+    const utxo = utxoSet[1238]
+    const hash = hashUTXO(utxo)
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
 
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.verifyProof.call(proof, hash);
+        return instance.verifyProof.call(proof, hash)
       })
       .then(valid => {
-        assert.equal(valid, true, 'Proof was not accepted');
-      });
-  });
+        assert.equal(valid, true, 'Proof was not accepted')
+      })
+  })
 
   it('should reject invalid Merkle proof', () => {
-    const utxo = utxoSet[11];
-    const hash = hashUTXO(utxo);
-    var proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
-    proof = proof.slice(32, proof.length - 32);
+    const utxo = utxoSet[11]
+    const hash = hashUTXO(utxo)
+    var proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+    proof = proof.slice(32, proof.length - 32)
 
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.verifyProof.call(proof, hash);
+        return instance.verifyProof.call(proof, hash)
       })
       .then(valid => {
-        assert.equal(valid, false, 'Proof was not rejected');
-      });
-  });
+        assert.equal(valid, false, 'Proof was not rejected')
+      })
+  })
 
   it('should accept valid UTXO', () => {
-    const utxo = utxoSet[1234];
-    const hash = hashUTXO(utxo);
-    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
-    const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
-    
+    const utxo = utxoSet[1234]
+    const hash = hashUTXO(utxo)
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+    const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex')
+
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.verifyUTXO('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis, proof);
+        return instance.verifyUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis, proof)
       })
       .then(valid => {
-        assert.equal(valid, true, 'UTXO was not accepted');
-      });
+        assert.equal(valid, true, 'UTXO was not accepted')
+      })
   })
 
   it('should reject invalid UTXO', () => {
-    const utxo = utxoSet[1234];
-    const hash = hashUTXO(utxo);
-    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
-    const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
+    const utxo = utxoSet[1234]
+    const hash = hashUTXO(utxo)
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+    const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex')
 
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.verifyUTXO('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis + 1, proof);
+        return instance.verifyUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis + 1, proof)
       })
       .then(valid => {
-        assert.equal(valid, false, 'UTXO was not rejected');
-      });
+        assert.equal(valid, false, 'UTXO was not rejected')
+      })
   })
 
-  it('should credit valid UTXO', () => {
-    const utxo = utxoSet[35997];
-    const hash = hashUTXO(utxo);
-    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'));
-    const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
-    const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network);
-    const ethAddr = accounts[0].slice(2);
-    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'));
-    const signature = keyPair.sign(hashBuf);
-    const compressed = signature.toCompact(1); // ARGH FIXME
-    const v = compressed.readUInt8(0);
-    const r = '0x' + compressed.slice(1, 33).toString('hex');
-    const s = '0x' + compressed.slice(33, 65).toString('hex');
-    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex');
+  it('should credit valid UTXO only once', () => {
+    const utxo = utxoSet[35997]
+    const hash = hashUTXO(utxo)
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+    const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network)
+    const ethAddr = accounts[0].slice(2)
+    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'))
+    const signature = keyPair.sign(hashBuf)
+    const compressed = signature.toCompact(undefined)
+    const v = compressed.readUInt8(0)
+    const r = '0x' + compressed.slice(1, 33).toString('hex')
+    const s = '0x' + compressed.slice(33, 65).toString('hex')
+    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex')
 
     return WyvernToken
       .deployed(utxoMerkleRoot)
       .then(instance => {
-        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, v, r, s);
+        instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, v, r, s)
+          .then(amount => {
+            amount = amount.toNumber()
+            assert.equal(amount, utxo.satoshis * Math.pow(10, 11), 'UTXO was not credited correctly!')
+            return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, v, r, s)
+              .then(() => {
+                assert.equal(false, true, 'UTXO was credited twice!')
+              }).catch(() => {
+                assert.equal(true, true, 'Error not thrown')
+              })
+          })
       })
-      .then(amount => {
-        amount = amount.toNumber();
-        assert.equal(amount, utxo.satoshis * Math.pow(10, 11), 'UTXO was not credited correctly!');
-      });
-  });
+  })
+
+  it('should not credit invalid UTXO', () => {
+    const utxo = utxoSet[35997]
+    const hash = hashUTXO(utxo)
+    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+    const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network)
+    const ethAddr = accounts[0].slice(2)
+    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'))
+    const signature = keyPair.sign(hashBuf)
+    const compressed = signature.toCompact(undefined)
+    const v = compressed.readUInt8(0)
+    const r = '0x' + compressed.slice(1, 33).toString('hex')
+    const s = '0x' + compressed.slice(33, 65).toString('hex')
+    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex')
+
+    return WyvernToken
+      .deployed(utxoMerkleRoot)
+      .then(instance => {
+        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex + 1, utxo.satoshis, proof, pubKey, v, r, s)
+          .then(amount => {
+            assert.equal(false, true, 'UTXO was credited!')
+          }).catch(() => {
+            assert.equal(true, true, 'Error not thrown')
+          })
+      })
+  })
 
   it('should verify valid signature', () => {
-    const rng = () => Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz');
-    const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: true });
-    // const keyPair = bitcoin.ECPair.makeRandom({ compressed: false });
-    const address = keyPair.getAddress();
-    const ethAddr = accounts[0].slice(2);
-    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'));
-    const signature   = keyPair.sign(hashBuf);
-    const compressed  = signature.toCompact(0); // This is not always true; the JS lib won't compute this. TODO FIXME
-    const v = compressed.readUInt8(0);
-    const r = '0x' + compressed.slice(1, 33).toString('hex');
-    const s = '0x' + compressed.slice(33, 65).toString('hex');
-    const hash = '0x' + hashBuf.toString('hex');
-    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex');
-  
+    const rng = () => Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
+    const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: true })
+    // const keyPair = bitcoin.ECPair.makeRandom({ compressed: true })
+    const ethAddr = accounts[0].slice(2)
+    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'))
+    const signature = keyPair.sign(hashBuf)
+    const compressed = signature.toCompact(undefined)
+    const v = compressed.readUInt8(0)
+    const r = '0x' + compressed.slice(1, 33).toString('hex')
+    const s = '0x' + compressed.slice(33, 65).toString('hex')
+    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex')
+
     return WyvernToken
       .deployed(utxoMerkleRoot)
       .then(instance => {
-        return instance.ecdsaVerify.call('0x' + ethAddr, pubKey, v, r, s);
+        return instance.ecdsaVerify.call('0x' + ethAddr, pubKey, v, r, s)
       })
       .then(valid => {
-        assert.equal(valid, true, 'Signature did not validate!');
-      });
-  });
+        assert.equal(valid, true, 'Signature did not validate!')
+      })
+  })
 
   it('should reject invalid signature', () => {
-    const rng = () => Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz');
-    const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: true });
-    // const keyPair = bitcoin.ECPair.makeRandom({ compressed: false });
-    const address = keyPair.getAddress();
-    const ethAddr = accounts[0].slice(2);
-    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'));
-    const signature   = keyPair.sign(hashBuf);
-    const compressed  = signature.toCompact(0); // This is not always true; the JS lib won't compute this. TODO FIXME
-    const v = compressed.readUInt8(0);
-    const r = '0x' + compressed.slice(1, 33).toString('hex');
-    const s = '0x' + compressed.slice(33, 65).toString('hex');
-    const hash = '0x' + hashBuf.toString('hex');
-    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex');
-  
+    const rng = () => Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
+    const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: true })
+    // const keyPair = bitcoin.ECPair.makeRandom({ compressed: true })
+    const ethAddr = accounts[0].slice(2)
+    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'))
+    const signature = keyPair.sign(hashBuf)
+    const compressed = signature.toCompact(undefined)
+    const v = compressed.readUInt8(0)
+    const r = '0x' + compressed.slice(1, 33).toString('hex')
+    const s = '0x' + compressed.slice(33, 65).toString('hex')
+    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex')
+
     return WyvernToken
       .deployed(utxoMerkleRoot)
       .then(instance => {
-        return instance.ecdsaVerify.call(accounts[1], pubKey, v, r, s);
+        return instance.ecdsaVerify.call(accounts[1], pubKey, v, r, s)
       })
       .then(valid => {
-        assert.equal(valid, false, 'Signature did not invalidate!');
-      });
-  });
-
-});
+        assert.equal(valid, false, 'Signature did not invalidate!')
+      })
+  })
+})

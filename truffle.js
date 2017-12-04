@@ -20,4 +20,4 @@ module.exports = {
       runs: 1000
     }
   }
-};
+}
