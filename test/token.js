@@ -17,7 +17,8 @@ console.log('Loaded UTXO merkle tree in ' + (mtEnd - mtStart) + 's - tree root: 
 const usStart         = Date.now() / 1000;
 const utxoSet         = JSON.parse(fs.readFileSync('utxo-merkle-proof/data/utxos.json'));
 const usEnd           = Date.now() / 1000;
-console.log('Loaded complete UTXO set in ' + (usEnd - usStart) + 's - total UTXOs: ' + utxoSet.length);
+const utxoAmount      = utxoSet.reduce((x, y) => x + y.satoshis, 0); 
+console.log('Loaded complete UTXO set in ' + (usEnd - usStart) + 's - total UTXOs: ' + utxoSet.length + ', total amount (Satoshis): ' + utxoAmount);
 
 const hashUTXO = (utxo) => {
   const rawAddr = bs58check.decode(utxo.address).slice(1, 21).toString('hex');
@@ -50,6 +51,18 @@ contract('WyvernToken', (accounts) => {
       })
       .then(total => {
         assert.equal(0, total, 'Total was nonzero!');
+      });
+  });
+
+  it('should deploy with correct redeemable', () => {
+    return WyvernToken
+      .deployed()
+      .then(instance => {
+        return instance.maximumRedeemable();
+      })
+      .then(redeemable => {
+        redeemable = redeemable.div(Math.pow(10, 11)).toNumber();
+        assert.equal(redeemable, utxoAmount, 'Redeemable was incorrect!');
       });
   });
 
@@ -125,7 +138,7 @@ contract('WyvernToken', (accounts) => {
     const ethAddr = accounts[0].slice(2);
     const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'));
     const signature = keyPair.sign(hashBuf);
-    const compressed = signature.toCompact(0); // ARGH FIXME
+    const compressed = signature.toCompact(1); // ARGH FIXME
     const v = compressed.readUInt8(0);
     const r = '0x' + compressed.slice(1, 33).toString('hex');
     const s = '0x' + compressed.slice(33, 65).toString('hex');
@@ -138,7 +151,7 @@ contract('WyvernToken', (accounts) => {
       })
       .then(amount => {
         amount = amount.toNumber();
-        assert.equal(amount, utxo.satoshis * 10 * (10 ** 10), 'UTXO was not credited correctly!');
+        assert.equal(amount, utxo.satoshis * Math.pow(10, 11), 'UTXO was not credited correctly!');
       });
   });
 
@@ -147,7 +160,8 @@ contract('WyvernToken', (accounts) => {
     const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: true });
     // const keyPair = bitcoin.ECPair.makeRandom({ compressed: false });
     const address = keyPair.getAddress();
-    const hashBuf = bitcoin.crypto.sha256('Test Message');
+    const ethAddr = accounts[0].slice(2);
+    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'));
     const signature   = keyPair.sign(hashBuf);
     const compressed  = signature.toCompact(0); // This is not always true; the JS lib won't compute this. TODO FIXME
     const v = compressed.readUInt8(0);
@@ -155,12 +169,11 @@ contract('WyvernToken', (accounts) => {
     const s = '0x' + compressed.slice(33, 65).toString('hex');
     const hash = '0x' + hashBuf.toString('hex');
     const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex');
-    // const pubKey = '0x' + keyPair.getPublicKeyBuffer().toString('hex').slice(2);
   
     return WyvernToken
       .deployed(utxoMerkleRoot)
       .then(instance => {
-        return instance.ecdsaVerify.call('Test Message', pubKey, v, r, s);
+        return instance.ecdsaVerify.call('0x' + ethAddr, pubKey, v, r, s);
       })
       .then(valid => {
         assert.equal(valid, true, 'Signature did not validate!');
@@ -169,22 +182,23 @@ contract('WyvernToken', (accounts) => {
 
   it('should reject invalid signature', () => {
     const rng = () => Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz');
-    const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: false });
+    const keyPair = bitcoin.ECPair.makeRandom({ rng: rng, compressed: true });
     // const keyPair = bitcoin.ECPair.makeRandom({ compressed: false });
     const address = keyPair.getAddress();
-    const hashBuf = bitcoin.crypto.sha256('Test Message');
+    const ethAddr = accounts[0].slice(2);
+    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'));
     const signature   = keyPair.sign(hashBuf);
     const compressed  = signature.toCompact(0); // This is not always true; the JS lib won't compute this. TODO FIXME
     const v = compressed.readUInt8(0);
     const r = '0x' + compressed.slice(1, 33).toString('hex');
     const s = '0x' + compressed.slice(33, 65).toString('hex');
     const hash = '0x' + hashBuf.toString('hex');
-    const pubKey = '0x' + keyPair.getPublicKeyBuffer().toString('hex').slice(2);
+    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex');
   
     return WyvernToken
       .deployed(utxoMerkleRoot)
       .then(instance => {
-        return instance.ecdsaVerify.call('Test Message 2', pubKey, v, r, s);
+        return instance.ecdsaVerify.call(accounts[1], pubKey, v, r, s);
       })
       .then(valid => {
         assert.equal(valid, false, 'Signature did not invalidate!');

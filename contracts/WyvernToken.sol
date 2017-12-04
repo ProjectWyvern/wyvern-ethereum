@@ -22,23 +22,33 @@ contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken 
   string constant public name       = "Project Wyvern Token";
   string constant public symbol     = "WYV";
 
-  uint constant public MULTIPLIER   = 10;
-  uint constant public DAO_AMOUNT   = MULTIPLIER * 100000 * (10 ** decimals);
-  uint constant public UTXO_AMOUNT  = MULTIPLIER * 1900000 * (10 ** decimals);
-  uint constant public MINT_AMOUNT  = DAO_AMOUNT + UTXO_AMOUNT;
+  /* Amount of tokens per Wyvern, . */
+  uint constant public MULTIPLIER       = 10;
 
-  function WyvernToken (bytes32 merkleRoot) {
+  /* Constant for conversion from satoshis to tokens. */
+  uint constant public SATS_TO_TOKENS   = MULTIPLIER * (10 ** decimals) / (10 ** 8);
+
+  /* Total mint amount, in tokens (will be reached when all UTXOs are redeemed). */
+  uint constant public MINT_AMOUNT      = 2000000 * MULTIPLIER * (10 ** decimals);
+
+  /**
+   * @dev Initialize the Wyvern token
+   * @param merkleRoot Merkle tree root of the UTXO set
+   * @param totalUtxoAmount Total satoshis of the UTXO set
+   */
+  function WyvernToken (bytes32 merkleRoot, uint totalUtxoAmount) {
+    /* Total number of tokens that can be redeemed from UTXOs. */
+    uint utxoTokens = SATS_TO_TOKENS * totalUtxoAmount;
+
     /* Configure DelayedReleaseToken. */
-    hasBeenReleased = false;
     temporaryAdmin = msg.sender;
-    numberOfDelayedTokens = DAO_AMOUNT;
+    numberOfDelayedTokens = MINT_AMOUNT - utxoTokens;
 
     /* Configure UTXORedeemableToken. */
     rootUTXOMerkleTreeHash = merkleRoot;
-    // startingByte = 0x02;
     totalSupply = MINT_AMOUNT;
-    maximumRedeemable = UTXO_AMOUNT;
-    multiplier = MULTIPLIER * (10 ** decimals) / (10 ** 8);
+    maximumRedeemable = utxoTokens;
+    multiplier = SATS_TO_TOKENS;
   }
 
 }

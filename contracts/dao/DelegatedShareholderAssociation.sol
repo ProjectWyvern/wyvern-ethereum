@@ -54,8 +54,8 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     event ProposalTallied(uint proposalID, uint result, uint quorum, bool active);
     event ChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes, address newSharesTokenAddress);
 
-    event TokensDelegated(address delegator, uint numberOfTokens, address delegate);
-    event TokensUndelegated(address delegator, uint numberOfTokens, address delegate);
+    event TokensDelegated(address indexed delegator, uint numberOfTokens, address indexed delegate);
+    event TokensUndelegated(address indexed delegator, uint numberOfTokens, address indexed delegate);
 
     struct Proposal {
         address recipient;
