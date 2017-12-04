@@ -124,13 +124,8 @@ contract UTXORedeemableToken is StandardToken {
      * @return Whether or not the UTXO with the specified hash can be redeemed
      */
     function verifyUTXOHash(bytes32 merkleLeafHash, bytes proof) public constant returns (bool) {
-        /* Require that the UTXO has not yet been redeemed and that it exists in the Merkle tree. */
-        return (
-            (redeemedUTXOs[merkleLeafHash] == false) &&
-            verifyProof(proof, merkleLeafHash)
-        );
-      
-        return true;
+        /* Check that the UTXO has not yet been redeemed and that it exists in the Merkle tree. */
+        return((redeemedUTXOs[merkleLeafHash] == false) && verifyProof(proof, merkleLeafHash));
     }
 
     /**
