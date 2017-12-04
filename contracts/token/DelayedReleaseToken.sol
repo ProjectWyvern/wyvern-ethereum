@@ -8,7 +8,7 @@
 
 pragma solidity ^0.4.15;
 
-import 'zeppelin-solidity/contracts/token/StandardToken.sol';
+import "zeppelin-solidity/contracts/token/StandardToken.sol";
 
 /**
   * @title DelayedReleaseToken
@@ -17,30 +17,27 @@ import 'zeppelin-solidity/contracts/token/StandardToken.sol';
   */
 contract DelayedReleaseToken is StandardToken {
 
-  /* Temporary administrator address, only used for the initial token release, must be initialized by token constructor. */
-  address temporaryAdmin;
+    /* Temporary administrator address, only used for the initial token release, must be initialized by token constructor. */
+    address temporaryAdmin;
 
-  /* Whether or not the delayed token release has occurred. */
-  bool hasBeenReleased = false;
+    /* Whether or not the delayed token release has occurred. */
+    bool hasBeenReleased = false;
 
-  /* Number of tokens to be released, must be initialized by token constructor. */
-  uint numberOfDelayedTokens;
+    /* Number of tokens to be released, must be initialized by token constructor. */
+    uint numberOfDelayedTokens;
 
-  /* Event for convenience. */
-  event TokensReleased(address destination, uint numberOfTokens);
+    /* Event for convenience. */
+    event TokensReleased(address destination, uint numberOfTokens);
 
-  /**
-   * @dev Release the previously specified amount of tokens to the provided address
-   * @param destination Address for which tokens will be released (minted) 
-   */
-  function releaseTokens(address destination) {
-    require(
-      (msg.sender == temporaryAdmin) &&
-      (!hasBeenReleased)
-      );
-    hasBeenReleased = true;
-    balances[destination] = numberOfDelayedTokens;
-    TokensReleased(destination, numberOfDelayedTokens);
-  }
+    /**
+     * @dev Release the previously specified amount of tokens to the provided address
+     * @param destination Address for which tokens will be released (minted) 
+     */
+    function releaseTokens(address destination)  public {
+        require((msg.sender == temporaryAdmin) && (!hasBeenReleased));
+        hasBeenReleased = true;
+        balances[destination] = numberOfDelayedTokens;
+        TokensReleased(destination, numberOfDelayedTokens);
+    }
 
 }

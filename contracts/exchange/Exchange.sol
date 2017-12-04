@@ -8,11 +8,11 @@
 
 pragma solidity ^0.4.15;
 
-import 'zeppelin-solidity/contracts/token/ERC20.sol';
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import 'zeppelin-solidity/contracts/ownership/Claimable.sol';
+import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 
-import './EscrowProvider.sol';
+import "./EscrowProvider.sol";
 
 contract Exchange is Ownable {
 
@@ -115,25 +115,25 @@ contract Exchange is Ownable {
     _;
   }
 
-  function withdrawFees(address dest) onlyOwner {
+  function withdrawFees(address dest) onlyOwner  public {
     require(exchangeTokenAddress.transfer(dest, collectedFees));
     collectedFees = 0;
   }
 
-  function setListFee(uint listFee) onlyOwner {
+  function setListFee(uint listFee) onlyOwner  public {
     feeList = listFee;
   }
 
-  function setBidFee(uint bidFee) onlyOwner {
+  function setBidFee(uint bidFee) onlyOwner  public {
     feeBid = bidFee;
   }
 
-  function setBuyFee(uint buyFee) onlyOwner {
+  function setBuyFee(uint buyFee) onlyOwner  public {
     feeBuy = buyFee;
   }
 
-  function listItem(Claimable contractAddress, bytes metadataHash, SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint auctionExtra, EscrowProvider escrowProvider) costs (feeList) returns (bytes32 id) {
-    id = sha3(msg.sender, contractAddress, metadataHash, saleKind, paymentToken, price, now, expirationTime, auctionExtra, escrowProvider);
+  function listItem(Claimable contractAddress, bytes metadataHash, SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint auctionExtra, EscrowProvider escrowProvider) public costs (feeList) returns (bytes32 id) {
+    id = keccak256(msg.sender, contractAddress, metadataHash, saleKind, paymentToken, price, now, expirationTime, auctionExtra, escrowProvider);
     require(items[id].seller == address(0));
     if (contractAddress != address(0)) {
       contractAddress.claimOwnership();
@@ -144,13 +144,13 @@ contract Exchange is Ownable {
     return id;
   }
 
-  function removeItem (bytes32 id) requiresActiveItem(id) {
+  function removeItem (bytes32 id) public requiresActiveItem(id) {
     require(items[id].seller == msg.sender);
     items[id].removed = true;
     ItemRemoved(id);
   }
 
-  function bidOnItem (bytes32 id, uint amount) requiresActiveItem (id) costs (feeBid) {
+  function bidOnItem (bytes32 id, uint amount) public requiresActiveItem (id) costs (feeBid) {
     /* Must be an English auction that has not yet completed. */
     require(
       (items[id].saleKind == SaleKind.EnglishAuction) &&
@@ -182,14 +182,14 @@ contract Exchange is Ownable {
     } else if (items[id].saleKind == SaleKind.DutchAuction) {
       return items[id].basePrice * (1 - (items[id].auctionExtra * (now - items[id].listingTime) / (items[id].expirationTime - items[id].listingTime)));
     } else {
-      throw;
+      revert();
     }
   }
 
   /* Called by a buyer to purchase an item or finalize an auction they have won. */
-  function purchaseItem (bytes32 id) requiresActiveItem (id) costs (feeBuy) {
+  function purchaseItem (bytes32 id) public requiresActiveItem (id) costs (feeBuy) {
     if (items[id].saleKind == SaleKind.EnglishAuction) {
-      Bid topBid = topBids[id];
+      Bid storage topBid = topBids[id];
       require(
         (msg.sender == topBid.bidder) &&
         (now >= items[id].expirationTime)
@@ -209,7 +209,7 @@ contract Exchange is Ownable {
   }
 
   /* Called by the seller of an item to finalize sale to the buyer, linking the IPFS metadata. */
-  function finalizeSale (bytes32 id, bytes saleMetadataHash) {
+  function finalizeSale (bytes32 id, bytes saleMetadataHash) public {
     require(items[id].seller == msg.sender);
     sales[id].metadataHash = saleMetadataHash;
     SaleFinalized(id, saleMetadataHash);

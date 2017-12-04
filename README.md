@@ -42,6 +42,18 @@ Run the testsuite against the simulated network:
 yarn test
 ```
 
+Make sure to lint the Solidity files once you're done:
+
+```bash
+yarn lint
+```
+
+And run automated smart contract analysis:
+
+```bash
+yarn analyze
+```
+
 #### Generating Documentation
 
 Install the dependencies:
