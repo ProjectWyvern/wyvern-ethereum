@@ -220,7 +220,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         bytes transactionBytecode
     )
         public
-        constant
+        view
         returns (bool codeChecksOut)
     {
         Proposal storage p = proposals[proposalNumber];

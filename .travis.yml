@@ -7,11 +7,6 @@ node_js:
 cache:
   yarn: true
 before_script:
-  - truffle version
-  - yarn list
-  - yarn lint
-  - yarn testrpc &
-  - sleep 1
+  - scripts/travis_prep.sh
 script:
-  - yarn test
-#   - yarn coverage
+  - scripts/travis_script.sh
