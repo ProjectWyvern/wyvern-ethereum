@@ -48,12 +48,6 @@ Make sure to lint the Solidity files once you're done:
 yarn lint
 ```
 
-And run automated smart contract analysis:
-
-```bash
-yarn analyze
-```
-
 #### Generating Documentation
 
 Install the dependencies:
@@ -71,6 +65,19 @@ yarn doc
 ```
 
 Final output will be written to [docs](docs), which will be automatically published on push to GitHub Pages at [docs.projectwyvern.com](https://docs.projectwyvern.com).
+
+#### Misc
+
+Run automated smart contract analysis (*presently disabled*):
+
+```bash
+yarn analyze
+```
+
+Flatten contract source (for e.g. Etherscan verification, requires [solidity-flattener](https://github.com/BlockCatIO/solidity-flattener) to be installed):
+```bash
+yarn flatten
+```
 
 #### Contributing
 
