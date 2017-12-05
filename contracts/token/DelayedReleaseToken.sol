@@ -33,7 +33,7 @@ contract DelayedReleaseToken is StandardToken {
      * @dev Release the previously specified amount of tokens to the provided address
      * @param destination Address for which tokens will be released (minted) 
      */
-    function releaseTokens(address destination)  public {
+    function releaseTokens(address destination) public {
         require((msg.sender == temporaryAdmin) && (!hasBeenReleased));
         hasBeenReleased = true;
         balances[destination] = numberOfDelayedTokens;

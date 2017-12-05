@@ -1,4 +1,4 @@
 module.exports = {
-  skipFiles: ['WyvernExchange.sol', 'exchange/Exchange.sol'],
+  skipFiles: ['exchange/Exchange.sol'],
   copyPackages: ['zeppelin-solidity']
 }
