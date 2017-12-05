@@ -46,7 +46,7 @@ contract('WyvernToken', (accounts) => {
       })
   })
 
-  range(0, 10).map(index => {
+  range(1, 10).map(index => {
     it('should accept valid Merkle proof of random UTXO (#' + index + ' of 10)', () => {
       const utxo = randomUTXO()
       const hash = hashUTXO(utxo)
@@ -63,7 +63,7 @@ contract('WyvernToken', (accounts) => {
     })
   })
 
-  range(0, 10).map(index => {
+  range(1, 10).map(index => {
     it('should reject invalid Merkle proof of random UTXO (#' + index + 'of 10)', () => {
       const utxo = randomUTXO()
       const hash = hashUTXO(utxo)
@@ -81,7 +81,7 @@ contract('WyvernToken', (accounts) => {
     })
   })
 
-  range(0, 10).map(index => {
+  range(1, 10).map(index => {
     it('should validate random UTXO (#' + index + ' of 10)', () => {
       const utxo = randomUTXO()
       const hash = hashUTXO(utxo)
@@ -99,7 +99,7 @@ contract('WyvernToken', (accounts) => {
     })
   })
 
-  range(0, 10).map(index => {
+  range(1, 10).map(index => {
     it('should reject invalid UTXO (#' + index + ' of 10)', () => {
       const utxo = randomUTXO()
       const hash = hashUTXO(utxo)
@@ -132,11 +132,11 @@ contract('WyvernToken', (accounts) => {
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, v, r, s)
-          .then(amount => {
-            amount = amount.toNumber()
-            assert.equal(amount, utxo.satoshis * Math.pow(10, 11), 'UTXO was not credited correctly!')
-          })
+        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
+      })
+      .then(amount => {
+        amount = amount.toNumber()
+        assert.equal(amount, utxo.satoshis * Math.pow(10, 11), 'UTXO was not credited correctly!')
       })
   })
 
@@ -155,7 +155,7 @@ contract('WyvernToken', (accounts) => {
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, v, r, s)
+        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
       })
       .then(() => {
         assert.equal(false, true, 'UTXO was credited twice!')
@@ -180,7 +180,7 @@ contract('WyvernToken', (accounts) => {
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex + 1, utxo.satoshis, proof, pubKey, v, r, s)
+        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex + 1, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
           .then(amount => {
             assert.equal(false, true, 'UTXO was credited!')
           }).catch(() => {
@@ -189,7 +189,7 @@ contract('WyvernToken', (accounts) => {
       })
   })
 
-  range(0, 10).map(index => {
+  range(1, 10).map(index => {
     it('should correctly convert Ethereum address (#' + index + ' of 10)', () => {
       const keyPair = bitcoin.ECPair.makeRandom({ compressed: index % 2 === 0 })
       const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex')
@@ -206,7 +206,24 @@ contract('WyvernToken', (accounts) => {
     })
   })
 
-  range(0, 10).map(index => {
+  range(1, 10).map(index => {
+    it('should correctly convert Bitcoin address (#' + index + ' of 10)', () => {
+      const keyPair = bitcoin.ECPair.makeRandom({ compressed: index % 2 === 0 })
+      const rawAddr = '0x' + bs58check.decode(keyPair.getAddress()).slice(1, 21).toString('hex')
+      const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex')
+
+      return WyvernToken
+        .deployed()
+        .then(instance => {
+          return instance.pubKeyToBitcoinAddress.call(pubKey, keyPair.compressed)
+        })
+        .then(addr => {
+          assert.equal(addr, rawAddr, 'Address did not match!')
+        })
+    })
+  })
+
+  range(1, 10).map(index => {
     it('should verify valid signature (#' + index + ' of 10)', () => {
       const keyPair = bitcoin.ECPair.makeRandom({ compressed: index % 2 === 0 })
       const ethAddr = accounts[0].slice(2)
@@ -227,7 +244,7 @@ contract('WyvernToken', (accounts) => {
     })
   })
 
-  range(0, 10).map(index => {
+  range(1, 10).map(index => {
     it('should reject invalid signature (#' + index + ' of 10)', () => {
       const keyPair = bitcoin.ECPair.makeRandom({ compressed: index % 2 === 0 })
       const ethAddr = accounts[0].slice(2)

@@ -81,14 +81,22 @@ contract UTXORedeemableToken is StandardToken {
     /**
      * @dev Calculate the Bitcoin-style address associated with an uncompressed ECDSA public key
      * @param pubKey Compressed ECDSA public key to convert
+     * @param isCompressed Whether or not the *Bitcoin* address was generated from a compressed key
      * @return Raw Bitcoin address (no base58-check encoding)
      */
-    function pubKeyToBitcoinAddress(bytes pubKey) public pure returns (bytes20) {
-        /* The address is encoded from a compressed public key, so we need to compress the public key. */
+    function pubKeyToBitcoinAddress(bytes pubKey, bool isCompressed) public pure returns (bytes20) {
         uint x = uint(extract(pubKey, 0));
         uint y = uint(extract(pubKey, 32)); 
-        uint8 startingByte = y % 2 == 0 ? 0x02 : 0x03;
-        return ripemd160(sha256(startingByte, x));
+        uint8 startingByte;
+        if (isCompressed) {
+            /* The address is encoded from a compressed public key, so we need to compress the public key. */
+            startingByte = y % 2 == 0 ? 0x02 : 0x03;
+            return ripemd160(sha256(startingByte, x));
+        } else {
+            /* The address is encoded from an uncompressed public key, so 0x04 is used as the starting byte. */
+            startingByte = 0x04;
+            return ripemd160(sha256(startingByte, x, y));
+        }
     }
 
     /**
@@ -136,15 +144,16 @@ contract UTXORedeemableToken is StandardToken {
      * @param satoshis Amount of UTXO in satoshis
      * @param proof Merkle tree proof
      * @param pubKey Uncompressed ECDSA public key to which the UTXO was sent
+     * @param isCompressed Whether the Bitcoin address was generated from a compressed public key
      * @param v v parameter of ECDSA signature
      * @param r r parameter of ECDSA signature
      * @param s s parameter of ECDSA signature
      * @return The number of tokens redeemed, if successful
      */
-    function redeemUTXO (bytes32 txid, uint8 outputIndex, uint satoshis, bytes proof, bytes pubKey, uint8 v, bytes32 r, bytes32 s) public returns (uint tokensRedeemed) {
+    function redeemUTXO (bytes32 txid, uint8 outputIndex, uint satoshis, bytes proof, bytes pubKey, bool isCompressed, uint8 v, bytes32 r, bytes32 s) public returns (uint tokensRedeemed) {
 
         /* Calculate original Bitcoin-style address associated with the provided public key. */
-        bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey);
+        bytes20 originalAddress = pubKeyToBitcoinAddress(pubKey, isCompressed);
 
         /* Calculate the UTXO Merkle leaf hash. */
         bytes32 merkleLeafHash = keccak256(txid, originalAddress, outputIndex, satoshis);
