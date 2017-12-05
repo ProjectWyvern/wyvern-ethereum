@@ -74,7 +74,8 @@ contract UTXORedeemableToken is StandardToken {
      * @return Ethereum address generated from the ECDSA public key
      */
     function pubKeyToEthereumAddress (bytes pubKey) public pure returns (address) {
-        return address(uint(keccak256(pubKey)) & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
+        // ??
+        return address(uint(keccak256(pubKey)) & 0x000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
     }
 
     /**
