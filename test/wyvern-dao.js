@@ -23,16 +23,32 @@ contract('WyvernDAO', (accounts) => {
       })
   })
 
+  it('should have the right address', () => {
+    return WyvernDAO
+      .deployed()
+      .then(daoInstance => {
+        return WyvernToken
+          .deployed()
+          .then(tokenInstance => {
+            return daoInstance.sharesTokenAddress.call()
+              .then(address => {
+                assert.equal(address, tokenInstance.address, 'Incorrect token address')
+              })
+          })
+      })
+  })
+
   it('should not allow release twice', () => {
     return WyvernToken
       .deployed()
       .then(tokenInstance => {
-        return tokenInstance.releaseTokens.call(tokenInstance.address)
+        return tokenInstance.releaseTokens.sendTransaction(tokenInstance.address)
       })
       .then(() => {
         assert.equal(true, false, 'Tokens were released twice!')
       })
-      .catch(() => {
+      .catch(err => {
+        assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
       })
   })
 })

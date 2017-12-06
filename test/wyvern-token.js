@@ -117,7 +117,7 @@ contract('WyvernToken', (accounts) => {
     })
   })
 
-  it('should credit valid UTXO', () => {
+  it('should credit valid UTXO, with correct amount, only once', () => {
     const utxo = utxoSet[35997]
     const hash = hashUTXO(utxo)
     const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
@@ -133,35 +133,22 @@ contract('WyvernToken', (accounts) => {
       .deployed()
       .then(instance => {
         return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
-      })
-      .then(amount => {
-        amount = amount.toNumber()
-        assert.equal(amount, utxo.satoshis * Math.pow(10, 11), 'UTXO was not credited correctly!')
-      })
-  })
-
-  it('should credit valid UTXO only once', () => {
-    const utxo = utxoSet[35997]
-    const hash = hashUTXO(utxo)
-    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
-    const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network)
-    const ethAddr = accounts[0].slice(2)
-    const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'))
-    var { r, s, v } = ecsign(hashBuf, keyPair.d.toBuffer())
-    r = '0x' + r.toString('hex')
-    s = '0x' + s.toString('hex')
-    const pubKey = '0x' + keyPair.Q.affineX.toBuffer(32).toString('hex') + keyPair.Q.affineY.toBuffer(32).toString('hex')
-
-    return WyvernToken
-      .deployed()
-      .then(instance => {
-        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
-      })
-      .then(() => {
-        assert.equal(false, true, 'UTXO was credited twice!')
-      })
-      .catch(() => {
-        assert.equal(true, true, 'Error not thrown')
+          .then(amount => {
+            amount = amount.toNumber()
+            assert.equal(amount, utxo.satoshis * Math.pow(10, 11), 'UTXO was not credited correctly!')
+          })
+          .then(() => {
+            return instance.redeemUTXO.sendTransaction('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
+          })
+          .then(() => {
+            return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
+              .then(() => {
+                assert.equal(false, true, 'UTXO was credited twice!')
+              })
+              .catch(err => {
+                assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+              })
+          })
       })
   })
 
@@ -183,8 +170,8 @@ contract('WyvernToken', (accounts) => {
         return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex + 1, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
           .then(amount => {
             assert.equal(false, true, 'UTXO was credited!')
-          }).catch(() => {
-            assert.equal(true, true, 'Error not thrown')
+          }).catch(err => {
+            assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
           })
       })
   })

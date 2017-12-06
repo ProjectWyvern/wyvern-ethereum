@@ -49,7 +49,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     mapping (address => uint) public delegatedAmountsByDelegate;
     uint public totalLockedTokens;
 
-    event ProposalAdded(uint proposalID, address recipient, uint amount, string description);
+    event ProposalAdded(uint proposalID, address recipient, uint amount, bytes metadataHash);
     event Voted(uint proposalID, bool position, address voter);
     event ProposalTallied(uint proposalID, uint result, uint quorum, bool active);
     event ChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes, address newSharesTokenAddress);
@@ -60,7 +60,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     struct Proposal {
         address recipient;
         uint amount;
-        string description;
+        bytes metadataHash;
         uint votingDeadline;
         bool executed;
         bool proposalPassed;
@@ -77,7 +77,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
 
     /* Only shareholders can execute a function with this modifier. */
     modifier onlyShareholders {
-        require(sharesTokenAddress.balanceOf(msg.sender) > 0);
+        require(ERC20(sharesTokenAddress).balanceOf(msg.sender) > 0);
         _;
     }
 
@@ -105,7 +105,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
       * @param tokensToLock number of tokens to be locked (sending address must have at least this many tokens)
       * @param delegate the address to which votes equal to the number of tokens locked will be delegated
       */
-    function setDelegateAndLockTokens(uint tokensToLock, address delegate) onlyUndelegated  public {
+    function setDelegateAndLockTokens(uint tokensToLock, address delegate) public onlyShareholders onlyUndelegated {
         require(ERC20(sharesTokenAddress).transferFrom(msg.sender, address(this), tokensToLock));
         lockedDelegatingTokens[msg.sender] = tokensToLock;
         delegatedAmountsByDelegate[delegate] = tokensToLock;
@@ -136,7 +136,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      * @param minimumSharesToPassAVote proposal can vote only if the sum of shares held by all voters exceed this number
      * @param minutesForDebate the minimum amount of delay between when a proposal is made and when it can be executed
      */
-    function changeVotingRules(uint minimumSharesToPassAVote, uint minutesForDebate) onlySelf  public {
+    function changeVotingRules(uint minimumSharesToPassAVote, uint minutesForDebate) public onlySelf {
         if (minimumSharesToPassAVote == 0 ) {
             minimumSharesToPassAVote = 1;
         }
@@ -148,17 +148,17 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     /**
      * Add Proposal
      *
-     * Propose to send `weiAmount / 1e18` ether to `beneficiary` for `jobDescription`. `transactionBytecode ? Contains : Does not contain` code.
+     * Propose to send `weiAmount / 1e18` ether to `beneficiary` for `jobMetadataHash`. `transactionBytecode ? Contains : Does not contain` code.
      *
      * @param beneficiary who to send the ether to
      * @param weiAmount amount of ether to send, in wei
-     * @param jobDescription Description of job
+     * @param jobMetadataHash Hash of job metadata (IPFS)
      * @param transactionBytecode bytecode of transaction
      */
     function newProposal(
         address beneficiary,
         uint weiAmount,
-        string jobDescription,
+        bytes jobMetadataHash,
         bytes transactionBytecode
     )
         public
@@ -169,13 +169,13 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         Proposal storage p = proposals[proposalID];
         p.recipient = beneficiary;
         p.amount = weiAmount;
-        p.description = jobDescription;
+        p.metadataHash = jobMetadataHash;
         p.proposalHash = keccak256(beneficiary, weiAmount, transactionBytecode);
         p.votingDeadline = now + debatingPeriodInMinutes * 1 minutes;
         p.executed = false;
         p.proposalPassed = false;
         p.numberOfVotes = 0;
-        ProposalAdded(proposalID, beneficiary, weiAmount, jobDescription);
+        ProposalAdded(proposalID, beneficiary, weiAmount, jobMetadataHash);
         numProposals = proposalID+1;
 
         return proposalID;
@@ -184,25 +184,25 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     /**
      * Add proposal in Ether
      *
-     * Propose to send `etherAmount` ether to `beneficiary` for `jobDescription`. `transactionBytecode ? Contains : Does not contain` code.
+     * Propose to send `etherAmount` ether to `beneficiary` for `jobMetadataHash`. `transactionBytecode ? Contains : Does not contain` code.
      * This is a convenience function to use if the amount to be given is in round number of ether units.
      *
      * @param beneficiary who to send the ether to
      * @param etherAmount amount of ether to send
-     * @param jobDescription Description of job
+     * @param jobMetadataHash Hash of job metadata (IPFS)
      * @param transactionBytecode bytecode of transaction
      */
     function newProposalInEther(
         address beneficiary,
         uint etherAmount,
-        string jobDescription,
+        bytes jobMetadataHash,
         bytes transactionBytecode
     )
         public
         onlyShareholders
         returns (uint proposalID)
     {
-        return newProposal(beneficiary, etherAmount * 1 ether, jobDescription, transactionBytecode);
+        return newProposal(beneficiary, etherAmount * 1 ether, jobMetadataHash, transactionBytecode);
     }
 
     /**
