@@ -68,7 +68,7 @@ Final output will be written to [docs](docs), which will be automatically publis
 
 #### Misc
 
-Run automated smart contract analysis (*presently disabled*):
+Run automated smart contract analysis (requires [Oyente](https://github.com/melonproject/oyente)):
 
 ```bash
 yarn analyze
