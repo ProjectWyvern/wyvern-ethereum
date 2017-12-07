@@ -44,10 +44,22 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     uint public numProposals;
     ERC20 public sharesTokenAddress;
 
+    /* Delegate addresses by delegator. */
     mapping (address => address) public delegatesByDelegator;
+
+    /* Locked tokens by delegator. */
     mapping (address => uint) public lockedDelegatingTokens;
+
+    /* Delegated votes by delegate. */
     mapping (address => uint) public delegatedAmountsByDelegate;
+    
+    /* Tokens currently locked by vote delegation. */
     uint public totalLockedTokens;
+
+    /* Threshold for the ability to create proposals. */
+    uint public requiredSharesToBeBoardMember;
+
+    /* Events for all state changes. TODO: Add for execution. */
 
     event ProposalAdded(uint proposalID, address recipient, uint amount, bytes metadataHash);
     event Voted(uint proposalID, bool position, address voter);
@@ -93,6 +105,11 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         _;
     }
 
+    modifier onlyBoardMembers {
+        require(ERC20(sharesTokenAddress).balanceOf(msg.sender) >= requiredSharesToBeBoardMember);
+        _;
+    }
+
     /* Only a shareholder who has delegated his vote can execute a function with this modifier. */
     modifier onlyDelegated {
         require(delegatesByDelegator[msg.sender] != address(0));
@@ -108,23 +125,27 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     function setDelegateAndLockTokens(uint tokensToLock, address delegate) public onlyShareholders onlyUndelegated {
         require(ERC20(sharesTokenAddress).transferFrom(msg.sender, address(this), tokensToLock));
         lockedDelegatingTokens[msg.sender] = tokensToLock;
-        delegatedAmountsByDelegate[delegate] = tokensToLock;
+        delegatedAmountsByDelegate[delegate] += tokensToLock;
         totalLockedTokens += tokensToLock;
+        delegatesByDelegator[msg.sender] = delegate;
         TokensDelegated(msg.sender, tokensToLock, delegate);
     }
 
     /** 
      * @notice Clear the delegate address for all tokens delegated by the sending address, unlocking the locked tokens.
      * @dev Can only be called by a sending address currently delegating tokens, will transfer all locked tokens back to the sender
+     * @return The number of tokens previously locked, now released
      */
-    function clearDelegateAndUnlockTokens() public onlyDelegated {
+    function clearDelegateAndUnlockTokens() public onlyDelegated returns (uint lockedTokens) {
         address delegate = delegatesByDelegator[msg.sender];
-        uint lockedTokens = lockedDelegatingTokens[msg.sender];
+        lockedTokens = lockedDelegatingTokens[msg.sender];
         lockedDelegatingTokens[msg.sender] = 0;
         delegatedAmountsByDelegate[delegate] -= lockedTokens;
         totalLockedTokens -= lockedTokens;
+        delete delegatesByDelegator[msg.sender];
         require(ERC20(sharesTokenAddress).transfer(msg.sender, lockedTokens));
         TokensUndelegated(msg.sender, lockedTokens, delegate);
+        return lockedTokens;
     }
 
     /**
@@ -162,7 +183,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         bytes transactionBytecode
     )
         public
-        onlyShareholders
+        onlyBoardMembers
         returns (uint proposalID)
     {
         proposalID = proposals.length++;
@@ -199,7 +220,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         bytes transactionBytecode
     )
         public
-        onlyShareholders
+        onlyBoardMembers
         returns (uint proposalID)
     {
         return newProposal(beneficiary, etherAmount * 1 ether, jobMetadataHash, transactionBytecode);
