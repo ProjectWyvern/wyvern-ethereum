@@ -9,6 +9,11 @@ pragma solidity ^0.4.18;
 import "zeppelin-solidity/contracts/token/StandardToken.sol";
 import "zeppelin-solidity/contracts/MerkleProof.sol";
 
+/**
+  * @title UTXORedeemableToken
+  * @author Project Wyvern Developers
+  * 
+  */
 contract UTXORedeemableToken is StandardToken {
 
     /* Root hash of the UTXO Merkle tree, must be initialized by token constructor. */

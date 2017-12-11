@@ -1,9 +1,10 @@
 /* global artifacts:false, it:false, contract:false, assert:false */
 
+const web3 = require('web3')
+const BigNumber = require('bignumber.js')
+
 const TestDAO = artifacts.require('TestDAO')
 const TestToken = artifacts.require('TestToken')
-
-const BigNumber = require('bignumber.js')
 
 contract('TestDAO', (accounts) => {
   it('should not allow delegation of more shares than owned', () => {
@@ -66,6 +67,40 @@ contract('TestDAO', (accounts) => {
       })
       .then(ret => {
         assert.equal(ret.equals(new BigNumber(0)), true, 'Incorrect proposal ID')
+      })
+  })
+
+  it('should allow voting and count votes correctly', () => {
+    const amount = new BigNumber(Math.pow(10, 18 + 7))
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        return daoInstance.newProposal.sendTransaction(accounts[1], 0, '0x', '0x')
+          .then(() => {
+            return daoInstance.vote.sendTransaction(0, true)
+          })
+          .then(() => {
+            return daoInstance.countVotes.call(0)
+          })
+          .then(ret => {
+            const yea = ret[0]
+            const nay = ret[1]
+            const quorum = ret[2]
+            assert.equal(yea.equals(amount), true, 'Incorrect yea count')
+            assert.equal(nay.equals(0), true, 'Incorrect nay count')
+            assert.equal(quorum.equals(amount), true, 'Incorrect quorum count')
+          })
+      })
+  })
+
+  it('should log receipt of Ether', () => {
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        return daoInstance.sendTransaction({value: web3.utils.toWei(0.1)})
+      })
+      .then(ret => {
+        assert.equal(ret.logs.length, 1, 'No logs were fired')
       })
   })
 })
