@@ -2,9 +2,15 @@ pragma solidity ^0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 
+/**
+ * @title TokenRecipient
+ * @author Project Wyvern Developers
+ *
+ *
+ */
 contract TokenRecipient {
     event ReceivedEther(address sender, uint amount);
-    event ReceivedTokens(address _from, uint256 _value, address _token, bytes _extraData);
+    event ReceivedTokens(address indexed _from, uint256 _value, address _token, bytes _extraData);
 
     /**
      * @dev Receive tokens and generate a log event

@@ -24,11 +24,6 @@
 
       Only the DAO itself can change its own voting rules (not an owning address). 
 
-  TODO
-
-    - Convenience constant function for vote tallying
-    - Clarify some documentation
-
 */
 
 pragma solidity ^0.4.18;
@@ -36,6 +31,12 @@ pragma solidity ^0.4.18;
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "../common/TokenRecipient.sol";
 
+/**
+ * @title DelegatedShareholderAssociation
+ * @author Project Wyvern Developers
+ *
+ *
+ */
 contract DelegatedShareholderAssociation is TokenRecipient {
 
     uint public minimumQuorum;
@@ -59,13 +60,12 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     /* Threshold for the ability to create proposals. */
     uint public requiredSharesToBeBoardMember;
 
-    /* Events for all state changes. TODO: Add for execution. */
+    /* Events for all state changes. */
 
     event ProposalAdded(uint proposalID, address recipient, uint amount, bytes metadataHash);
     event Voted(uint proposalID, bool position, address voter);
     event ProposalTallied(uint proposalID, uint result, uint quorum, bool active);
     event ChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes, address newSharesTokenAddress);
-
     event TokensDelegated(address indexed delegator, uint numberOfTokens, address indexed delegate);
     event TokensUndelegated(address indexed delegator, uint numberOfTokens, address indexed delegate);
 
@@ -105,6 +105,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         _;
     }
 
+    /* Only boardmembers (shareholders above a certain threshold) can execute a function with this modifier. */
     modifier onlyBoardMembers {
         require(ERC20(sharesTokenAddress).balanceOf(msg.sender) >= requiredSharesToBeBoardMember);
         _;
@@ -116,7 +117,9 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         _;
     }
 
-    /** 
+    /**
+      * Delegate an amount of tokens
+      * 
       * @notice Set the delegate address for a specified number of tokens belonging to the sending address, locking the tokens.
       * @dev An address holding tokens (shares) may only delegate some portion of their vote to one delegate at any one time
       * @param tokensToLock number of tokens to be locked (sending address must have at least this many tokens)
@@ -132,6 +135,8 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     }
 
     /** 
+     * Undelegate all delegated tokens
+     * 
      * @notice Clear the delegate address for all tokens delegated by the sending address, unlocking the locked tokens.
      * @dev Can only be called by a sending address currently delegating tokens, will transfer all locked tokens back to the sender
      * @return The number of tokens previously locked, now released
@@ -203,30 +208,6 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     }
 
     /**
-     * Add proposal in Ether
-     *
-     * Propose to send `etherAmount` ether to `beneficiary` for `jobMetadataHash`. `transactionBytecode ? Contains : Does not contain` code.
-     * This is a convenience function to use if the amount to be given is in round number of ether units.
-     *
-     * @param beneficiary who to send the ether to
-     * @param etherAmount amount of ether to send
-     * @param jobMetadataHash Hash of job metadata (IPFS)
-     * @param transactionBytecode bytecode of transaction
-     */
-    function newProposalInEther(
-        address beneficiary,
-        uint etherAmount,
-        bytes jobMetadataHash,
-        bytes transactionBytecode
-    )
-        public
-        onlyBoardMembers
-        returns (uint proposalID)
-    {
-        return newProposal(beneficiary, etherAmount * 1 ether, jobMetadataHash, transactionBytecode);
-    }
-
-    /**
      * Check if a proposal code matches
      *
      * @param proposalNumber ID number of the proposal to query
@@ -266,13 +247,34 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     {
         Proposal storage p = proposals[proposalNumber];
         require(p.voted[msg.sender] != true);
-
         voteID = p.votes.length++;
         p.votes[voteID] = Vote({inSupport: supportsProposal, voter: msg.sender});
         p.voted[msg.sender] = true;
         p.numberOfVotes = voteID + 1;
-        Voted(proposalNumber,  supportsProposal, msg.sender);
+        Voted(proposalNumber, supportsProposal, msg.sender);
         return voteID;
+    }
+
+    /**
+     * Count the votes, including delegated votes, in support of, against, and in total for a particular proposal
+     * @param proposalNumber proposal number
+     * @return yea votes, nay votes, quorum (total votes)
+     */
+    function countVotes(uint proposalNumber) public view returns (uint yea, uint nay, uint quorum) {
+        Proposal storage p = proposals[proposalNumber];
+        yea = 0;
+        nay = 0;
+        quorum = 0;
+        for (uint i = 0; i < p.votes.length; ++i) {
+            Vote storage v = p.votes[i];
+            uint voteWeight = sharesTokenAddress.balanceOf(v.voter) + delegatedAmountsByDelegate[v.voter];
+            quorum += voteWeight;
+            if (v.inSupport) {
+                yea += voteWeight;
+            } else {
+                nay += voteWeight;
+            }
+        }
     }
 
     /**
@@ -289,28 +291,14 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         /* If past deadline, not already executed, and code is correct, keep going. */
         require((now > p.votingDeadline) && !p.executed && p.proposalHash == keccak256(p.recipient, p.amount, transactionBytecode));
 
-        // ...then tally the results
-        uint quorum = 0;
-        uint yea = 0;
-        uint nay = 0;
-
-        for (uint i = 0; i < p.votes.length; ++i) {
-            Vote storage v = p.votes[i];
-            uint voteWeight = sharesTokenAddress.balanceOf(v.voter) + delegatedAmountsByDelegate[v.voter];
-            quorum += voteWeight;
-            if (v.inSupport) {
-                yea += voteWeight;
-            } else {
-                nay += voteWeight;
-            }
-        }
+        /* Count the votes. */
+        var ( yea, nay, quorum ) = countVotes(proposalNumber);
 
         /* Assert that a minimum quorum has been reached. */
         require(quorum >= minimumQuorum);
 
         if (yea > nay) {
-            // Proposal passed; execute the transaction
-
+            /* Proposal passed; execute the transaction. */
             p.executed = true;
             require(p.recipient.call.value(p.amount)(transactionBytecode));
 
@@ -319,11 +307,11 @@ contract DelegatedShareholderAssociation is TokenRecipient {
 
             p.proposalPassed = true;
         } else {
-            // Proposal failed
+            /* Proposal failed. */
             p.proposalPassed = false;
         }
 
-        // Fire Events
+        /* Log event. */
         ProposalTallied(proposalNumber, yea - nay, quorum, p.proposalPassed);
     }
 }
