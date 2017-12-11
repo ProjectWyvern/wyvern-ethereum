@@ -206,6 +206,32 @@ contract('TestDAO', (accounts) => {
       })
   })
 
+  it('should not allow spending the locked tokens', () => {
+    const amount = new BigNumber(Math.pow(10, 18 + 7))
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        return daoInstance.minimumQuorum.call()
+          .then(() => {
+            return TestToken
+              .deployed()
+              .then(tokenInstance => {
+                const abi = new web3.eth.Contract(tokenInstance.abi, tokenInstance.address).methods.transfer(accounts[0], amount).encodeABI()
+                return daoInstance.newProposal.sendTransaction(tokenInstance.address, 0, '0x', abi)
+                  .then(() => {
+                    return daoInstance.vote.sendTransaction(3, true)
+                  })
+                  .then(() => {
+                    return daoInstance.executeProposal.sendTransaction(3, abi)
+                  })
+                  .catch(err => {
+                    assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+                  })
+              })
+          })
+      })
+  })
+
   it('should log receipt of Ether', () => {
     return TestDAO
       .deployed()
