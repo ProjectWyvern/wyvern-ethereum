@@ -2,6 +2,8 @@
 
 const WyvernExchange = artifacts.require('./WyvernExchange.sol')
 
-module.exports = (deployer) => {
-  deployer.deploy(WyvernExchange)
+module.exports = (deployer, network) => {
+  if (network === 'development') {
+    deployer.deploy(WyvernExchange)
+  }
 }

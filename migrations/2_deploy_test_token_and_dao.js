@@ -4,10 +4,10 @@ const TestToken = artifacts.require('./TestToken.sol')
 const TestDAO = artifacts.require('./TestDAO.sol')
 
 module.exports = (deployer, network) => {
-  if (network === 'development') {
+  if (network === 'development' || network === 'kovan') {
     deployer.deploy(TestToken)
       .then(() => {
-        return deployer.deploy(TestDAO, TestToken.address, Math.pow(10, 18) * 1000000, 60 * 24 * 7)
+        return deployer.deploy(TestDAO, TestToken.address, Math.pow(10, 18) * 1000, 60 * 24 * 7)
       })
   }
 }
