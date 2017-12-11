@@ -1,10 +1,12 @@
 /* global artifacts:false, it:false, contract:false, assert:false */
 
-const web3 = require('web3')
+const Web3 = require('web3')
 const BigNumber = require('bignumber.js')
 
 const TestDAO = artifacts.require('TestDAO')
 const TestToken = artifacts.require('TestToken')
+
+const web3 = new Web3()
 
 contract('TestDAO', (accounts) => {
   it('should not allow delegation of more shares than owned', () => {
@@ -130,6 +132,76 @@ contract('TestDAO', (accounts) => {
           })
           .then(ret => {
             assert.equal(ret.length, 0, 'Proposal was not executed')
+          })
+      })
+  })
+
+  it('should allow the DAO to change its own voting rules', () => {
+    const amount = new BigNumber(Math.pow(10, 18 + 7))
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(2, 0).encodeABI()
+        return daoInstance.newProposal.sendTransaction(daoInstance.address, 0, '0x', abi)
+          .then(() => {
+            return daoInstance.vote.sendTransaction(1, true)
+          })
+          .then(() => {
+            return daoInstance.countVotes.call(1)
+          })
+          .then(ret => {
+            const yea = ret[0]
+            const nay = ret[1]
+            const quorum = ret[2]
+            assert.equal(yea.equals(amount), true, 'Incorrect yea count')
+            assert.equal(nay.equals(0), true, 'Incorrect nay count')
+            assert.equal(quorum.equals(amount), true, 'Incorrect quorum count')
+            return daoInstance.checkProposalCode.call(1, daoInstance.address, 0, abi)
+          })
+          .then(ret => {
+            assert.equal(ret, true, 'Proposal code did not match')
+            return daoInstance.executeProposal.sendTransaction(1, abi)
+          })
+          .then(() => {
+            return daoInstance.minimumQuorum.call()
+          })
+          .then(ret => {
+            assert.equal(ret, 2, 'Voting rules were not changed')
+          })
+      })
+  })
+
+  it('should not allow execution of a failed proposal', () => {
+    const amount = new BigNumber(Math.pow(10, 18 + 7))
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(3, 3).encodeABI()
+        return daoInstance.newProposal.sendTransaction(daoInstance.address, 0, '0x', abi)
+          .then(() => {
+            return daoInstance.vote.sendTransaction(2, false)
+          })
+          .then(() => {
+            return daoInstance.countVotes.call(2)
+          })
+          .then(ret => {
+            const yea = ret[0]
+            const nay = ret[1]
+            const quorum = ret[2]
+            assert.equal(yea.equals(0), true, 'Incorrect yea count')
+            assert.equal(nay.equals(amount), true, 'Incorrect nay count')
+            assert.equal(quorum.equals(amount), true, 'Incorrect quorum count')
+            return daoInstance.checkProposalCode.call(2, daoInstance.address, 0, abi)
+          })
+          .then(ret => {
+            assert.equal(ret, true, 'Proposal code did not match')
+            return daoInstance.executeProposal.sendTransaction(2, abi)
+          })
+          .then(() => {
+            return daoInstance.minimumQuorum.call()
+          })
+          .then(ret => {
+            assert.equal(ret, 2, 'The failed proposal was executed')
           })
       })
   })
