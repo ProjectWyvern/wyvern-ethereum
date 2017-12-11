@@ -10,6 +10,13 @@
 
 These are the official Ethereum smart contracts for the Wyvern ERC20 token (WYV), the Wyvern Exchange, and the Wyvern DAO. For general information on the Wyvern project, please see [the official website](https://projectwyvern.com).
 
+### Deployed Contracts
+
+#### Kovan Testnet
+
+[Test DAO](https://kovan.etherscan.io/address/0x2e35494d3a06b97f856a3148f30a8890727b9e0c#code)
+[Test Token](https://kovan.etherscan.io/address/0xf012bd75a2ee18d948e847760c0272c8a944c9c4#code)
+
 ### Development Information
 
 #### Setup
