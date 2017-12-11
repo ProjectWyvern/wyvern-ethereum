@@ -73,6 +73,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         address recipient;
         uint amount;
         bytes metadataHash;
+        uint timeCreated;
         uint votingDeadline;
         bool executed;
         bool proposalPassed;
@@ -197,6 +198,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         p.amount = weiAmount;
         p.metadataHash = jobMetadataHash;
         p.proposalHash = keccak256(beneficiary, weiAmount, transactionBytecode);
+        p.timeCreated = now;
         p.votingDeadline = now + debatingPeriodInMinutes * 1 minutes;
         p.executed = false;
         p.proposalPassed = false;
@@ -285,11 +287,11 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      * @param proposalNumber proposal number
      * @param transactionBytecode optional: if the transaction contained a bytecode, you need to send it
      */
-    function executeProposal(uint proposalNumber, bytes transactionBytecode)  public {
+    function executeProposal(uint proposalNumber, bytes transactionBytecode) public {
         Proposal storage p = proposals[proposalNumber];
 
-        /* If past deadline, not already executed, and code is correct, keep going. */
-        require((now > p.votingDeadline) && !p.executed && p.proposalHash == keccak256(p.recipient, p.amount, transactionBytecode));
+        /* If at or past deadline, not already executed, and code is correct, keep going. */
+        require((now >= p.votingDeadline) && !p.executed && p.proposalHash == keccak256(p.recipient, p.amount, transactionBytecode));
 
         /* Count the votes. */
         var ( yea, nay, quorum ) = countVotes(proposalNumber);

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-./node_modules/solium/bin/solium.js -d . --fix
+./node_modules/solium/bin/solium.js -d ./contracts --fix

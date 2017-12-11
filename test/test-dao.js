@@ -21,6 +21,20 @@ contract('TestDAO', (accounts) => {
       })
   })
 
+  it('should not allow anyone to change the voting rules', () => {
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        return daoInstance.changeVotingRules.call(0, 0)
+      })
+      .then(ret => {
+        assert.equal(true, false, 'Anyone was allowed to change the voting rules')
+      })
+      .catch(err => {
+        assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+      })
+  })
+
   it('should allow share delegation after token allowance', () => {
     const amount = new BigNumber(Math.pow(10, 18 + 7))
     return TestDAO
@@ -33,6 +47,25 @@ contract('TestDAO', (accounts) => {
           })
           .then(() => {
             return daoInstance.setDelegateAndLockTokens.call(amount, accounts[1])
+          })
+      })
+  })
+
+  it('should allow receipt of tokens', () => {
+    const amount = new BigNumber(Math.pow(10, 18 + 7))
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        return TestToken
+          .deployed()
+          .then(tokenInstance => {
+            return tokenInstance.approve.sendTransaction(daoInstance.address, amount)
+              .then(() => {
+                return daoInstance.receiveApproval.call(accounts[0], amount, tokenInstance.address, '0x')
+              })
+              .then(ret => {
+                assert.equal(ret.length, 0, 'Was not able to receive tokens')
+              })
           })
       })
   })
@@ -70,12 +103,12 @@ contract('TestDAO', (accounts) => {
       })
   })
 
-  it('should allow voting and count votes correctly', () => {
+  it('should allow voting, count votes correctly, then allow proposal execution', () => {
     const amount = new BigNumber(Math.pow(10, 18 + 7))
     return TestDAO
       .deployed()
       .then(daoInstance => {
-        return daoInstance.newProposal.sendTransaction(accounts[1], 0, '0x', '0x')
+        return daoInstance.newProposal.sendTransaction(daoInstance.address, 0, '0x', '0x')
           .then(() => {
             return daoInstance.vote.sendTransaction(0, true)
           })
@@ -89,6 +122,14 @@ contract('TestDAO', (accounts) => {
             assert.equal(yea.equals(amount), true, 'Incorrect yea count')
             assert.equal(nay.equals(0), true, 'Incorrect nay count')
             assert.equal(quorum.equals(amount), true, 'Incorrect quorum count')
+            return daoInstance.checkProposalCode.call(0, daoInstance.address, 0, '0x')
+          })
+          .then(ret => {
+            assert.equal(ret, true, 'Proposal code did not match')
+            return daoInstance.executeProposal.call(0, '0x')
+          })
+          .then(ret => {
+            assert.equal(ret.length, 0, 'Proposal was not executed')
           })
       })
   })
