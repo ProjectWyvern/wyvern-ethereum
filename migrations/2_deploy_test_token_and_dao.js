@@ -7,7 +7,7 @@ module.exports = (deployer, network) => {
   if (network === 'development' || network === 'kovan') {
     deployer.deploy(TestToken)
       .then(() => {
-        return deployer.deploy(TestDAO, TestToken.address, Math.pow(10, 18) * 1000, 0)
+        return deployer.deploy(TestDAO, TestToken.address)
       })
   }
 }

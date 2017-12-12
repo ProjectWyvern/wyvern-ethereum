@@ -12,7 +12,7 @@ module.exports = (deployer, network) => {
   deployer.link(MerkleProof, WyvernToken)
   deployer.deploy(WyvernToken, utxoMerkleRoot, utxoAmount)
     .then(() => {
-      return deployer.deploy(WyvernDAO, WyvernToken.address, Math.pow(10, 18) * 1000000, 60 * 24 * 7)
+      return deployer.deploy(WyvernDAO, WyvernToken.address)
     })
   deployer.then(() => {
     WyvernToken.deployed()
