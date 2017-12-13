@@ -261,6 +261,17 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     }
 
     /**
+     * Return whether a particular shareholder has voted on a particular proposal (convenience function)
+     * @param proposalNumber proposal number
+     * @param shareholder address to query
+     * @return whether or not the specified address has cast a vote on the specified proposal
+     */
+    function hasVoted(uint proposalNumber, address shareholder) public view returns (bool) {
+        Proposal storage p = proposals[proposalNumber];
+        return p.voted[shareholder];
+    }
+
+    /**
      * Count the votes, including delegated votes, in support of, against, and in total for a particular proposal
      * @param proposalNumber proposal number
      * @return yea votes, nay votes, quorum (total votes)

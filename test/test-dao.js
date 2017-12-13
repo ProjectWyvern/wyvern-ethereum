@@ -124,6 +124,10 @@ contract('TestDAO', (accounts) => {
             assert.equal(yea.equals(amount), true, 'Incorrect yea count')
             assert.equal(nay.equals(0), true, 'Incorrect nay count')
             assert.equal(quorum.equals(amount), true, 'Incorrect quorum count')
+            return daoInstance.hasVoted.call(0, accounts[0])
+          })
+          .then(ret => {
+            assert.equal(ret, true, 'Account was not marked as having voted')
             return daoInstance.checkProposalCode.call(0, daoInstance.address, 0, '0x')
           })
           .then(ret => {
