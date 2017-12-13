@@ -159,6 +159,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      *
      * Make so that proposals need tobe discussed for at least `minutesForDebate/60` hours
      * and all voters combined must own more than `minimumSharesToPassAVote` shares of token `sharesAddress` to be executed
+     * and a shareholder needs `sharesToBeBoardMember` shares to create a transaction proposal
      *
      * @param minimumSharesToPassAVote proposal can vote only if the sum of shares held by all voters exceed this number
      * @param minutesForDebate the minimum amount of delay between when a proposal is made and when it can be executed

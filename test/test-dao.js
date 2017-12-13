@@ -176,7 +176,7 @@ contract('TestDAO', (accounts) => {
     return TestDAO
       .deployed()
       .then(daoInstance => {
-        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(3, 3, 0).encodeABI()
+        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(0, 3, 0).encodeABI()
         return daoInstance.newProposal.sendTransaction(daoInstance.address, 0, '0x', abi)
           .then(() => {
             return daoInstance.vote.sendTransaction(2, false)
