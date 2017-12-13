@@ -162,13 +162,15 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      *
      * @param minimumSharesToPassAVote proposal can vote only if the sum of shares held by all voters exceed this number
      * @param minutesForDebate the minimum amount of delay between when a proposal is made and when it can be executed
+     * @param sharesToBeBoardMember the minimum number of shares required to create proposals
      */
-    function changeVotingRules(uint minimumSharesToPassAVote, uint minutesForDebate) public onlySelf {
+    function changeVotingRules(uint minimumSharesToPassAVote, uint minutesForDebate, uint sharesToBeBoardMember) public onlySelf {
         if (minimumSharesToPassAVote == 0 ) {
             minimumSharesToPassAVote = 1;
         }
         minimumQuorum = minimumSharesToPassAVote;
         debatingPeriodInMinutes = minutesForDebate;
+        requiredSharesToBeBoardMember = sharesToBeBoardMember;
         ChangeOfRules(minimumQuorum, debatingPeriodInMinutes, sharesTokenAddress);
     }
 

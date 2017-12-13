@@ -27,7 +27,7 @@ contract('TestDAO', (accounts) => {
     return TestDAO
       .deployed()
       .then(daoInstance => {
-        return daoInstance.changeVotingRules.call(0, 0)
+        return daoInstance.changeVotingRules.call(0, 0, 0)
       })
       .then(ret => {
         assert.equal(true, false, 'Anyone was allowed to change the voting rules')
@@ -141,7 +141,7 @@ contract('TestDAO', (accounts) => {
     return TestDAO
       .deployed()
       .then(daoInstance => {
-        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(2, 0).encodeABI()
+        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(2, 0, 0).encodeABI()
         return daoInstance.newProposal.sendTransaction(daoInstance.address, 0, '0x', abi)
           .then(() => {
             return daoInstance.vote.sendTransaction(1, true)
@@ -176,7 +176,7 @@ contract('TestDAO', (accounts) => {
     return TestDAO
       .deployed()
       .then(daoInstance => {
-        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(3, 3).encodeABI()
+        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(3, 3, 0).encodeABI()
         return daoInstance.newProposal.sendTransaction(daoInstance.address, 0, '0x', abi)
           .then(() => {
             return daoInstance.vote.sendTransaction(2, false)
