@@ -1,6 +1,6 @@
 /*
 
-  Trustless decentralized digital item & smart contract exchange.
+  Decentralized digital item exchange.
 
   Written from scratch.
 
@@ -14,6 +14,10 @@ import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 
 import "./EscrowProvider.sol";
 
+/**
+ * @title Exchange
+ * @author Project Wyvern Developers
+ */
 contract Exchange is Ownable {
 
   /* The owner address of the exchange (a) can withdraw fees periodically and (b) can change the fee amounts, escrow settings. */

@@ -4,25 +4,41 @@
 
   Originally based on the Shareholder Association example from https://ethereum.org/dao.
   
-  Modified to support vote delegation and self-ownership - modifications in detail:
+  Modified to support vote delegation, self-ownership, and board members - modifications in detail:
 
     Delegation
 
-      Overview
+      Motivation
+      
+        A basic shareholder association only allows shareholders to vote directly. This poses a usability limitation and an attack risk. Small shareholders are unlikely to invest time evaluating and voting on proposals,
+        especially if proposals are frequent, so an active shareholder association with many small shareholders would need a low quorum threshold - thus rendering it easier for a malicious party to buy enough shares to
+        pass a proposal in their exclusive interest (for example, that sends all the DAO's assets to their account) before enough shareholders are paying attention. Vote delegation - allowing shareholders to choose someone
+        else to vote in their stead - solves this problem, as small shareholders need only choose a trusted delegate once (and check back occaisionally to make sure they still approve of the delegate's votes).
 
-        Any shareholder in the DAO (which is anyone who holds the associated token) can voluntarily delegate any portion of their tokens to another address.
-        They do so by sending the tokens which they wish to delegate to the DAO, which locks them until the user undelegates their tokens (at which point the DAO returns the tokens to the user).
+      Implementation 
+
+        Any shareholder in the DAO (which is anyone who holds the associated token) can voluntarily delegate any portion of their voting stake to another address.
+        They do so by sending the tokens which they wish to delegate to the DAO, which locks them until the user undelegates their tokens, at which point the DAO returns the tokens to the user.
         While locked, these tokens count as extra votes for the address to whom the user delegated their tokens.
-        Tokens can be unlocked at any time, and once unlocked no longer count as delegated votes in this manner.
+        Tokens can be unlocked at any time, and once unlocked no longer count as delegated votes.
+        Notably, this allows delegating shareholders to *withdraw* their support for a proposal under consideration before the execution deadline even if their delegate had originally voted in favor of the proposal.
 
       Notes
 
-        - Delegated votes are counted when a proposal is finalized and executed (or not) - there's no way to move tokens around to create more votes than tokens and/or cause any tokens to count twice.
-        - The DAO is prevented from spending these locked tokens in the executeProposal function, so users who lock tokens are guaranteed the ability to withdraw them whenever they choose (no reserve banking).
+        Delegated votes are counted when a proposal is finalized and executed (or not) - there's no way to move tokens around to create more votes than tokens and/or cause any tokens to count twice.
+        The DAO is prevented from spending these locked tokens in the executeProposal function, so users who lock tokens are guaranteed the ability to withdraw them whenever they choose (no reserve banking).
 
     Self-Ownership
 
       Only the DAO itself can change its own voting rules (not an owning address). 
+      This poses the small risk that a large amount of shareholders not voting could cause the DAO never to be able to reach quorum (and thus change the required quorum),
+        but given the strong incentives for shareholders to avoid that (since a dysfunctional DAO would render their shares less valuable) and the expected liquidity of share tokens,
+        this seems unlikely.
+
+    Board Members
+
+      A modicum of shares is required to create proposals to prevent proposal spam by shareholders only holding a tiny amount of tokens.
+      This threshold can be adjusted by the DAO over time, so it shouldn't pose a capital barrier to proposal ideas.
 
 */
 

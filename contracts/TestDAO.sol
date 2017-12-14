@@ -1,6 +1,6 @@
 /*
 
-  << Test DAO (since we need a token that we can send around in tests) >>
+  << Test DAO (since we need a DAO controlled by a token that we can send around in tests) >>
 
 */
 
@@ -11,8 +11,6 @@ import "./dao/DelegatedShareholderAssociation.sol";
 /**
  * @title TestDAO
  * @author Project Wyvern Developers
- *
- *
  */
 contract TestDAO is DelegatedShareholderAssociation {
 

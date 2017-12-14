@@ -1,3 +1,9 @@
+/*
+
+  Token receipient. Modified very slightly from the example on http://ethereum.org/dao (just to index log parameters).
+
+*/
+
 pragma solidity ^0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
@@ -5,24 +11,22 @@ import "zeppelin-solidity/contracts/token/ERC20.sol";
 /**
  * @title TokenRecipient
  * @author Project Wyvern Developers
- *
- *
  */
 contract TokenRecipient {
-    event ReceivedEther(address sender, uint amount);
-    event ReceivedTokens(address indexed _from, uint256 _value, address _token, bytes _extraData);
+    event ReceivedEther(address indexed sender, uint amount);
+    event ReceivedTokens(address indexed from, uint256 value, address indexed token, bytes extraData);
 
     /**
      * @dev Receive tokens and generate a log event
-     * @param _from Address from which to transfer tokens
-     * @param _value Amount of tokens to transfer
-     * @param _token Address of token
-     * @param _extraData Additional data to log
+     * @param from Address from which to transfer tokens
+     * @param value Amount of tokens to transfer
+     * @param token Address of token
+     * @param extraData Additional data to log
      */
-    function receiveApproval(address _from, uint256 _value, address _token, bytes _extraData) public {
-        ERC20 t = ERC20(_token);
-        require(t.transferFrom(_from, this, _value));
-        ReceivedTokens(_from, _value, _token, _extraData);
+    function receiveApproval(address from, uint256 value, address token, bytes extraData) public {
+        ERC20 t = ERC20(token);
+        require(t.transferFrom(from, this, value));
+        ReceivedTokens(from, value, token, extraData);
     }
 
     /**

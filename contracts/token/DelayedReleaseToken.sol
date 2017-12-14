@@ -13,7 +13,6 @@ import "zeppelin-solidity/contracts/token/StandardToken.sol";
 /**
   * @title DelayedReleaseToken
   * @author Project Wyvern Developers
-  * 
   */
 contract DelayedReleaseToken is StandardToken {
 

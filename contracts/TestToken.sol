@@ -11,8 +11,6 @@ import "zeppelin-solidity/contracts/token/StandardToken.sol";
 /**
   * @title TestToken
   * @author Project Wyvern Developers
-  *
-  *
   */
 contract TestToken is StandardToken {
 

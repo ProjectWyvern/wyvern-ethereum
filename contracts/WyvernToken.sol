@@ -14,8 +14,6 @@ import "./token/DelayedReleaseToken.sol";
 /**
   * @title WyvernToken
   * @author Project Wyvern Developers
-  *
-  *
   */
 contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken {
 
@@ -23,7 +21,7 @@ contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken 
     string constant public name       = "Project Wyvern Token";
     string constant public symbol     = "WYV";
 
-    /* Amount of tokens per Wyvern, . */
+    /* Amount of tokens per Wyvern. */
     uint constant public MULTIPLIER       = 10;
 
     /* Constant for conversion from satoshis to tokens. */

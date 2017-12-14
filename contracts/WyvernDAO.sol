@@ -11,8 +11,6 @@ import "./dao/DelegatedShareholderAssociation.sol";
 /**
  * @title WyvernDAO
  * @author Project Wyvern Developers
- *
- *
  */
 contract WyvernDAO is DelegatedShareholderAssociation {
 

@@ -8,6 +8,10 @@ pragma solidity ^0.4.18;
 
 import "./exchange/Exchange.sol";
 
+/**
+ * @title WyvernExchange
+ * @author Project Wyvern Developers
+ */
 contract WyvernExchange is Exchange {
 
     string public constant name = "Project Wyvern Exchange";

@@ -12,7 +12,6 @@ import "zeppelin-solidity/contracts/MerkleProof.sol";
 /**
   * @title UTXORedeemableToken
   * @author Project Wyvern Developers
-  * 
   */
 contract UTXORedeemableToken is StandardToken {
 
@@ -94,11 +93,11 @@ contract UTXORedeemableToken is StandardToken {
         uint y = uint(extract(pubKey, 32)); 
         uint8 startingByte;
         if (isCompressed) {
-            /* The address is encoded from a compressed public key, so we need to compress the public key. */
+            /* Hash the compressed public key format. */
             startingByte = y % 2 == 0 ? 0x02 : 0x03;
             return ripemd160(sha256(startingByte, x));
         } else {
-            /* The address is encoded from an uncompressed public key, so 0x04 is used as the starting byte. */
+            /* Hash the uncompressed public key format. */
             startingByte = 0x04;
             return ripemd160(sha256(startingByte, x, y));
         }
