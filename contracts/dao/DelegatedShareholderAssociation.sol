@@ -50,8 +50,6 @@ import "../common/TokenRecipient.sol";
 /**
  * @title DelegatedShareholderAssociation
  * @author Project Wyvern Developers
- *
- *
  */
 contract DelegatedShareholderAssociation is TokenRecipient {
 
