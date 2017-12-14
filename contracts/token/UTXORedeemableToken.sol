@@ -1,6 +1,18 @@
 /*
 
-  UTXO redeemable token - a token extension to allow porting a Bitcoin or Bitcoin-fork sourced UTXO set to an ERC20 token through redemption of individual UTXOs in the token contract.
+  UTXO redeemable token.
+
+  This is a token extension to allow porting a Bitcoin or Bitcoin-fork sourced UTXO set to an ERC20 token through redemption of individual UTXOs in the token contract.
+    
+  Owners of UTXOs in a chosen final set (where "owner" is simply anyone who could have spent the UTXO) are allowed to redeem (mint) a number of tokens proportional to the satoshi amount of the UTXO.
+
+  Notes
+
+    - This method *does not* provision for special Bitcoin scripts (e.g. multisig addresses).
+    - Pending transactions are public, so the UTXO redemption transaction must work *only* for an Ethereum address belonging to the same person who owns the UTXO.
+      This is enforced by requiring that the redeeemer sign their Ethereum address with their Bitcoin (original-chain) private key.
+    - We cannot simply store the UTXO set, as that would be far too expensive. Instead we compute a Merkle tree for the entire UTXO set at the chain state which is to be ported,
+      store only the root of that Merkle tree, and require UTXO claimants prove that the UTXO they wish to claim is present in the tree.
 
 */
 
@@ -78,7 +90,6 @@ contract UTXORedeemableToken is StandardToken {
      * @return Ethereum address generated from the ECDSA public key
      */
     function pubKeyToEthereumAddress (bytes pubKey) public pure returns (address) {
-        // ??
         return address(uint(keccak256(pubKey)) & 0x000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
     }
 
@@ -89,7 +100,14 @@ contract UTXORedeemableToken is StandardToken {
      * @return Raw Bitcoin address (no base58-check encoding)
      */
     function pubKeyToBitcoinAddress(bytes pubKey, bool isCompressed) public pure returns (bytes20) {
+        /* Helpful references:
+           - https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses 
+           - https://github.com/cryptocoinjs/ecurve/blob/master/lib/point.js
+        */
+
+        /* x coordinate - first 32 bytes of public key */
         uint x = uint(extract(pubKey, 0));
+        /* y coordinate - second 32 bytes of public key */
         uint y = uint(extract(pubKey, 32)); 
         uint8 startingByte;
         if (isCompressed) {
@@ -122,12 +140,12 @@ contract UTXORedeemableToken is StandardToken {
      * @param proof Merkle tree proof
      * @return Whether or not the UTXO can be redeemed
      */
-    function verifyUTXO(bytes32 txid, bytes20 originalAddress, uint8 outputIndex, uint satoshis, bytes proof) public constant returns (bool) {
+    function canRedeemUTXO(bytes32 txid, bytes20 originalAddress, uint8 outputIndex, uint satoshis, bytes proof) public constant returns (bool) {
         /* Calculate the hash of the Merkle leaf associated with this UTXO. */
         bytes32 merkleLeafHash = keccak256(txid, originalAddress, outputIndex, satoshis);
     
         /* Verify the proof. */
-        return verifyUTXOHash(merkleLeafHash, proof);
+        return canRedeemUTXOHash(merkleLeafHash, proof);
     }
       
     /**
@@ -136,7 +154,7 @@ contract UTXORedeemableToken is StandardToken {
      * @param proof Merkle tree proof
      * @return Whether or not the UTXO with the specified hash can be redeemed
      */
-    function verifyUTXOHash(bytes32 merkleLeafHash, bytes proof) public constant returns (bool) {
+    function canRedeemUTXOHash(bytes32 merkleLeafHash, bytes proof) public constant returns (bool) {
         /* Check that the UTXO has not yet been redeemed and that it exists in the Merkle tree. */
         return((redeemedUTXOs[merkleLeafHash] == false) && verifyProof(proof, merkleLeafHash));
     }
@@ -163,7 +181,7 @@ contract UTXORedeemableToken is StandardToken {
         bytes32 merkleLeafHash = keccak256(txid, originalAddress, outputIndex, satoshis);
 
         /* Verify that the UTXO can be redeemed. */
-        require(verifyUTXOHash(merkleLeafHash, proof));
+        require(canRedeemUTXOHash(merkleLeafHash, proof));
 
         /* Claimant must sign the Ethereum address to which they wish to remit the redeemed tokens. */
         require(ecdsaVerify(msg.sender, pubKey, v, r, s));

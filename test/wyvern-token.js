@@ -91,7 +91,7 @@ contract('WyvernToken', (accounts) => {
       return WyvernToken
         .deployed()
         .then(instance => {
-          return instance.verifyUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis, proof)
+          return instance.canRedeemUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis, proof)
         })
         .then(valid => {
           assert.equal(valid, true, 'UTXO was not accepted')
@@ -109,7 +109,7 @@ contract('WyvernToken', (accounts) => {
       return WyvernToken
         .deployed()
         .then(instance => {
-          return instance.verifyUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis + 1, proof)
+          return instance.canRedeemUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis + 1, proof)
         })
         .then(valid => {
           assert.equal(valid, false, 'UTXO was not rejected')
@@ -121,6 +121,7 @@ contract('WyvernToken', (accounts) => {
     const utxo = utxoSet[35997]
     const hash = hashUTXO(utxo)
     const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+    // This is a real private key but the amount is not worth your time to steal.
     const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network)
     const ethAddr = accounts[0].slice(2)
     const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'))
