@@ -76,6 +76,8 @@ contract Exchange is Ownable {
         NonFungibleAssetInterface.NonFungibleAssetKind assetKind; 
         /* Item contract - a value of 0 means no contract is being sold. */
         address contractAddress;
+        /* Item contract nonfungible extra (token ID). */
+        uint assetExtra;
         /* Item metadata IPFS hash. */
         bytes metadataHash;
         /* The kind of sale. */
@@ -107,7 +109,7 @@ contract Exchange is Ownable {
         bytes metadataHash;
     }
 
-    event ItemListed    (bytes32 id, address seller, NonFungibleAssetInterface.NonFungibleAssetKind assetKind, address contractAddress, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint timestamp, uint expirationTime, uint extra, EscrowProvider escrowProvider);
+    event ItemListed    (bytes32 id, address seller, NonFungibleAssetInterface.NonFungibleAssetKind assetKind, address contractAddress, uint assetExtra, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint timestamp, uint expirationTime, uint extra, EscrowProvider escrowProvider);
     event ItemRemoved   (bytes32 id);
     event ItemBidOn     (bytes32 id, address bidder, uint amount, uint timestamp);
     event ItemPurchased (bytes32 id, address buyer, uint price);
@@ -155,13 +157,13 @@ contract Exchange is Ownable {
         feeFrontend = frontendFee;
     }
 
-    function listItem(NonFungibleAssetInterface.NonFungibleAssetKind assetKind, address contractAddress, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint extra, EscrowProvider escrowProvider) public costs (feeList) returns (bytes32 id) {
-        id = keccak256(msg.sender, assetKind, contractAddress, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
+    function listItem(NonFungibleAssetInterface.NonFungibleAssetKind assetKind, address contractAddress, uint assetExtra, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint extra, EscrowProvider escrowProvider) public costs (feeList) returns (bytes32 id) {
+        id = keccak256(msg.sender, assetKind, contractAddress, assetExtra, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
         require(items[id].seller == address(0));
-        NonFungibleAssetInterface.claimOwnership(assetKind, contractAddress);
-        items[id] = Item(msg.sender, assetKind, contractAddress, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider, false);
+        NonFungibleAssetInterface.claimOwnership(assetKind, contractAddress, assetExtra);
+        items[id] = Item(msg.sender, assetKind, contractAddress, assetExtra, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider, false);
         ids.push(id);
-        ItemListed(id, msg.sender, assetKind, contractAddress, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
+        ItemListed(id, msg.sender, assetKind, contractAddress, assetExtra, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
         return id;
     }
 
@@ -229,7 +231,7 @@ contract Exchange is Ownable {
         require(item.escrowProvider.holdInEscrow(id, msg.sender, item.seller, item.paymentToken, finalPrice));
 
         /* Transfer ownership of the asset. */
-        NonFungibleAssetInterface.transferOwnership(item.assetKind, item.contractAddress, msg.sender);
+        NonFungibleAssetInterface.transferOwnership(item.assetKind, item.contractAddress, msg.sender, item.assetExtra);
 
         /* Record the sale. */
         sales[id] = Sale(msg.sender, price, now, new bytes(0));
