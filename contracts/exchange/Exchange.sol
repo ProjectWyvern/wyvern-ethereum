@@ -63,9 +63,6 @@ contract Exchange is Ownable {
     /* Top bids for all bid-supporting auctions. */
     mapping(bytes32 => SaleKindInterface.Bid) public topBids;
 
-    /* NonfungibleAsset whitelist. */
-    mapping(address => bool) nonFungibleAssetWhitelist;
-
     /* ERC20 whitelist. */
     mapping(address => bool) erc20Whitelist;
 
@@ -75,16 +72,21 @@ contract Exchange is Ownable {
     /* Authenticated proxies. */
     mapping(address => AuthenticatedProxy) proxies;
 
+    /* Usernames. */
+    mapping(address => string) usernames;
+
+    /* Reverse usernames. */
+    mapping(string => address) reverseUsernames;
+
+    /* Side enum. */
+    enum Side { Buy, Sell }
+
     /* An item listed for sale on the exchange. */
     struct Item {
-        /* The address selling the item. */
-        address seller;
-        /* Item contract nonfungible kind. */
-        NonFungibleAssetInterface.NonFungibleAssetKind assetKind; 
-        /* Item contract - a value of 0 means no contract is being sold. */
-        address contractAddress;
-        /* Item contract nonfungible extra (token ID). */
-        uint assetExtra;
+        /* The address buying/selling the item. */
+        address initiator;
+        /* Side of sell. */
+        Side side;
         /* Item metadata IPFS hash. */
         bytes metadataHash;
         /* The kind of sale. */
@@ -103,6 +105,8 @@ contract Exchange is Ownable {
         EscrowProvider escrowProvider;
         /* Whether or not the listing has been removed. */
         bool removed;
+
+        // ^ most of this can be stored on IPFS and validated with ecrecover on-demand, but is that cheaper on net?
     }
 
     struct Sale {
@@ -116,7 +120,7 @@ contract Exchange is Ownable {
         bytes metadataHash;
     }
 
-    event ItemListed    (bytes32 id, address seller, NonFungibleAssetInterface.NonFungibleAssetKind assetKind, address contractAddress, uint assetExtra, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint timestamp, uint expirationTime, uint extra, EscrowProvider escrowProvider);
+    event ItemListed    (bytes32 id, address initiator, Side side, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint timestamp, uint expirationTime, uint extra, EscrowProvider escrowProvider);
     event ItemRemoved   (bytes32 id);
     event ItemBidOn     (bytes32 id, address bidder, uint amount, uint timestamp);
     event ItemPurchased (bytes32 id, address buyer, uint price);
@@ -124,7 +128,7 @@ contract Exchange is Ownable {
     event PublicBeneficiaryChanged (address indexed newAddress);
 
     modifier requiresActiveItem (bytes32 id) {
-        require((items[id].seller != address(0)) && (!items[id].removed) && (sales[id].buyer == address(0)));
+        require((items[id].initiator != address(0)) && (!items[id].removed) && (sales[id].buyer == address(0)));
         _;
     }
 
@@ -147,10 +151,6 @@ contract Exchange is Ownable {
         escrowProviderWhitelist[provider] = value;
     }
 
-    function modifyNonFungibleAssetWhitelist(address asset, bool value) public onlyOwner {
-        nonFungibleAssetWhitelist[asset] = value;
-    }
-
     function withdrawFees(address dest, address token) public {
         uint amount = collectedFees[msg.sender][token];
         collectedFees[msg.sender][token] = 0;
@@ -166,27 +166,28 @@ contract Exchange is Ownable {
         feeFrontend = frontendFee;
     }
 
-    function register() public returns (AuthenticatedProxy proxy) {
+    function register(string username) public returns (AuthenticatedProxy proxy) {
         require(proxies[msg.sender] == address(0));
+        require(reverseUsernames[username] == address(0));
+        usernames[msg.sender] = username;
+        reverseUsernames[username] = msg.sender;
         proxy = new AuthenticatedProxy(msg.sender, this);
         proxies[msg.sender] = proxy;
         return proxy;
     }
 
-    function listItem(NonFungibleAssetInterface.NonFungibleAssetKind assetKind, address contractAddress, uint assetExtra, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint extra, EscrowProvider escrowProvider)
+    function listItem(Side side, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint extra, EscrowProvider escrowProvider)
         public
         costs (feeList)
         returns (bytes32 id)
     {
         require(escrowProviderWhitelist[escrowProvider]);
-        require(nonFungibleAssetWhitelist[contractAddress]);
         require(erc20Whitelist[paymentToken]);
-        id = keccak256(msg.sender, assetKind, contractAddress, assetExtra, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
-        require(items[id].seller == address(0));
-        NonFungibleAssetInterface.claimOwnership(assetKind, contractAddress, assetExtra);
-        items[id] = Item(msg.sender, assetKind, contractAddress, assetExtra, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider, false);
+        id = keccak256(msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
+        require(items[id].initiator == address(0));
+        items[id] = Item(msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider, false);
         ids.push(id);
-        ItemListed(id, msg.sender, assetKind, contractAddress, assetExtra, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
+        ItemListed(id, msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
         return id;
     }
 
@@ -195,7 +196,7 @@ contract Exchange is Ownable {
         requiresActiveItem(id)
     {
         Item storage item = items[id];
-        require(item.seller == msg.sender);
+        require(item.initiator == msg.sender);
         item.removed = true;
         ItemRemoved(id);
     }
@@ -224,25 +225,11 @@ contract Exchange is Ownable {
         ItemBidOn(id, msg.sender, amount, now);
     }
 
-    /* Called by a buyer to purchase an item or finalize an auction they have won. Frontend address provided by the frontend. */
-    function purchaseItem (bytes32 id, address frontend)
-        public
-        requiresActiveItem (id)
-        costs (feeBuy)
+    function executeFundsTransfer (bytes32 id, Item item, SaleKindInterface.Bid topBid, address frontend)
+        internal
+        returns (uint)
     {
-      
-        Item storage item = items[id];
-        SaleKindInterface.Bid storage topBid = topBids[id];
-
-        /* Ensure that the item can be purchased. */
-        require(SaleKindInterface.canPurchaseItem(item.saleKind, item.expirationTime, topBid));
-
-        /* Release tokens from bid escrow. */
-        if (topBid.bidder != address(0)) {
-            item.paymentToken.transfer(msg.sender, topBid.amount);
-        }
-
-        /* Calculate the final price and transfer the tokens from the buyer. */
+        /* Calculate the purchase price and transfer the tokens from the buyer. */
         uint price = SaleKindInterface.calculateFinalPrice(item.saleKind, item.basePrice, item.extra, item.listingTime, item.expirationTime, topBid);
         require(item.paymentToken.transferFrom(msg.sender, this, price));
 
@@ -260,12 +247,43 @@ contract Exchange is Ownable {
 
         /* Calculate final price (what the seller will receive). */
         uint finalPrice = price - feeToOwner - feeToPublicBenefit - feeToFrontend;
-  
-        /* Send funds to the escrow provider. */
-        require(item.escrowProvider.holdInEscrow(id, msg.sender, item.seller, item.paymentToken, finalPrice));
 
-        /* Transfer ownership of the asset. */
-        NonFungibleAssetInterface.transferOwnership(item.assetKind, item.contractAddress, msg.sender, item.assetExtra);
+        /* Send funds to the escrow provider, if one is being used. Else send funds directly to seller. */
+        if (item.escrowProvider != address(0)) {
+            require(item.escrowProvider.holdInEscrow(id, msg.sender, item.initiator, item.paymentToken, finalPrice));
+        } else {
+            require(item.paymentToken.transfer(item.initiator, finalPrice));
+        }
+
+        return price;
+    }
+
+    /* Called by a buyer to purchase an item or finalize an auction they have won. Frontend address provided by the frontend. */
+    function purchaseItem (bytes32 id, address frontend, bytes calldata, address replace, uint start, uint8 v, bytes32 r, bytes32 s)
+        public
+        requiresActiveItem(id)
+        costs (feeBuy)
+    {
+      
+        Item storage item = items[id];
+        SaleKindInterface.Bid storage topBid = topBids[id];
+
+        /* Ensure that the item can be purchased. */
+        require(SaleKindInterface.canPurchaseItem(item.saleKind, item.expirationTime, topBid));
+
+        /* Ensure that the proxy exists. */
+        require(proxies[item.initiator] != address(0));
+
+        /* Release tokens from bid escrow. */
+        if (topBid.bidder != address(0)) {
+            item.paymentToken.transfer(msg.sender, topBid.amount);
+        }
+
+        /* Execute funds transfer. */
+        uint price = executeFundsTransfer(id, item, topBid, frontend);
+
+        /* Execute the function. */
+        require(proxies[item.initiator].proxyModified(msg.sender, calldata, toBytes(replace), start, v, r, s));
 
         /* Record the sale. */
         sales[id] = Sale(msg.sender, price, now, new bytes(0));
@@ -274,11 +292,20 @@ contract Exchange is Ownable {
         ItemPurchased(id, msg.sender, price);
     }
 
+    function toBytes(address a) pure public returns (bytes b) {
+        assembly {
+            let m := mload(0x40)
+            mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
+            mstore(0x40, add(m, 52))
+            b := m
+        }
+    }
+
     /* Called by the seller of an item to finalize sale to the buyer, linking the IPFS metadata. */
     function finalizeSale (bytes32 id, bytes saleMetadataHash)  
         public
     {
-        require(items[id].seller == msg.sender);
+        require(items[id].initiator == msg.sender);
         sales[id].metadataHash = saleMetadataHash;
         SaleFinalized(id, saleMetadataHash);
     }
