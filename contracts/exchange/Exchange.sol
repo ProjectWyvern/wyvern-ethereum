@@ -13,6 +13,7 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "./EscrowProvider.sol";
 import "./SaleKindInterface.sol";
+import "./AuthenticatedProxy.sol";
 import "./NonFungibleAssetInterface.sol";
 
 /**
@@ -62,11 +63,17 @@ contract Exchange is Ownable {
     /* Top bids for all bid-supporting auctions. */
     mapping(bytes32 => SaleKindInterface.Bid) public topBids;
 
+    /* NonfungibleAsset whitelist. */
+    mapping(address => bool) nonFungibleAssetWhitelist;
+
     /* ERC20 whitelist. */
     mapping(address => bool) erc20Whitelist;
 
     /* Escrow provider whitelist. */
     mapping(address => bool) escrowProviderWhitelist;
+
+    /* Authenticated proxies. */
+    mapping(address => AuthenticatedProxy) proxies;
 
     /* An item listed for sale on the exchange. */
     struct Item {
@@ -92,7 +99,7 @@ contract Exchange is Ownable {
         uint expirationTime;
         /* Auction extra parameter - minimum bid increment for English auctions, decay factor for Dutch auctions. */
         uint extra;
-        /* The escrow provider contract, which is paid a fee to arbitrage escrow disputes and must provide (TODO) specific functions. 0 for no escrow. */
+        /* The escrow provider contract, which is paid a fee to arbitrage escrow disputes and must provide specific functions. 0 for no escrow. */
         EscrowProvider escrowProvider;
         /* Whether or not the listing has been removed. */
         bool removed;
@@ -116,16 +123,6 @@ contract Exchange is Ownable {
     event SaleFinalized (bytes32 id, bytes metadataHash);
     event PublicBeneficiaryChanged (address indexed newAddress);
 
-    modifier requiresValidToken(ERC20 erc20) {
-        require(erc20Whitelist[erc20]);
-        _;
-    }
-
-    modifier requiresValidEscrowProvider(EscrowProvider escrowProvider) {
-        require(escrowProviderWhitelist[escrowProvider]);
-        _;
-    }
-
     modifier requiresActiveItem (bytes32 id) {
         require((items[id].seller != address(0)) && (!items[id].removed) && (sales[id].buyer == address(0)));
         _;
@@ -137,9 +134,21 @@ contract Exchange is Ownable {
         _;
     }
 
-    function setPublicBeneficiary(address newAddress) onlyOwner public {
+    function setPublicBeneficiary(address newAddress) public onlyOwner {
         publicBeneficiary = newAddress;
         PublicBeneficiaryChanged(newAddress);
+    }
+
+    function modifyERC20Whitelist(address token, bool value) public onlyOwner {
+        erc20Whitelist[token] = value;
+    }
+
+    function modifyEscrowProviderWhitelist(address provider, bool value) public onlyOwner {
+        escrowProviderWhitelist[provider] = value;
+    }
+
+    function modifyNonFungibleAssetWhitelist(address asset, bool value) public onlyOwner {
+        nonFungibleAssetWhitelist[asset] = value;
     }
 
     function withdrawFees(address dest, address token) public {
@@ -148,7 +157,7 @@ contract Exchange is Ownable {
         require(ERC20(token).transfer(dest, amount));
     }
 
-    function setFees(uint listFee, uint bidFee, uint buyFee, uint ownerFee, uint publicBenefitFee, uint frontendFee) onlyOwner public {
+    function setFees(uint listFee, uint bidFee, uint buyFee, uint ownerFee, uint publicBenefitFee, uint frontendFee) public onlyOwner {
         feeList = listFee;
         feeBid = bidFee;
         feeBuy = buyFee;
@@ -157,7 +166,21 @@ contract Exchange is Ownable {
         feeFrontend = frontendFee;
     }
 
-    function listItem(NonFungibleAssetInterface.NonFungibleAssetKind assetKind, address contractAddress, uint assetExtra, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint extra, EscrowProvider escrowProvider) public costs (feeList) returns (bytes32 id) {
+    function register() public returns (AuthenticatedProxy proxy) {
+        require(proxies[msg.sender] == address(0));
+        proxy = new AuthenticatedProxy(msg.sender, this);
+        proxies[msg.sender] = proxy;
+        return proxy;
+    }
+
+    function listItem(NonFungibleAssetInterface.NonFungibleAssetKind assetKind, address contractAddress, uint assetExtra, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint extra, EscrowProvider escrowProvider)
+        public
+        costs (feeList)
+        returns (bytes32 id)
+    {
+        require(escrowProviderWhitelist[escrowProvider]);
+        require(nonFungibleAssetWhitelist[contractAddress]);
+        require(erc20Whitelist[paymentToken]);
         id = keccak256(msg.sender, assetKind, contractAddress, assetExtra, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
         require(items[id].seller == address(0));
         NonFungibleAssetInterface.claimOwnership(assetKind, contractAddress, assetExtra);
@@ -167,14 +190,21 @@ contract Exchange is Ownable {
         return id;
     }
 
-    function removeItem (bytes32 id) public requiresActiveItem(id) {
+    function removeItem (bytes32 id)
+        public
+        requiresActiveItem(id)
+    {
         Item storage item = items[id];
         require(item.seller == msg.sender);
         item.removed = true;
         ItemRemoved(id);
     }
 
-    function bidOnItem (bytes32 id, uint amount) public requiresActiveItem (id) costs (feeBid) {
+    function bidOnItem (bytes32 id, uint amount)
+        public
+        requiresActiveItem (id)
+        costs (feeBid)
+    {
         Item storage item = items[id];
         SaleKindInterface.Bid storage topBid = topBids[id];
 
@@ -195,7 +225,11 @@ contract Exchange is Ownable {
     }
 
     /* Called by a buyer to purchase an item or finalize an auction they have won. Frontend address provided by the frontend. */
-    function purchaseItem (bytes32 id, address frontend) public requiresActiveItem (id) costs (feeBuy) {
+    function purchaseItem (bytes32 id, address frontend)
+        public
+        requiresActiveItem (id)
+        costs (feeBuy)
+    {
       
         Item storage item = items[id];
         SaleKindInterface.Bid storage topBid = topBids[id];
@@ -241,7 +275,9 @@ contract Exchange is Ownable {
     }
 
     /* Called by the seller of an item to finalize sale to the buyer, linking the IPFS metadata. */
-    function finalizeSale (bytes32 id, bytes saleMetadataHash) public {
+    function finalizeSale (bytes32 id, bytes saleMetadataHash)  
+        public
+    {
         require(items[id].seller == msg.sender);
         sales[id].metadataHash = saleMetadataHash;
         SaleFinalized(id, saleMetadataHash);
