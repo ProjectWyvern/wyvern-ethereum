@@ -46,7 +46,7 @@ contract Exchange is Ownable {
     uint public feeFrontend;
 
     /* Current collected fees available for withdrawal, by owner, by token. */
-    mapping(address => mapping(address => uint)) collectedFees;
+    mapping(address => mapping(address => uint)) public collectedFees;
 
     /* The token used to pay exchange fees. */
     ERC20 public exchangeTokenAddress;
@@ -64,16 +64,16 @@ contract Exchange is Ownable {
     mapping(bytes32 => SaleKindInterface.Bid) public topBids;
 
     /* ERC20 whitelist. */
-    mapping(address => bool) erc20Whitelist;
+    mapping(address => bool) public erc20Whitelist;
 
     /* Escrow provider whitelist. */
-    mapping(address => bool) escrowProviderWhitelist;
+    mapping(address => bool) public escrowProviderWhitelist;
 
     /* Authenticated proxies. */
-    mapping(address => AuthenticatedProxy) proxies;
+    mapping(address => AuthenticatedProxy) public proxies;
 
     /* Usernames. */
-    mapping(address => string) usernames;
+    mapping(address => string) public usernames;
 
     /* Reverse usernames. */
     mapping(string => address) reverseUsernames;
@@ -106,7 +106,7 @@ contract Exchange is Ownable {
         /* Whether or not the listing has been removed. */
         bool removed;
 
-        // ^ most of this can be stored on IPFS and validated with ecrecover on-demand, but is that cheaper on net?
+        /* Note: most of this could be stored on IPFS and validated with ecrecover on-demand. Not sure if the gas costs would be cheaper for the average use case or not. */
     }
 
     struct Sale {
@@ -120,10 +120,10 @@ contract Exchange is Ownable {
         bytes metadataHash;
     }
 
-    event ItemListed    (bytes32 id, address initiator, Side side, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint timestamp, uint expirationTime, uint extra, EscrowProvider escrowProvider);
+    event ItemListed    (bytes32 id, address indexed initiator, Side side, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint timestamp, uint expirationTime, uint extra, EscrowProvider escrowProvider);
     event ItemRemoved   (bytes32 id);
-    event ItemBidOn     (bytes32 id, address bidder, uint amount, uint timestamp);
-    event ItemPurchased (bytes32 id, address buyer, uint price);
+    event ItemBidOn     (bytes32 id, address indexed bidder, uint amount, uint timestamp);
+    event ItemFinalized (bytes32 id, address indexed finalizer, uint price);
     event SaleFinalized (bytes32 id, bytes metadataHash);
     event PublicBeneficiaryChanged (address indexed newAddress);
 
@@ -136,6 +136,10 @@ contract Exchange is Ownable {
         require(exchangeTokenAddress.transferFrom(msg.sender, this, amount));
         collectedFees[owner][exchangeTokenAddress] += amount;
         _;
+    }
+
+    function reverseUsername(string username) public view returns (address) {
+        return reverseUsernames[username];
     }
 
     function setPublicBeneficiary(address newAddress) public onlyOwner {
@@ -181,8 +185,16 @@ contract Exchange is Ownable {
         costs (feeList)
         returns (bytes32 id)
     {
+
+        /* Escrow provider must be whitelisted. */
         require(escrowProviderWhitelist[escrowProvider]);
+
+        /* Payment token must be whitelisted. */
         require(erc20Whitelist[paymentToken]);
+        
+        /* Buy-side listings cannot be English auctions. */
+        require(saleKind != SaleKindInterface.SaleKind.EnglishAuction || side == Side.Sell);
+
         id = keccak256(msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider);
         require(items[id].initiator == address(0));
         items[id] = Item(msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, escrowProvider, false);
@@ -208,7 +220,7 @@ contract Exchange is Ownable {
     {
         Item storage item = items[id];
         SaleKindInterface.Bid storage topBid = topBids[id];
-
+        
         /* Calculated required bid price. */
         uint requiredBidPrice = SaleKindInterface.requiredBidPrice(item.saleKind, item.basePrice, item.extra, item.expirationTime, topBid);
         /* Assert bid amount is sufficient. */
@@ -231,7 +243,13 @@ contract Exchange is Ownable {
     {
         /* Calculate the purchase price and transfer the tokens from the buyer. */
         uint price = SaleKindInterface.calculateFinalPrice(item.saleKind, item.basePrice, item.extra, item.listingTime, item.expirationTime, topBid);
-        require(item.paymentToken.transferFrom(msg.sender, this, price));
+
+        /* Select payer/payee. */
+        address payer = item.side == Side.Buy ? item.initiator : msg.sender;
+        address payee = item.side == Side.Buy ? msg.sender : item.initiator;
+
+        /* Withdraw tokens from payer. */
+        require(item.paymentToken.transferFrom(payer, this, price));
 
         /* Calculate and credit the owner fee. */
         uint feeToOwner = price * (feeOwner / 10000);
@@ -250,9 +268,10 @@ contract Exchange is Ownable {
 
         /* Send funds to the escrow provider, if one is being used. Else send funds directly to seller. */
         if (item.escrowProvider != address(0)) {
-            require(item.escrowProvider.holdInEscrow(id, msg.sender, item.initiator, item.paymentToken, finalPrice));
+            item.paymentToken.approve(item.escrowProvider, finalPrice);
+            require(item.escrowProvider.holdInEscrow(id, payer, payee, item.paymentToken, finalPrice));
         } else {
-            require(item.paymentToken.transfer(item.initiator, finalPrice));
+            require(item.paymentToken.transfer(payee, finalPrice));
         }
 
         return price;
@@ -272,7 +291,7 @@ contract Exchange is Ownable {
         require(SaleKindInterface.canPurchaseItem(item.saleKind, item.expirationTime, topBid));
 
         /* Ensure that the proxy exists. */
-        require(proxies[item.initiator] != address(0));
+        require(proxies[item.side == Side.Buy ? msg.sender : item.initiator] != address(0));
 
         /* Release tokens from bid escrow. */
         if (topBid.bidder != address(0)) {
@@ -283,16 +302,16 @@ contract Exchange is Ownable {
         uint price = executeFundsTransfer(id, item, topBid, frontend);
 
         /* Execute the function. */
-        require(proxies[item.initiator].proxyModified(msg.sender, calldata, toBytes(replace), start, v, r, s));
+        require(proxies[item.side == Side.Buy ? msg.sender : item.initiator].proxyModified(item.side == Side.Buy ? item.initiator : msg.sender, calldata, toBytes(replace), start, v, r, s));
 
         /* Record the sale. */
         sales[id] = Sale(msg.sender, price, now, new bytes(0));
 
         /* Log the purchase event. */
-        ItemPurchased(id, msg.sender, price);
+        ItemFinalized(id, msg.sender, price);
     }
 
-    function toBytes(address a) pure public returns (bytes b) {
+    function toBytes(address a) pure internal returns (bytes b) {
         assembly {
             let m := mload(0x40)
             mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
