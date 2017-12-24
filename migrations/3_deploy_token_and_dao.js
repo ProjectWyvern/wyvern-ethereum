@@ -7,7 +7,7 @@ const WyvernDAO = artifacts.require('./WyvernDAO.sol')
 const { utxoMerkleRoot, utxoAmount } = require('../test/aux.js')
 
 module.exports = (deployer, network) => {
-  if (network === 'kovan') return
+  if (network === 'kovan' || network === 'rinkeby') return
   deployer.deploy(MerkleProof)
   deployer.link(MerkleProof, WyvernToken)
   deployer.deploy(WyvernToken, utxoMerkleRoot, utxoAmount)
