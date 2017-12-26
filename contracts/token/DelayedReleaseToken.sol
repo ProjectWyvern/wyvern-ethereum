@@ -6,7 +6,7 @@
 
 */
 
-pragma solidity ^0.4.18;
+pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/StandardToken.sol";
 
@@ -36,6 +36,7 @@ contract DelayedReleaseToken is StandardToken {
         require((msg.sender == temporaryAdmin) && (!hasBeenReleased));
         hasBeenReleased = true;
         balances[destination] = numberOfDelayedTokens;
+        Transfer(address(0), destination, numberOfDelayedTokens); 
         TokensReleased(destination, numberOfDelayedTokens);
     }
 

@@ -42,7 +42,7 @@
 
 */
 
-pragma solidity ^0.4.18;
+pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "../common/TokenRecipient.sol";
@@ -78,7 +78,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
 
     event ProposalAdded(uint proposalID, address recipient, uint amount, bytes metadataHash);
     event Voted(uint proposalID, bool position, address voter);
-    event ProposalTallied(uint proposalID, uint result, uint quorum, bool active);
+    event ProposalTallied(uint proposalID, uint yea, uint nay, uint quorum, bool active);
     event ChangeOfRules(uint newMinimumQuorum, uint newDebatingPeriodInMinutes, address newSharesTokenAddress);
     event TokensDelegated(address indexed delegator, uint numberOfTokens, address indexed delegate);
     event TokensUndelegated(address indexed delegator, uint numberOfTokens, address indexed delegate);
@@ -141,11 +141,11 @@ contract DelegatedShareholderAssociation is TokenRecipient {
       * @param delegate the address to which votes equal to the number of tokens locked will be delegated
       */
     function setDelegateAndLockTokens(uint tokensToLock, address delegate) public onlyShareholders onlyUndelegated {
-        require(ERC20(sharesTokenAddress).transferFrom(msg.sender, address(this), tokensToLock));
         lockedDelegatingTokens[msg.sender] = tokensToLock;
         delegatedAmountsByDelegate[delegate] += tokensToLock;
         totalLockedTokens += tokensToLock;
         delegatesByDelegator[msg.sender] = delegate;
+        require(ERC20(sharesTokenAddress).transferFrom(msg.sender, address(this), tokensToLock));
         TokensDelegated(msg.sender, tokensToLock, delegate);
     }
 
@@ -328,20 +328,22 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         require(quorum >= minimumQuorum);
 
         if (yea > nay) {
-            /* Proposal passed; execute the transaction. */
+            /* Mark proposal as passed. */
             p.executed = true;
+            p.proposalPassed = true;
+
+            /* Execute the function. */
             require(p.recipient.call.value(p.amount)(transactionBytecode));
 
             /* Prevent the DAO from sending the locked shares tokens (and thus potentially being unable to release locked tokens to delegating shareholders). */
             require(ERC20(sharesTokenAddress).balanceOf(address(this)) >= totalLockedTokens);
 
-            p.proposalPassed = true;
         } else {
             /* Proposal failed. */
             p.proposalPassed = false;
         }
 
         /* Log event. */
-        ProposalTallied(proposalNumber, yea - nay, quorum, p.proposalPassed);
+        ProposalTallied(proposalNumber, yea, nay, quorum, p.proposalPassed);
     }
 }
