@@ -1,3 +1,11 @@
+/*
+
+  Abstract over fixed-price sales and various kinds of auction.
+
+  Separated into a library for convenience, all the functions are inlined.
+
+*/
+
 pragma solidity 0.4.18;
 
 /**
@@ -6,6 +14,10 @@ pragma solidity 0.4.18;
  */
 library SaleKindInterface {
 
+    /**
+     * Currently supported kinds of sale: fixed price, English auction, Dutch auction. 
+     * Future interesting options: Vickrey auction.
+     */
     enum SaleKind { FixedPrice, EnglishAuction, DutchAuction }
 
     struct Bid {
@@ -13,9 +25,11 @@ library SaleKindInterface {
         address bidder;
         /* Amount of the bid. */
         uint amount;
-        /* Timestamp of bid placement. */
-        uint timestamp;
-    }   
+    }
+
+    function validateParameters(SaleKind saleKind, uint expirationTime) pure internal returns (bool) {
+        return (saleKind != SaleKind.EnglishAuction || expirationTime > 0);
+    }
 
     function requiredBidPrice(SaleKind saleKind, uint basePrice, uint extra, uint expirationTime, Bid currentTopBid) view internal returns (uint minimumBid) {
         require((saleKind == SaleKind.EnglishAuction) && (now < expirationTime));
@@ -30,7 +44,7 @@ library SaleKindInterface {
         if (saleKind == SaleKind.EnglishAuction) {
             return ((msg.sender == topBid.bidder) && (now >= expirationTime));
         } else {
-            return (now < expirationTime);
+            return (expirationTime == 0 || now < expirationTime);
         }
     }
 
@@ -41,7 +55,8 @@ library SaleKindInterface {
             require(topBid.bidder != address(0));
             return topBid.amount;
         } else if (saleKind == SaleKind.DutchAuction) {
-            return basePrice * (1 - (extra * (now - listingTime) / (expirationTime - listingTime)));
+            /* Start price: basePrice. End price: basePrice - extra. */
+            return basePrice - (extra * (now - listingTime) / (expirationTime - listingTime));
         } else {
             revert();
         }

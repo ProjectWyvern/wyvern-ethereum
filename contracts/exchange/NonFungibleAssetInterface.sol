@@ -1,8 +1,14 @@
+/*
+
+  Do we need this anymore?
+
+*/
+
 pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 
-import "./ERC721.sol";
+import "../common/ERC721.sol";
 
 /**
  * @title NonFungibleAssetInterface

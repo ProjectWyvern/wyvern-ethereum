@@ -201,7 +201,10 @@ contract UTXORedeemableToken is StandardToken {
         /* Credit the redeemer. */ 
         balances[msg.sender] += tokensRedeemed;   
 
-        /* Mark the event. */
+        /* Mark the transfer event. */
+        Transfer(address(0), msg.sender, tokensRedeemed);
+
+        /* Mark the UTXO redemption event. */
         UTXORedeemed(txid, outputIndex, satoshis, proof, pubKey, v, r, s, msg.sender, tokensRedeemed);
         
         /* Return the number of tokens redeemed. */
