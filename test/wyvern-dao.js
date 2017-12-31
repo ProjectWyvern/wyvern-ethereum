@@ -17,7 +17,7 @@ contract('WyvernDAO', (accounts) => {
             return tokenInstance.balanceOf.call(daoInstance.address)
           })
           .then(value => {
-            const expected = (new BigNumber(20000000 * Math.pow(10, 18))).sub(new BigNumber(utxoAmount * Math.pow(10, 11)))
+            const expected = (new BigNumber(2000000 * Math.pow(10, 18))).sub(new BigNumber(utxoAmount * Math.pow(10, 10)))
             assert.equal(value.equals(expected), true, 'Incorrect balance!')
           })
       })

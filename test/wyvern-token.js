@@ -41,7 +41,7 @@ contract('WyvernToken', (accounts) => {
         return instance.maximumRedeemable.call()
       })
       .then(redeemable => {
-        redeemable = redeemable.div(Math.pow(10, 11)).toNumber()
+        redeemable = redeemable.div(Math.pow(10, 10)).toNumber()
         assert.equal(redeemable, utxoAmount, 'Redeemable was incorrect!')
       })
   })
@@ -136,7 +136,7 @@ contract('WyvernToken', (accounts) => {
         return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
           .then(amount => {
             amount = amount.toNumber()
-            assert.equal(amount, utxo.satoshis * Math.pow(10, 11), 'UTXO was not credited correctly!')
+            assert.equal(amount, utxo.satoshis * Math.pow(10, 10), 'UTXO was not credited correctly!')
           })
           .then(() => {
             return instance.redeemUTXO.sendTransaction('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
