@@ -4,17 +4,21 @@ const MerkleProof = artifacts.require('./MerkleProof.sol')
 const WyvernToken = artifacts.require('./WyvernToken.sol')
 const WyvernDAO = artifacts.require('./WyvernDAO.sol')
 
+const { setConfig } = require('./config.js')
 const { utxoMerkleRoot, utxoAmount } = require('../test/aux.js')
 
 module.exports = (deployer, network) => {
-  if (network === 'kovan' || network === 'rinkeby') return
-  deployer.deploy(MerkleProof)
-  deployer.link(MerkleProof, WyvernToken)
-  deployer.deploy(WyvernToken, utxoMerkleRoot, utxoAmount)
-    .then(() => {
-      return deployer.deploy(WyvernDAO, WyvernToken.address)
-    })
-  deployer.then(() => {
+  return deployer.deploy(MerkleProof).then(() => {
+    setConfig('deployed.' + network + '.MerkleProof', MerkleProof.address)
+    deployer.link(MerkleProof, WyvernToken)
+    return deployer.deploy(WyvernToken, utxoMerkleRoot, utxoAmount)
+      .then(() => {
+        setConfig('deployed.' + network + '.WyvernToken', WyvernToken.address)
+        return deployer.deploy(WyvernDAO, WyvernToken.address).then(() => {
+          setConfig('deployed.' + network + '.WyvernDAO', WyvernDAO.address)
+        })
+      })
+  }).then(() => {
     WyvernToken.deployed()
       .then(tokenInstance => {
         return WyvernDAO.deployed()

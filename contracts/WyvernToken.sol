@@ -22,7 +22,7 @@ contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken 
     string constant public symbol     = "WYV";
 
     /* Amount of tokens per Wyvern. */
-    uint constant public MULTIPLIER       = 10;
+    uint constant public MULTIPLIER       = 1;
 
     /* Constant for conversion from satoshis to tokens. */
     uint constant public SATS_TO_TOKENS   = MULTIPLIER * (10 ** decimals) / (10 ** 8);
