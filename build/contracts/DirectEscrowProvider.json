@@ -1,0 +1,1104 @@
+{
+  "contractName": "DirectEscrowProvider",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "requestRelease",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        },
+        {
+          "name": "",
+          "type": "address"
+        },
+        {
+          "name": "seller",
+          "type": "address"
+        },
+        {
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "name": "price",
+          "type": "uint256"
+        }
+      ],
+      "name": "holdInEscrow",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "releaseEscrow",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "disputeEscrow",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    }
+  ],
+  "bytecode": "0x6060604052341561000f57600080fd5b6102308061001e6000396000f3006060604052600436106100475763ffffffff60e060020a6000350416625dd204811461004c578063b472704f14610076578063bf89fc611461004c578063cfd245221461004c575b600080fd5b341561005757600080fd5b6100626004356100b4565b604051901515815260200160405180910390f35b341561008157600080fd5b61006260043573ffffffffffffffffffffffffffffffffffffffff602435811690604435811690606435166084356100ba565b50600090565b60008273ffffffffffffffffffffffffffffffffffffffff166323b872dd33308560006040516020015260405160e060020a63ffffffff861602815273ffffffffffffffffffffffffffffffffffffffff93841660048201529190921660248201526044810191909152606401602060405180830381600087803b151561014057600080fd5b6102c65a03f1151561015157600080fd5b50505060405180519050151561016657600080fd5b8273ffffffffffffffffffffffffffffffffffffffff1663a9059cbb858460006040516020015260405160e060020a63ffffffff851602815273ffffffffffffffffffffffffffffffffffffffff90921660048301526024820152604401602060405180830381600087803b15156101dd57600080fd5b6102c65a03f115156101ee57600080fd5b50505060405180515060019796505050505050505600a165627a7a72305820c8f0d600a2211b82379b53b504fa2426a72ef293dee50aebe5d6fbe593a5d4430029",
+  "deployedBytecode": "0x6060604052600436106100475763ffffffff60e060020a6000350416625dd204811461004c578063b472704f14610076578063bf89fc611461004c578063cfd245221461004c575b600080fd5b341561005757600080fd5b6100626004356100b4565b604051901515815260200160405180910390f35b341561008157600080fd5b61006260043573ffffffffffffffffffffffffffffffffffffffff602435811690604435811690606435166084356100ba565b50600090565b60008273ffffffffffffffffffffffffffffffffffffffff166323b872dd33308560006040516020015260405160e060020a63ffffffff861602815273ffffffffffffffffffffffffffffffffffffffff93841660048201529190921660248201526044810191909152606401602060405180830381600087803b151561014057600080fd5b6102c65a03f1151561015157600080fd5b50505060405180519050151561016657600080fd5b8273ffffffffffffffffffffffffffffffffffffffff1663a9059cbb858460006040516020015260405160e060020a63ffffffff851602815273ffffffffffffffffffffffffffffffffffffffff90921660048301526024820152604401602060405180830381600087803b15156101dd57600080fd5b6102c65a03f115156101ee57600080fd5b50505060405180515060019796505050505050505600a165627a7a72305820c8f0d600a2211b82379b53b504fa2426a72ef293dee50aebe5d6fbe593a5d4430029",
+  "sourceMap": "188:614:11:-;;;227:47;;;;;;;;188:614;;;;;;",
+  "deployedSourceMap": "188:614:11:-;;;;;;;;;-1:-1:-1;;;188:614:11;;;;;;;;;;;;;;;;;;;;;;;;;;;;518:89;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;280:232;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;518:89;-1:-1:-1;572:4:11;;518:89::o;280:232::-;377:4;401:5;:18;;;420:10;432:4;438:5;401:43;;;;;;;;-1:-1:-1;;;401:43:11;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;393:52;;;;;;;;455:5;:14;;;470:6;478:5;455:29;;;;;;;;-1:-1:-1;;;455:29:11;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;501:4:11;;280:232;-1:-1:-1;;;;;;;280:232:11:o",
+  "source": "pragma solidity 0.4.18;\n\nimport \"zeppelin-solidity/contracts/token/ERC20.sol\";\n\nimport \"./EscrowProvider.sol\";\n\n/**\n * @title DirectEscrowProvider\n * @author Project Wyvern Developers\n */\ncontract DirectEscrowProvider {\n  \n    function DirectEscrowProvider () public {\n    }\n\n    function holdInEscrow(bytes32, address, address seller, ERC20 token, uint price) public returns (bool) {\n        require(token.transferFrom(msg.sender, this, price));\n        token.transfer(seller, price);\n        return true;\n    }\n\n    function requestRelease(bytes32) pure public returns (bool) {\n        return false;\n    }    \n\n    function releaseEscrow(bytes32) pure public returns (bool) {\n        return false;\n    }\n\n    function disputeEscrow(bytes32) pure public returns (bool) {\n        return false;\n    }\n\n}\n",
+  "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/escrow/DirectEscrowProvider.sol",
+  "ast": {
+    "attributes": {
+      "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/escrow/DirectEscrowProvider.sol",
+      "exportedSymbols": {
+        "DirectEscrowProvider": [
+          1366
+        ]
+      }
+    },
+    "children": [
+      {
+        "attributes": {
+          "literals": [
+            "solidity",
+            "0.4",
+            ".18"
+          ]
+        },
+        "id": 1294,
+        "name": "PragmaDirective",
+        "src": "0:23:11"
+      },
+      {
+        "attributes": {
+          "SourceUnit": 4068,
+          "absolutePath": "zeppelin-solidity/contracts/token/ERC20.sol",
+          "file": "zeppelin-solidity/contracts/token/ERC20.sol",
+          "scope": 1367,
+          "symbolAliases": [
+            null
+          ],
+          "unitAlias": ""
+        },
+        "id": 1295,
+        "name": "ImportDirective",
+        "src": "25:53:11"
+      },
+      {
+        "attributes": {
+          "SourceUnit": 1407,
+          "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/escrow/EscrowProvider.sol",
+          "file": "./EscrowProvider.sol",
+          "scope": 1367,
+          "symbolAliases": [
+            null
+          ],
+          "unitAlias": ""
+        },
+        "id": 1296,
+        "name": "ImportDirective",
+        "src": "80:30:11"
+      },
+      {
+        "attributes": {
+          "baseContracts": [
+            null
+          ],
+          "contractDependencies": [
+            null
+          ],
+          "contractKind": "contract",
+          "documentation": "@title DirectEscrowProvider\n@author Project Wyvern Developers",
+          "fullyImplemented": true,
+          "linearizedBaseContracts": [
+            1366
+          ],
+          "name": "DirectEscrowProvider",
+          "scope": 1367
+        },
+        "children": [
+          {
+            "attributes": {
+              "constant": false,
+              "implemented": true,
+              "isConstructor": true,
+              "modifiers": [
+                null
+              ],
+              "name": "DirectEscrowProvider",
+              "payable": false,
+              "scope": 1366,
+              "stateMutability": "nonpayable",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "attributes": {
+                  "parameters": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 1297,
+                "name": "ParameterList",
+                "src": "257:2:11"
+              },
+              {
+                "attributes": {
+                  "parameters": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 1298,
+                "name": "ParameterList",
+                "src": "267:0:11"
+              },
+              {
+                "attributes": {
+                  "statements": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 1299,
+                "name": "Block",
+                "src": "267:7:11"
+              }
+            ],
+            "id": 1300,
+            "name": "FunctionDefinition",
+            "src": "227:47:11"
+          },
+          {
+            "attributes": {
+              "constant": false,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "holdInEscrow",
+              "payable": false,
+              "scope": 1366,
+              "stateMutability": "nonpayable",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1335,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "bytes32",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "bytes32",
+                          "type": "bytes32"
+                        },
+                        "id": 1301,
+                        "name": "ElementaryTypeName",
+                        "src": "302:7:11"
+                      }
+                    ],
+                    "id": 1302,
+                    "name": "VariableDeclaration",
+                    "src": "302:7:11"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1335,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 1303,
+                        "name": "ElementaryTypeName",
+                        "src": "311:7:11"
+                      }
+                    ],
+                    "id": 1304,
+                    "name": "VariableDeclaration",
+                    "src": "311:7:11"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "seller",
+                      "scope": 1335,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 1305,
+                        "name": "ElementaryTypeName",
+                        "src": "320:7:11"
+                      }
+                    ],
+                    "id": 1306,
+                    "name": "VariableDeclaration",
+                    "src": "320:14:11"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "token",
+                      "scope": 1335,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "contract ERC20",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "contractScope": null,
+                          "name": "ERC20",
+                          "referencedDeclaration": 4067,
+                          "type": "contract ERC20"
+                        },
+                        "id": 1307,
+                        "name": "UserDefinedTypeName",
+                        "src": "336:5:11"
+                      }
+                    ],
+                    "id": 1308,
+                    "name": "VariableDeclaration",
+                    "src": "336:11:11"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "price",
+                      "scope": 1335,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "uint256",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "uint",
+                          "type": "uint256"
+                        },
+                        "id": 1309,
+                        "name": "ElementaryTypeName",
+                        "src": "349:4:11"
+                      }
+                    ],
+                    "id": 1310,
+                    "name": "VariableDeclaration",
+                    "src": "349:10:11"
+                  }
+                ],
+                "id": 1311,
+                "name": "ParameterList",
+                "src": "301:59:11"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1335,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "bool",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "bool",
+                          "type": "bool"
+                        },
+                        "id": 1312,
+                        "name": "ElementaryTypeName",
+                        "src": "377:4:11"
+                      }
+                    ],
+                    "id": 1313,
+                    "name": "VariableDeclaration",
+                    "src": "377:4:11"
+                  }
+                ],
+                "id": 1314,
+                "name": "ParameterList",
+                "src": "376:6:11"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "isStructConstructorCall": false,
+                          "lValueRequested": false,
+                          "names": [
+                            null
+                          ],
+                          "type": "tuple()",
+                          "type_conversion": false
+                        },
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": [
+                                {
+                                  "typeIdentifier": "t_bool",
+                                  "typeString": "bool"
+                                }
+                              ],
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 4357,
+                              "type": "function (bool) pure",
+                              "value": "require"
+                            },
+                            "id": 1315,
+                            "name": "Identifier",
+                            "src": "393:7:11"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": false,
+                              "isStructConstructorCall": false,
+                              "lValueRequested": false,
+                              "names": [
+                                null
+                              ],
+                              "type": "bool",
+                              "type_conversion": false
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": [
+                                    {
+                                      "typeIdentifier": "t_address",
+                                      "typeString": "address"
+                                    },
+                                    {
+                                      "typeIdentifier": "t_contract$_DirectEscrowProvider_$1366",
+                                      "typeString": "contract DirectEscrowProvider"
+                                    },
+                                    {
+                                      "typeIdentifier": "t_uint256",
+                                      "typeString": "uint256"
+                                    }
+                                  ],
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": false,
+                                  "lValueRequested": false,
+                                  "member_name": "transferFrom",
+                                  "referencedDeclaration": 4049,
+                                  "type": "function (address,address,uint256) external returns (bool)"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 1308,
+                                      "type": "contract ERC20",
+                                      "value": "token"
+                                    },
+                                    "id": 1316,
+                                    "name": "Identifier",
+                                    "src": "401:5:11"
+                                  }
+                                ],
+                                "id": 1317,
+                                "name": "MemberAccess",
+                                "src": "401:18:11"
+                              },
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": false,
+                                  "lValueRequested": false,
+                                  "member_name": "sender",
+                                  "referencedDeclaration": null,
+                                  "type": "address"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 4354,
+                                      "type": "msg",
+                                      "value": "msg"
+                                    },
+                                    "id": 1318,
+                                    "name": "Identifier",
+                                    "src": "420:3:11"
+                                  }
+                                ],
+                                "id": 1319,
+                                "name": "MemberAccess",
+                                "src": "420:10:11"
+                              },
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 4423,
+                                  "type": "contract DirectEscrowProvider",
+                                  "value": "this"
+                                },
+                                "id": 1320,
+                                "name": "Identifier",
+                                "src": "432:4:11"
+                              },
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 1310,
+                                  "type": "uint256",
+                                  "value": "price"
+                                },
+                                "id": 1321,
+                                "name": "Identifier",
+                                "src": "438:5:11"
+                              }
+                            ],
+                            "id": 1322,
+                            "name": "FunctionCall",
+                            "src": "401:43:11"
+                          }
+                        ],
+                        "id": 1323,
+                        "name": "FunctionCall",
+                        "src": "393:52:11"
+                      }
+                    ],
+                    "id": 1324,
+                    "name": "ExpressionStatement",
+                    "src": "393:52:11"
+                  },
+                  {
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "isStructConstructorCall": false,
+                          "lValueRequested": false,
+                          "names": [
+                            null
+                          ],
+                          "type": "bool",
+                          "type_conversion": false
+                        },
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": [
+                                {
+                                  "typeIdentifier": "t_address",
+                                  "typeString": "address"
+                                },
+                                {
+                                  "typeIdentifier": "t_uint256",
+                                  "typeString": "uint256"
+                                }
+                              ],
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": false,
+                              "lValueRequested": false,
+                              "member_name": "transfer",
+                              "referencedDeclaration": 4087,
+                              "type": "function (address,uint256) external returns (bool)"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 1308,
+                                  "type": "contract ERC20",
+                                  "value": "token"
+                                },
+                                "id": 1325,
+                                "name": "Identifier",
+                                "src": "455:5:11"
+                              }
+                            ],
+                            "id": 1327,
+                            "name": "MemberAccess",
+                            "src": "455:14:11"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 1306,
+                              "type": "address",
+                              "value": "seller"
+                            },
+                            "id": 1328,
+                            "name": "Identifier",
+                            "src": "470:6:11"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 1310,
+                              "type": "uint256",
+                              "value": "price"
+                            },
+                            "id": 1329,
+                            "name": "Identifier",
+                            "src": "478:5:11"
+                          }
+                        ],
+                        "id": 1330,
+                        "name": "FunctionCall",
+                        "src": "455:29:11"
+                      }
+                    ],
+                    "id": 1331,
+                    "name": "ExpressionStatement",
+                    "src": "455:29:11"
+                  },
+                  {
+                    "attributes": {
+                      "functionReturnParameters": 1314
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "hexvalue": "74727565",
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "lValueRequested": false,
+                          "subdenomination": null,
+                          "token": "bool",
+                          "type": "bool",
+                          "value": "true"
+                        },
+                        "id": 1332,
+                        "name": "Literal",
+                        "src": "501:4:11"
+                      }
+                    ],
+                    "id": 1333,
+                    "name": "Return",
+                    "src": "494:11:11"
+                  }
+                ],
+                "id": 1334,
+                "name": "Block",
+                "src": "383:129:11"
+              }
+            ],
+            "id": 1335,
+            "name": "FunctionDefinition",
+            "src": "280:232:11"
+          },
+          {
+            "attributes": {
+              "constant": true,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "requestRelease",
+              "payable": false,
+              "scope": 1366,
+              "stateMutability": "pure",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1345,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "bytes32",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "bytes32",
+                          "type": "bytes32"
+                        },
+                        "id": 1336,
+                        "name": "ElementaryTypeName",
+                        "src": "542:7:11"
+                      }
+                    ],
+                    "id": 1337,
+                    "name": "VariableDeclaration",
+                    "src": "542:7:11"
+                  }
+                ],
+                "id": 1338,
+                "name": "ParameterList",
+                "src": "541:9:11"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1345,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "bool",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "bool",
+                          "type": "bool"
+                        },
+                        "id": 1339,
+                        "name": "ElementaryTypeName",
+                        "src": "572:4:11"
+                      }
+                    ],
+                    "id": 1340,
+                    "name": "VariableDeclaration",
+                    "src": "572:4:11"
+                  }
+                ],
+                "id": 1341,
+                "name": "ParameterList",
+                "src": "571:6:11"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "functionReturnParameters": 1341
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "hexvalue": "66616c7365",
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "lValueRequested": false,
+                          "subdenomination": null,
+                          "token": "bool",
+                          "type": "bool",
+                          "value": "false"
+                        },
+                        "id": 1342,
+                        "name": "Literal",
+                        "src": "595:5:11"
+                      }
+                    ],
+                    "id": 1343,
+                    "name": "Return",
+                    "src": "588:12:11"
+                  }
+                ],
+                "id": 1344,
+                "name": "Block",
+                "src": "578:29:11"
+              }
+            ],
+            "id": 1345,
+            "name": "FunctionDefinition",
+            "src": "518:89:11"
+          },
+          {
+            "attributes": {
+              "constant": true,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "releaseEscrow",
+              "payable": false,
+              "scope": 1366,
+              "stateMutability": "pure",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1355,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "bytes32",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "bytes32",
+                          "type": "bytes32"
+                        },
+                        "id": 1346,
+                        "name": "ElementaryTypeName",
+                        "src": "640:7:11"
+                      }
+                    ],
+                    "id": 1347,
+                    "name": "VariableDeclaration",
+                    "src": "640:7:11"
+                  }
+                ],
+                "id": 1348,
+                "name": "ParameterList",
+                "src": "639:9:11"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1355,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "bool",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "bool",
+                          "type": "bool"
+                        },
+                        "id": 1349,
+                        "name": "ElementaryTypeName",
+                        "src": "670:4:11"
+                      }
+                    ],
+                    "id": 1350,
+                    "name": "VariableDeclaration",
+                    "src": "670:4:11"
+                  }
+                ],
+                "id": 1351,
+                "name": "ParameterList",
+                "src": "669:6:11"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "functionReturnParameters": 1351
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "hexvalue": "66616c7365",
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "lValueRequested": false,
+                          "subdenomination": null,
+                          "token": "bool",
+                          "type": "bool",
+                          "value": "false"
+                        },
+                        "id": 1352,
+                        "name": "Literal",
+                        "src": "693:5:11"
+                      }
+                    ],
+                    "id": 1353,
+                    "name": "Return",
+                    "src": "686:12:11"
+                  }
+                ],
+                "id": 1354,
+                "name": "Block",
+                "src": "676:29:11"
+              }
+            ],
+            "id": 1355,
+            "name": "FunctionDefinition",
+            "src": "617:88:11"
+          },
+          {
+            "attributes": {
+              "constant": true,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "disputeEscrow",
+              "payable": false,
+              "scope": 1366,
+              "stateMutability": "pure",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1365,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "bytes32",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "bytes32",
+                          "type": "bytes32"
+                        },
+                        "id": 1356,
+                        "name": "ElementaryTypeName",
+                        "src": "734:7:11"
+                      }
+                    ],
+                    "id": 1357,
+                    "name": "VariableDeclaration",
+                    "src": "734:7:11"
+                  }
+                ],
+                "id": 1358,
+                "name": "ParameterList",
+                "src": "733:9:11"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 1365,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "bool",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "bool",
+                          "type": "bool"
+                        },
+                        "id": 1359,
+                        "name": "ElementaryTypeName",
+                        "src": "764:4:11"
+                      }
+                    ],
+                    "id": 1360,
+                    "name": "VariableDeclaration",
+                    "src": "764:4:11"
+                  }
+                ],
+                "id": 1361,
+                "name": "ParameterList",
+                "src": "763:6:11"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "functionReturnParameters": 1361
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "hexvalue": "66616c7365",
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "lValueRequested": false,
+                          "subdenomination": null,
+                          "token": "bool",
+                          "type": "bool",
+                          "value": "false"
+                        },
+                        "id": 1362,
+                        "name": "Literal",
+                        "src": "787:5:11"
+                      }
+                    ],
+                    "id": 1363,
+                    "name": "Return",
+                    "src": "780:12:11"
+                  }
+                ],
+                "id": 1364,
+                "name": "Block",
+                "src": "770:29:11"
+              }
+            ],
+            "id": 1365,
+            "name": "FunctionDefinition",
+            "src": "711:88:11"
+          }
+        ],
+        "id": 1366,
+        "name": "ContractDefinition",
+        "src": "188:614:11"
+      }
+    ],
+    "id": 1367,
+    "name": "SourceUnit",
+    "src": "0:803:11"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.4.18+commit.9cf6e910.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "1.0.1",
+  "updatedAt": "2018-01-01T03:03:48.728Z"
+}

@@ -118,7 +118,7 @@ contract('WyvernToken', (accounts) => {
   })
 
   it('should credit valid UTXO, with correct amount, only once', () => {
-    const utxo = utxoSet[35997]
+    const utxo = utxoSet.filter(utxo => utxo.address === 'WexQQptYFHYgSp1c3NSRmgwniBAU7WMHKq')[0]
     const hash = hashUTXO(utxo)
     const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
     // This is a real private key but the amount is not worth your time to steal.
@@ -154,7 +154,7 @@ contract('WyvernToken', (accounts) => {
   })
 
   it('should not credit invalid UTXO', () => {
-    const utxo = utxoSet[35997]
+    const utxo = utxoSet.filter(utxo => utxo.address === 'WexQQptYFHYgSp1c3NSRmgwniBAU7WMHKq')[0]
     const hash = hashUTXO(utxo)
     const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
     const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network)

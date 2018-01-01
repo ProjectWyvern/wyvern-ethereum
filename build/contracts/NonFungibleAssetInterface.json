@@ -1,0 +1,2260 @@
+{
+  "contractName": "NonFungibleAssetInterface",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "kind",
+          "type": "NonFungibleAssetInterface.NonFungibleAssetKind"
+        },
+        {
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "name": "assetExtra",
+          "type": "uint256"
+        }
+      ],
+      "name": "claimOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "kind",
+          "type": "NonFungibleAssetInterface.NonFungibleAssetKind"
+        },
+        {
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "name": "assetExtra",
+          "type": "uint256"
+        }
+      ],
+      "name": "currentOwner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "kind",
+          "type": "NonFungibleAssetInterface.NonFungibleAssetKind"
+        },
+        {
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address"
+        },
+        {
+          "name": "assetExtra",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6060604052341561000f57600080fd5b6103cd8061001e6000396000f30060606040526004361061003d5763ffffffff60e060020a6000350416639f78d8428114610042578063c7c7060814610061578063ebab00251461009a575b600080fd5b61005f60ff60043516600160a060020a03602435166044356100bd565b005b61007e60ff60043516600160a060020a036024351660443561019f565b604051600160a060020a03909116815260200160405180910390f35b61005f60ff60043516600160a060020a036024358116906044351660643561029f565b60008360028111156100cb57fe5b14156100d65761019a565b60018360028111156100e457fe5b14156101405781600160a060020a0316634e71e0c86040518163ffffffff1660e060020a028152600401600060405180830381600087803b151561012757600080fd5b6102c65a03f1151561013857600080fd5b50505061019a565b600283600281111561014e57fe5b141561003d5781600160a060020a031663b2e6ceeb8260405160e060020a63ffffffff84160281526004810191909152602401600060405180830381600087803b151561012757600080fd5b505050565b6000808460028111156101ae57fe5b14156101b957600080fd5b60018460028111156101c757fe5b14156102355782600160a060020a0316638da5cb5b6000604051602001526040518163ffffffff1660e060020a028152600401602060405180830381600087803b151561021357600080fd5b6102c65a03f1151561022457600080fd5b505050604051805190509050610298565b600284600281111561024357fe5b141561003d5782600160a060020a0316636352211e8360006040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b151561021357600080fd5b9392505050565b60008460028111156102ad57fe5b14156102b85761039b565b60018460028111156102c657fe5b14156103335782600160a060020a031663f2fde38b8360405160e060020a63ffffffff8416028152600160a060020a039091166004820152602401600060405180830381600087803b151561031a57600080fd5b6102c65a03f1151561032b57600080fd5b50505061039b565b600284600281111561034157fe5b141561003d5782600160a060020a031663a9059cbb838360405160e060020a63ffffffff8516028152600160a060020a0390921660048301526024820152604401600060405180830381600087803b151561031a57600080fd5b505050505600a165627a7a72305820fe6daa33dcc2a86578e891aafc49c62c6e2b8c22a1bea8cf73a4a9a51008dcb90029",
+  "deployedBytecode": "0x60606040526004361061003d5763ffffffff60e060020a6000350416639f78d8428114610042578063c7c7060814610061578063ebab00251461009a575b600080fd5b61005f60ff60043516600160a060020a03602435166044356100bd565b005b61007e60ff60043516600160a060020a036024351660443561019f565b604051600160a060020a03909116815260200160405180910390f35b61005f60ff60043516600160a060020a036024358116906044351660643561029f565b60008360028111156100cb57fe5b14156100d65761019a565b60018360028111156100e457fe5b14156101405781600160a060020a0316634e71e0c86040518163ffffffff1660e060020a028152600401600060405180830381600087803b151561012757600080fd5b6102c65a03f1151561013857600080fd5b50505061019a565b600283600281111561014e57fe5b141561003d5781600160a060020a031663b2e6ceeb8260405160e060020a63ffffffff84160281526004810191909152602401600060405180830381600087803b151561012757600080fd5b505050565b6000808460028111156101ae57fe5b14156101b957600080fd5b60018460028111156101c757fe5b14156102355782600160a060020a0316638da5cb5b6000604051602001526040518163ffffffff1660e060020a028152600401602060405180830381600087803b151561021357600080fd5b6102c65a03f1151561022457600080fd5b505050604051805190509050610298565b600284600281111561024357fe5b141561003d5782600160a060020a0316636352211e8360006040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b151561021357600080fd5b9392505050565b60008460028111156102ad57fe5b14156102b85761039b565b60018460028111156102c657fe5b14156103335782600160a060020a031663f2fde38b8360405160e060020a63ffffffff8416028152600160a060020a039091166004820152602401600060405180830381600087803b151561031a57600080fd5b6102c65a03f1151561032b57600080fd5b50505061039b565b600284600281111561034157fe5b141561003d5782600160a060020a031663a9059cbb838360405160e060020a63ffffffff8516028152600160a060020a0390921660048301526024820152604401600060405180830381600087803b151561031a57600080fd5b505050505600a165627a7a72305820fe6daa33dcc2a86578e891aafc49c62c6e2b8c22a1bea8cf73a4a9a51008dcb90029",
+  "sourceMap": "237:1480:14:-;;;;;;;;;;;;;;;;;",
+  "deployedSourceMap": "237:1480:14:-;;;;;;;;;-1:-1:-1;;;237:1480:14;;;;;;;;;;;;;;;;;;;;;;;1279:435;;;;;;-1:-1:-1;;;;;1279:435:14;;;;;;;;;337:458;;;;;;-1:-1:-1;;;;;337:458:14;;;;;;;;;;-1:-1:-1;;;;;337:458:14;;;;;;;;;;;;;;801:472;;;;;;-1:-1:-1;;;;;801:472:14;;;;;;;;;;;;1279:435;1392:25;1384:4;:33;;;;;;;;;1380:328;;;1433:7;;1380:328;1468:30;1460:4;:38;;;;;;;;;1456:252;;;1524:5;-1:-1:-1;;;;;1514:31:14;;:33;;;;;-1:-1:-1;;;1514:33:14;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1456:252;;;1576:27;1568:4;:35;;;;;;;;;1564:144;;;1626:5;-1:-1:-1;;;;;1619:27:14;;1647:10;1619:39;;-1:-1:-1;;;1619:39:14;;;;;;;;;;;;;;;-1:-1:-1;1619:39:14;;;;;;;;;;;;;;;;;1564:144;1279:435;;;:::o;337:458::-;439:7;;462:4;:33;;;;;;;;;458:329;;;511:8;;;458:329;548:30;540:4;:38;;;;;;;;;536:251;;;611:5;-1:-1:-1;;;;;601:22:14;;:24;;;;;;;;;;;-1:-1:-1;;;601:24:14;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;594:31;;;;536:251;654:27;646:4;:35;;;;;;;;;642:145;;;711:5;-1:-1:-1;;;;;704:21:14;;726:10;704:33;;;;;;;;-1:-1:-1;;;704:33:14;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;642:145;337:458;;;;;:::o;801:472::-;935:25;927:4;:33;;;;;;;;;923:344;;;976:7;;923:344;1011:30;1003:4;:38;;;;;;;;;999:268;;;1067:5;-1:-1:-1;;;;;1057:34:14;;1092:8;1057:44;;-1:-1:-1;;;1057:44:14;;;;;;-1:-1:-1;;;;;1057:44:14;;;;;;;;;-1:-1:-1;1057:44:14;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;999:268;;;1130:27;1122:4;:35;;;;;;;;;1118:149;;;1180:5;-1:-1:-1;;;;;1173:22:14;;1196:8;1206:10;1173:44;;-1:-1:-1;;;1173:44:14;;;;;;-1:-1:-1;;;;;1173:44:14;;;;;;;;;;;;;-1:-1:-1;1173:44:14;;;;;;;;;;;;;;;;;1118:149;801:472;;;;:::o",
+  "source": "/*\n\n  Do we need this anymore?\n\n*/\n\npragma solidity 0.4.18;\n\nimport \"zeppelin-solidity/contracts/ownership/Claimable.sol\";\n\nimport \"../common/ERC721.sol\";\n\n/**\n * @title NonFungibleAssetInterface\n * @author Project Wyvern Developers\n */\nlibrary NonFungibleAssetInterface {\n\n    enum NonFungibleAssetKind { None, Claimable, ERC721 }\n\n    function currentOwner(NonFungibleAssetKind kind, address asset, uint assetExtra) public view returns (address) {\n        if (kind == NonFungibleAssetKind.None) {\n            revert();\n        } else if (kind == NonFungibleAssetKind.Claimable) {\n            return Claimable(asset).owner();\n        } else if (kind == NonFungibleAssetKind.ERC721) {\n            return ERC721(asset).ownerOf(assetExtra);\n        } else {\n            revert();\n        }  \n    }\n\n    function transferOwnership (NonFungibleAssetKind kind, address asset, address newOwner, uint assetExtra) public {\n        if (kind == NonFungibleAssetKind.None) {\n            return;\n        } else if (kind == NonFungibleAssetKind.Claimable) {\n            Claimable(asset).transferOwnership(newOwner);\n        } else if (kind == NonFungibleAssetKind.ERC721) {\n            ERC721(asset).transfer(newOwner, assetExtra);\n        } else {\n            revert();\n        }\n    }\n\n    function claimOwnership (NonFungibleAssetKind kind, address asset, uint assetExtra) public {\n        if (kind == NonFungibleAssetKind.None) {\n            return;\n        } else if (kind == NonFungibleAssetKind.Claimable) {\n            Claimable(asset).claimOwnership();\n        } else if (kind == NonFungibleAssetKind.ERC721) {\n            ERC721(asset).takeOwnership(assetExtra);\n        } else {\n            revert();\n        }\n    }\n\n}\n",
+  "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/exchange/NonFungibleAssetInterface.sol",
+  "ast": {
+    "attributes": {
+      "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/exchange/NonFungibleAssetInterface.sol",
+      "exportedSymbols": {
+        "NonFungibleAssetInterface": [
+          2590
+        ]
+      }
+    },
+    "children": [
+      {
+        "attributes": {
+          "literals": [
+            "solidity",
+            "0.4",
+            ".18"
+          ]
+        },
+        "id": 2437,
+        "name": "PragmaDirective",
+        "src": "36:23:14"
+      },
+      {
+        "attributes": {
+          "SourceUnit": 3822,
+          "absolutePath": "zeppelin-solidity/contracts/ownership/Claimable.sol",
+          "file": "zeppelin-solidity/contracts/ownership/Claimable.sol",
+          "scope": 2591,
+          "symbolAliases": [
+            null
+          ],
+          "unitAlias": ""
+        },
+        "id": 2438,
+        "name": "ImportDirective",
+        "src": "61:61:14"
+      },
+      {
+        "attributes": {
+          "SourceUnit": 456,
+          "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ERC721.sol",
+          "file": "../common/ERC721.sol",
+          "scope": 2591,
+          "symbolAliases": [
+            null
+          ],
+          "unitAlias": ""
+        },
+        "id": 2439,
+        "name": "ImportDirective",
+        "src": "124:30:14"
+      },
+      {
+        "attributes": {
+          "baseContracts": [
+            null
+          ],
+          "contractDependencies": [
+            null
+          ],
+          "contractKind": "library",
+          "documentation": "@title NonFungibleAssetInterface\n@author Project Wyvern Developers",
+          "fullyImplemented": true,
+          "linearizedBaseContracts": [
+            2590
+          ],
+          "name": "NonFungibleAssetInterface",
+          "scope": 2591
+        },
+        "children": [
+          {
+            "attributes": {
+              "canonicalName": "NonFungibleAssetInterface.NonFungibleAssetKind",
+              "name": "NonFungibleAssetKind"
+            },
+            "children": [
+              {
+                "attributes": {
+                  "name": "None"
+                },
+                "id": 2440,
+                "name": "EnumValue",
+                "src": "306:4:14"
+              },
+              {
+                "attributes": {
+                  "name": "Claimable"
+                },
+                "id": 2441,
+                "name": "EnumValue",
+                "src": "312:9:14"
+              },
+              {
+                "attributes": {
+                  "name": "ERC721"
+                },
+                "id": 2442,
+                "name": "EnumValue",
+                "src": "323:6:14"
+              }
+            ],
+            "id": 2443,
+            "name": "EnumDefinition",
+            "src": "278:53:14"
+          },
+          {
+            "attributes": {
+              "constant": true,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "currentOwner",
+              "payable": false,
+              "scope": 2590,
+              "stateMutability": "view",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "kind",
+                      "scope": 2493,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "contractScope": null,
+                          "name": "NonFungibleAssetKind",
+                          "referencedDeclaration": 2443,
+                          "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                        },
+                        "id": 2444,
+                        "name": "UserDefinedTypeName",
+                        "src": "359:20:14"
+                      }
+                    ],
+                    "id": 2445,
+                    "name": "VariableDeclaration",
+                    "src": "359:25:14"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "asset",
+                      "scope": 2493,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 2446,
+                        "name": "ElementaryTypeName",
+                        "src": "386:7:14"
+                      }
+                    ],
+                    "id": 2447,
+                    "name": "VariableDeclaration",
+                    "src": "386:13:14"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "assetExtra",
+                      "scope": 2493,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "uint256",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "uint",
+                          "type": "uint256"
+                        },
+                        "id": 2448,
+                        "name": "ElementaryTypeName",
+                        "src": "401:4:14"
+                      }
+                    ],
+                    "id": 2449,
+                    "name": "VariableDeclaration",
+                    "src": "401:15:14"
+                  }
+                ],
+                "id": 2450,
+                "name": "ParameterList",
+                "src": "358:59:14"
+              },
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "",
+                      "scope": 2493,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 2451,
+                        "name": "ElementaryTypeName",
+                        "src": "439:7:14"
+                      }
+                    ],
+                    "id": 2452,
+                    "name": "VariableDeclaration",
+                    "src": "439:7:14"
+                  }
+                ],
+                "id": 2453,
+                "name": "ParameterList",
+                "src": "438:9:14"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "commonType": {
+                            "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                            "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                          },
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "operator": "==",
+                          "type": "bool"
+                        },
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 2445,
+                              "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                              "value": "kind"
+                            },
+                            "id": 2454,
+                            "name": "Identifier",
+                            "src": "462:4:14"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": true,
+                              "lValueRequested": false,
+                              "member_name": "None",
+                              "referencedDeclaration": null,
+                              "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 2443,
+                                  "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                  "value": "NonFungibleAssetKind"
+                                },
+                                "id": 2455,
+                                "name": "Identifier",
+                                "src": "470:20:14"
+                              }
+                            ],
+                            "id": 2456,
+                            "name": "MemberAccess",
+                            "src": "470:25:14"
+                          }
+                        ],
+                        "id": 2457,
+                        "name": "BinaryOperation",
+                        "src": "462:33:14"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "arguments": [
+                                    null
+                                  ],
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": false,
+                                  "isStructConstructorCall": false,
+                                  "lValueRequested": false,
+                                  "names": [
+                                    null
+                                  ],
+                                  "type": "tuple()",
+                                  "type_conversion": false
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": [
+                                        null
+                                      ],
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 4358,
+                                      "type": "function () pure",
+                                      "value": "revert"
+                                    },
+                                    "id": 2458,
+                                    "name": "Identifier",
+                                    "src": "511:6:14"
+                                  }
+                                ],
+                                "id": 2459,
+                                "name": "FunctionCall",
+                                "src": "511:8:14"
+                              }
+                            ],
+                            "id": 2460,
+                            "name": "ExpressionStatement",
+                            "src": "511:8:14"
+                          }
+                        ],
+                        "id": 2461,
+                        "name": "Block",
+                        "src": "497:33:14"
+                      },
+                      {
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "commonType": {
+                                "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                                "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                              },
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": false,
+                              "lValueRequested": false,
+                              "operator": "==",
+                              "type": "bool"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 2445,
+                                  "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                                  "value": "kind"
+                                },
+                                "id": 2462,
+                                "name": "Identifier",
+                                "src": "540:4:14"
+                              },
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": true,
+                                  "lValueRequested": false,
+                                  "member_name": "Claimable",
+                                  "referencedDeclaration": null,
+                                  "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 2443,
+                                      "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                      "value": "NonFungibleAssetKind"
+                                    },
+                                    "id": 2463,
+                                    "name": "Identifier",
+                                    "src": "548:20:14"
+                                  }
+                                ],
+                                "id": 2464,
+                                "name": "MemberAccess",
+                                "src": "548:30:14"
+                              }
+                            ],
+                            "id": 2465,
+                            "name": "BinaryOperation",
+                            "src": "540:38:14"
+                          },
+                          {
+                            "children": [
+                              {
+                                "attributes": {
+                                  "functionReturnParameters": 2453
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "arguments": [
+                                        null
+                                      ],
+                                      "isConstant": false,
+                                      "isLValue": false,
+                                      "isPure": false,
+                                      "isStructConstructorCall": false,
+                                      "lValueRequested": false,
+                                      "names": [
+                                        null
+                                      ],
+                                      "type": "address",
+                                      "type_conversion": false
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": [
+                                            null
+                                          ],
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "lValueRequested": false,
+                                          "member_name": "owner",
+                                          "referencedDeclaration": 3825,
+                                          "type": "function () view external returns (address)"
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "isConstant": false,
+                                              "isLValue": false,
+                                              "isPure": false,
+                                              "isStructConstructorCall": false,
+                                              "lValueRequested": false,
+                                              "names": [
+                                                null
+                                              ],
+                                              "type": "contract Claimable",
+                                              "type_conversion": true
+                                            },
+                                            "children": [
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": [
+                                                    {
+                                                      "typeIdentifier": "t_address",
+                                                      "typeString": "address"
+                                                    }
+                                                  ],
+                                                  "overloadedDeclarations": [
+                                                    null
+                                                  ],
+                                                  "referencedDeclaration": 3821,
+                                                  "type": "type(contract Claimable)",
+                                                  "value": "Claimable"
+                                                },
+                                                "id": 2466,
+                                                "name": "Identifier",
+                                                "src": "601:9:14"
+                                              },
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": null,
+                                                  "overloadedDeclarations": [
+                                                    null
+                                                  ],
+                                                  "referencedDeclaration": 2447,
+                                                  "type": "address",
+                                                  "value": "asset"
+                                                },
+                                                "id": 2467,
+                                                "name": "Identifier",
+                                                "src": "611:5:14"
+                                              }
+                                            ],
+                                            "id": 2468,
+                                            "name": "FunctionCall",
+                                            "src": "601:16:14"
+                                          }
+                                        ],
+                                        "id": 2469,
+                                        "name": "MemberAccess",
+                                        "src": "601:22:14"
+                                      }
+                                    ],
+                                    "id": 2470,
+                                    "name": "FunctionCall",
+                                    "src": "601:24:14"
+                                  }
+                                ],
+                                "id": 2471,
+                                "name": "Return",
+                                "src": "594:31:14"
+                              }
+                            ],
+                            "id": 2472,
+                            "name": "Block",
+                            "src": "580:56:14"
+                          },
+                          {
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "commonType": {
+                                    "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                                    "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                  },
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": false,
+                                  "lValueRequested": false,
+                                  "operator": "==",
+                                  "type": "bool"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 2445,
+                                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                                      "value": "kind"
+                                    },
+                                    "id": 2473,
+                                    "name": "Identifier",
+                                    "src": "646:4:14"
+                                  },
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "isConstant": false,
+                                      "isLValue": false,
+                                      "isPure": true,
+                                      "lValueRequested": false,
+                                      "member_name": "ERC721",
+                                      "referencedDeclaration": null,
+                                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "overloadedDeclarations": [
+                                            null
+                                          ],
+                                          "referencedDeclaration": 2443,
+                                          "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                          "value": "NonFungibleAssetKind"
+                                        },
+                                        "id": 2474,
+                                        "name": "Identifier",
+                                        "src": "654:20:14"
+                                      }
+                                    ],
+                                    "id": 2475,
+                                    "name": "MemberAccess",
+                                    "src": "654:27:14"
+                                  }
+                                ],
+                                "id": 2476,
+                                "name": "BinaryOperation",
+                                "src": "646:35:14"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "functionReturnParameters": 2453
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "isStructConstructorCall": false,
+                                          "lValueRequested": false,
+                                          "names": [
+                                            null
+                                          ],
+                                          "type": "address",
+                                          "type_conversion": false
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": [
+                                                {
+                                                  "typeIdentifier": "t_uint256",
+                                                  "typeString": "uint256"
+                                                }
+                                              ],
+                                              "isConstant": false,
+                                              "isLValue": false,
+                                              "isPure": false,
+                                              "lValueRequested": false,
+                                              "member_name": "ownerOf",
+                                              "referencedDeclaration": 435,
+                                              "type": "function (uint256) view external returns (address)"
+                                            },
+                                            "children": [
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": null,
+                                                  "isConstant": false,
+                                                  "isLValue": false,
+                                                  "isPure": false,
+                                                  "isStructConstructorCall": false,
+                                                  "lValueRequested": false,
+                                                  "names": [
+                                                    null
+                                                  ],
+                                                  "type": "contract ERC721",
+                                                  "type_conversion": true
+                                                },
+                                                "children": [
+                                                  {
+                                                    "attributes": {
+                                                      "argumentTypes": [
+                                                        {
+                                                          "typeIdentifier": "t_address",
+                                                          "typeString": "address"
+                                                        }
+                                                      ],
+                                                      "overloadedDeclarations": [
+                                                        null
+                                                      ],
+                                                      "referencedDeclaration": 455,
+                                                      "type": "type(contract ERC721)",
+                                                      "value": "ERC721"
+                                                    },
+                                                    "id": 2477,
+                                                    "name": "Identifier",
+                                                    "src": "704:6:14"
+                                                  },
+                                                  {
+                                                    "attributes": {
+                                                      "argumentTypes": null,
+                                                      "overloadedDeclarations": [
+                                                        null
+                                                      ],
+                                                      "referencedDeclaration": 2447,
+                                                      "type": "address",
+                                                      "value": "asset"
+                                                    },
+                                                    "id": 2478,
+                                                    "name": "Identifier",
+                                                    "src": "711:5:14"
+                                                  }
+                                                ],
+                                                "id": 2479,
+                                                "name": "FunctionCall",
+                                                "src": "704:13:14"
+                                              }
+                                            ],
+                                            "id": 2480,
+                                            "name": "MemberAccess",
+                                            "src": "704:21:14"
+                                          },
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 2449,
+                                              "type": "uint256",
+                                              "value": "assetExtra"
+                                            },
+                                            "id": 2481,
+                                            "name": "Identifier",
+                                            "src": "726:10:14"
+                                          }
+                                        ],
+                                        "id": 2482,
+                                        "name": "FunctionCall",
+                                        "src": "704:33:14"
+                                      }
+                                    ],
+                                    "id": 2483,
+                                    "name": "Return",
+                                    "src": "697:40:14"
+                                  }
+                                ],
+                                "id": 2484,
+                                "name": "Block",
+                                "src": "683:65:14"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "arguments": [
+                                            null
+                                          ],
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "isStructConstructorCall": false,
+                                          "lValueRequested": false,
+                                          "names": [
+                                            null
+                                          ],
+                                          "type": "tuple()",
+                                          "type_conversion": false
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": [
+                                                null
+                                              ],
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 4358,
+                                              "type": "function () pure",
+                                              "value": "revert"
+                                            },
+                                            "id": 2485,
+                                            "name": "Identifier",
+                                            "src": "768:6:14"
+                                          }
+                                        ],
+                                        "id": 2486,
+                                        "name": "FunctionCall",
+                                        "src": "768:8:14"
+                                      }
+                                    ],
+                                    "id": 2487,
+                                    "name": "ExpressionStatement",
+                                    "src": "768:8:14"
+                                  }
+                                ],
+                                "id": 2488,
+                                "name": "Block",
+                                "src": "754:33:14"
+                              }
+                            ],
+                            "id": 2489,
+                            "name": "IfStatement",
+                            "src": "642:145:14"
+                          }
+                        ],
+                        "id": 2490,
+                        "name": "IfStatement",
+                        "src": "536:251:14"
+                      }
+                    ],
+                    "id": 2491,
+                    "name": "IfStatement",
+                    "src": "458:329:14"
+                  }
+                ],
+                "id": 2492,
+                "name": "Block",
+                "src": "448:347:14"
+              }
+            ],
+            "id": 2493,
+            "name": "FunctionDefinition",
+            "src": "337:458:14"
+          },
+          {
+            "attributes": {
+              "constant": false,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "transferOwnership",
+              "payable": false,
+              "scope": 2590,
+              "stateMutability": "nonpayable",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "kind",
+                      "scope": 2543,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "contractScope": null,
+                          "name": "NonFungibleAssetKind",
+                          "referencedDeclaration": 2443,
+                          "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                        },
+                        "id": 2494,
+                        "name": "UserDefinedTypeName",
+                        "src": "829:20:14"
+                      }
+                    ],
+                    "id": 2495,
+                    "name": "VariableDeclaration",
+                    "src": "829:25:14"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "asset",
+                      "scope": 2543,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 2496,
+                        "name": "ElementaryTypeName",
+                        "src": "856:7:14"
+                      }
+                    ],
+                    "id": 2497,
+                    "name": "VariableDeclaration",
+                    "src": "856:13:14"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "newOwner",
+                      "scope": 2543,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 2498,
+                        "name": "ElementaryTypeName",
+                        "src": "871:7:14"
+                      }
+                    ],
+                    "id": 2499,
+                    "name": "VariableDeclaration",
+                    "src": "871:16:14"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "assetExtra",
+                      "scope": 2543,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "uint256",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "uint",
+                          "type": "uint256"
+                        },
+                        "id": 2500,
+                        "name": "ElementaryTypeName",
+                        "src": "889:4:14"
+                      }
+                    ],
+                    "id": 2501,
+                    "name": "VariableDeclaration",
+                    "src": "889:15:14"
+                  }
+                ],
+                "id": 2502,
+                "name": "ParameterList",
+                "src": "828:77:14"
+              },
+              {
+                "attributes": {
+                  "parameters": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 2503,
+                "name": "ParameterList",
+                "src": "913:0:14"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "commonType": {
+                            "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                            "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                          },
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "operator": "==",
+                          "type": "bool"
+                        },
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 2495,
+                              "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                              "value": "kind"
+                            },
+                            "id": 2504,
+                            "name": "Identifier",
+                            "src": "927:4:14"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": true,
+                              "lValueRequested": false,
+                              "member_name": "None",
+                              "referencedDeclaration": null,
+                              "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 2443,
+                                  "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                  "value": "NonFungibleAssetKind"
+                                },
+                                "id": 2505,
+                                "name": "Identifier",
+                                "src": "935:20:14"
+                              }
+                            ],
+                            "id": 2506,
+                            "name": "MemberAccess",
+                            "src": "935:25:14"
+                          }
+                        ],
+                        "id": 2507,
+                        "name": "BinaryOperation",
+                        "src": "927:33:14"
+                      },
+                      {
+                        "children": [
+                          {
+                            "attributes": {
+                              "expression": null,
+                              "functionReturnParameters": 2503
+                            },
+                            "id": 2508,
+                            "name": "Return",
+                            "src": "976:7:14"
+                          }
+                        ],
+                        "id": 2509,
+                        "name": "Block",
+                        "src": "962:31:14"
+                      },
+                      {
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "commonType": {
+                                "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                                "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                              },
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": false,
+                              "lValueRequested": false,
+                              "operator": "==",
+                              "type": "bool"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 2495,
+                                  "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                                  "value": "kind"
+                                },
+                                "id": 2510,
+                                "name": "Identifier",
+                                "src": "1003:4:14"
+                              },
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": true,
+                                  "lValueRequested": false,
+                                  "member_name": "Claimable",
+                                  "referencedDeclaration": null,
+                                  "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 2443,
+                                      "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                      "value": "NonFungibleAssetKind"
+                                    },
+                                    "id": 2511,
+                                    "name": "Identifier",
+                                    "src": "1011:20:14"
+                                  }
+                                ],
+                                "id": 2512,
+                                "name": "MemberAccess",
+                                "src": "1011:30:14"
+                              }
+                            ],
+                            "id": 2513,
+                            "name": "BinaryOperation",
+                            "src": "1003:38:14"
+                          },
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "isConstant": false,
+                                      "isLValue": false,
+                                      "isPure": false,
+                                      "isStructConstructorCall": false,
+                                      "lValueRequested": false,
+                                      "names": [
+                                        null
+                                      ],
+                                      "type": "tuple()",
+                                      "type_conversion": false
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": [
+                                            {
+                                              "typeIdentifier": "t_address",
+                                              "typeString": "address"
+                                            }
+                                          ],
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "lValueRequested": false,
+                                          "member_name": "transferOwnership",
+                                          "referencedDeclaration": 3799,
+                                          "type": "function (address) external"
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "isConstant": false,
+                                              "isLValue": false,
+                                              "isPure": false,
+                                              "isStructConstructorCall": false,
+                                              "lValueRequested": false,
+                                              "names": [
+                                                null
+                                              ],
+                                              "type": "contract Claimable",
+                                              "type_conversion": true
+                                            },
+                                            "children": [
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": [
+                                                    {
+                                                      "typeIdentifier": "t_address",
+                                                      "typeString": "address"
+                                                    }
+                                                  ],
+                                                  "overloadedDeclarations": [
+                                                    null
+                                                  ],
+                                                  "referencedDeclaration": 3821,
+                                                  "type": "type(contract Claimable)",
+                                                  "value": "Claimable"
+                                                },
+                                                "id": 2514,
+                                                "name": "Identifier",
+                                                "src": "1057:9:14"
+                                              },
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": null,
+                                                  "overloadedDeclarations": [
+                                                    null
+                                                  ],
+                                                  "referencedDeclaration": 2497,
+                                                  "type": "address",
+                                                  "value": "asset"
+                                                },
+                                                "id": 2515,
+                                                "name": "Identifier",
+                                                "src": "1067:5:14"
+                                              }
+                                            ],
+                                            "id": 2516,
+                                            "name": "FunctionCall",
+                                            "src": "1057:16:14"
+                                          }
+                                        ],
+                                        "id": 2517,
+                                        "name": "MemberAccess",
+                                        "src": "1057:34:14"
+                                      },
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "overloadedDeclarations": [
+                                            null
+                                          ],
+                                          "referencedDeclaration": 2499,
+                                          "type": "address",
+                                          "value": "newOwner"
+                                        },
+                                        "id": 2518,
+                                        "name": "Identifier",
+                                        "src": "1092:8:14"
+                                      }
+                                    ],
+                                    "id": 2519,
+                                    "name": "FunctionCall",
+                                    "src": "1057:44:14"
+                                  }
+                                ],
+                                "id": 2520,
+                                "name": "ExpressionStatement",
+                                "src": "1057:44:14"
+                              }
+                            ],
+                            "id": 2521,
+                            "name": "Block",
+                            "src": "1043:69:14"
+                          },
+                          {
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "commonType": {
+                                    "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                                    "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                  },
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": false,
+                                  "lValueRequested": false,
+                                  "operator": "==",
+                                  "type": "bool"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 2495,
+                                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                                      "value": "kind"
+                                    },
+                                    "id": 2522,
+                                    "name": "Identifier",
+                                    "src": "1122:4:14"
+                                  },
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "isConstant": false,
+                                      "isLValue": false,
+                                      "isPure": true,
+                                      "lValueRequested": false,
+                                      "member_name": "ERC721",
+                                      "referencedDeclaration": null,
+                                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "overloadedDeclarations": [
+                                            null
+                                          ],
+                                          "referencedDeclaration": 2443,
+                                          "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                          "value": "NonFungibleAssetKind"
+                                        },
+                                        "id": 2523,
+                                        "name": "Identifier",
+                                        "src": "1130:20:14"
+                                      }
+                                    ],
+                                    "id": 2524,
+                                    "name": "MemberAccess",
+                                    "src": "1130:27:14"
+                                  }
+                                ],
+                                "id": 2525,
+                                "name": "BinaryOperation",
+                                "src": "1122:35:14"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "isStructConstructorCall": false,
+                                          "lValueRequested": false,
+                                          "names": [
+                                            null
+                                          ],
+                                          "type": "tuple()",
+                                          "type_conversion": false
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": [
+                                                {
+                                                  "typeIdentifier": "t_address",
+                                                  "typeString": "address"
+                                                },
+                                                {
+                                                  "typeIdentifier": "t_uint256",
+                                                  "typeString": "uint256"
+                                                }
+                                              ],
+                                              "isConstant": false,
+                                              "isLValue": false,
+                                              "isPure": false,
+                                              "lValueRequested": false,
+                                              "member_name": "transfer",
+                                              "referencedDeclaration": 454,
+                                              "type": "function (address,uint256) external"
+                                            },
+                                            "children": [
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": null,
+                                                  "isConstant": false,
+                                                  "isLValue": false,
+                                                  "isPure": false,
+                                                  "isStructConstructorCall": false,
+                                                  "lValueRequested": false,
+                                                  "names": [
+                                                    null
+                                                  ],
+                                                  "type": "contract ERC721",
+                                                  "type_conversion": true
+                                                },
+                                                "children": [
+                                                  {
+                                                    "attributes": {
+                                                      "argumentTypes": [
+                                                        {
+                                                          "typeIdentifier": "t_address",
+                                                          "typeString": "address"
+                                                        }
+                                                      ],
+                                                      "overloadedDeclarations": [
+                                                        null
+                                                      ],
+                                                      "referencedDeclaration": 455,
+                                                      "type": "type(contract ERC721)",
+                                                      "value": "ERC721"
+                                                    },
+                                                    "id": 2526,
+                                                    "name": "Identifier",
+                                                    "src": "1173:6:14"
+                                                  },
+                                                  {
+                                                    "attributes": {
+                                                      "argumentTypes": null,
+                                                      "overloadedDeclarations": [
+                                                        null
+                                                      ],
+                                                      "referencedDeclaration": 2497,
+                                                      "type": "address",
+                                                      "value": "asset"
+                                                    },
+                                                    "id": 2527,
+                                                    "name": "Identifier",
+                                                    "src": "1180:5:14"
+                                                  }
+                                                ],
+                                                "id": 2528,
+                                                "name": "FunctionCall",
+                                                "src": "1173:13:14"
+                                              }
+                                            ],
+                                            "id": 2529,
+                                            "name": "MemberAccess",
+                                            "src": "1173:22:14"
+                                          },
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 2499,
+                                              "type": "address",
+                                              "value": "newOwner"
+                                            },
+                                            "id": 2530,
+                                            "name": "Identifier",
+                                            "src": "1196:8:14"
+                                          },
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 2501,
+                                              "type": "uint256",
+                                              "value": "assetExtra"
+                                            },
+                                            "id": 2531,
+                                            "name": "Identifier",
+                                            "src": "1206:10:14"
+                                          }
+                                        ],
+                                        "id": 2532,
+                                        "name": "FunctionCall",
+                                        "src": "1173:44:14"
+                                      }
+                                    ],
+                                    "id": 2533,
+                                    "name": "ExpressionStatement",
+                                    "src": "1173:44:14"
+                                  }
+                                ],
+                                "id": 2534,
+                                "name": "Block",
+                                "src": "1159:69:14"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "arguments": [
+                                            null
+                                          ],
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "isStructConstructorCall": false,
+                                          "lValueRequested": false,
+                                          "names": [
+                                            null
+                                          ],
+                                          "type": "tuple()",
+                                          "type_conversion": false
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": [
+                                                null
+                                              ],
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 4358,
+                                              "type": "function () pure",
+                                              "value": "revert"
+                                            },
+                                            "id": 2535,
+                                            "name": "Identifier",
+                                            "src": "1248:6:14"
+                                          }
+                                        ],
+                                        "id": 2536,
+                                        "name": "FunctionCall",
+                                        "src": "1248:8:14"
+                                      }
+                                    ],
+                                    "id": 2537,
+                                    "name": "ExpressionStatement",
+                                    "src": "1248:8:14"
+                                  }
+                                ],
+                                "id": 2538,
+                                "name": "Block",
+                                "src": "1234:33:14"
+                              }
+                            ],
+                            "id": 2539,
+                            "name": "IfStatement",
+                            "src": "1118:149:14"
+                          }
+                        ],
+                        "id": 2540,
+                        "name": "IfStatement",
+                        "src": "999:268:14"
+                      }
+                    ],
+                    "id": 2541,
+                    "name": "IfStatement",
+                    "src": "923:344:14"
+                  }
+                ],
+                "id": 2542,
+                "name": "Block",
+                "src": "913:360:14"
+              }
+            ],
+            "id": 2543,
+            "name": "FunctionDefinition",
+            "src": "801:472:14"
+          },
+          {
+            "attributes": {
+              "constant": false,
+              "implemented": true,
+              "isConstructor": false,
+              "modifiers": [
+                null
+              ],
+              "name": "claimOwnership",
+              "payable": false,
+              "scope": 2590,
+              "stateMutability": "nonpayable",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "kind",
+                      "scope": 2589,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "contractScope": null,
+                          "name": "NonFungibleAssetKind",
+                          "referencedDeclaration": 2443,
+                          "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                        },
+                        "id": 2544,
+                        "name": "UserDefinedTypeName",
+                        "src": "1304:20:14"
+                      }
+                    ],
+                    "id": 2545,
+                    "name": "VariableDeclaration",
+                    "src": "1304:25:14"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "asset",
+                      "scope": 2589,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 2546,
+                        "name": "ElementaryTypeName",
+                        "src": "1331:7:14"
+                      }
+                    ],
+                    "id": 2547,
+                    "name": "VariableDeclaration",
+                    "src": "1331:13:14"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "assetExtra",
+                      "scope": 2589,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "uint256",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "uint",
+                          "type": "uint256"
+                        },
+                        "id": 2548,
+                        "name": "ElementaryTypeName",
+                        "src": "1346:4:14"
+                      }
+                    ],
+                    "id": 2549,
+                    "name": "VariableDeclaration",
+                    "src": "1346:15:14"
+                  }
+                ],
+                "id": 2550,
+                "name": "ParameterList",
+                "src": "1303:59:14"
+              },
+              {
+                "attributes": {
+                  "parameters": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 2551,
+                "name": "ParameterList",
+                "src": "1370:0:14"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "commonType": {
+                            "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                            "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                          },
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "operator": "==",
+                          "type": "bool"
+                        },
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 2545,
+                              "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                              "value": "kind"
+                            },
+                            "id": 2552,
+                            "name": "Identifier",
+                            "src": "1384:4:14"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": true,
+                              "lValueRequested": false,
+                              "member_name": "None",
+                              "referencedDeclaration": null,
+                              "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 2443,
+                                  "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                  "value": "NonFungibleAssetKind"
+                                },
+                                "id": 2553,
+                                "name": "Identifier",
+                                "src": "1392:20:14"
+                              }
+                            ],
+                            "id": 2554,
+                            "name": "MemberAccess",
+                            "src": "1392:25:14"
+                          }
+                        ],
+                        "id": 2555,
+                        "name": "BinaryOperation",
+                        "src": "1384:33:14"
+                      },
+                      {
+                        "children": [
+                          {
+                            "attributes": {
+                              "expression": null,
+                              "functionReturnParameters": 2551
+                            },
+                            "id": 2556,
+                            "name": "Return",
+                            "src": "1433:7:14"
+                          }
+                        ],
+                        "id": 2557,
+                        "name": "Block",
+                        "src": "1419:31:14"
+                      },
+                      {
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "commonType": {
+                                "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                                "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                              },
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": false,
+                              "lValueRequested": false,
+                              "operator": "==",
+                              "type": "bool"
+                            },
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "overloadedDeclarations": [
+                                    null
+                                  ],
+                                  "referencedDeclaration": 2545,
+                                  "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                                  "value": "kind"
+                                },
+                                "id": 2558,
+                                "name": "Identifier",
+                                "src": "1460:4:14"
+                              },
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": true,
+                                  "lValueRequested": false,
+                                  "member_name": "Claimable",
+                                  "referencedDeclaration": null,
+                                  "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 2443,
+                                      "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                      "value": "NonFungibleAssetKind"
+                                    },
+                                    "id": 2559,
+                                    "name": "Identifier",
+                                    "src": "1468:20:14"
+                                  }
+                                ],
+                                "id": 2560,
+                                "name": "MemberAccess",
+                                "src": "1468:30:14"
+                              }
+                            ],
+                            "id": 2561,
+                            "name": "BinaryOperation",
+                            "src": "1460:38:14"
+                          },
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "arguments": [
+                                        null
+                                      ],
+                                      "isConstant": false,
+                                      "isLValue": false,
+                                      "isPure": false,
+                                      "isStructConstructorCall": false,
+                                      "lValueRequested": false,
+                                      "names": [
+                                        null
+                                      ],
+                                      "type": "tuple()",
+                                      "type_conversion": false
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": [
+                                            null
+                                          ],
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "lValueRequested": false,
+                                          "member_name": "claimOwnership",
+                                          "referencedDeclaration": 3820,
+                                          "type": "function () external"
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "isConstant": false,
+                                              "isLValue": false,
+                                              "isPure": false,
+                                              "isStructConstructorCall": false,
+                                              "lValueRequested": false,
+                                              "names": [
+                                                null
+                                              ],
+                                              "type": "contract Claimable",
+                                              "type_conversion": true
+                                            },
+                                            "children": [
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": [
+                                                    {
+                                                      "typeIdentifier": "t_address",
+                                                      "typeString": "address"
+                                                    }
+                                                  ],
+                                                  "overloadedDeclarations": [
+                                                    null
+                                                  ],
+                                                  "referencedDeclaration": 3821,
+                                                  "type": "type(contract Claimable)",
+                                                  "value": "Claimable"
+                                                },
+                                                "id": 2562,
+                                                "name": "Identifier",
+                                                "src": "1514:9:14"
+                                              },
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": null,
+                                                  "overloadedDeclarations": [
+                                                    null
+                                                  ],
+                                                  "referencedDeclaration": 2547,
+                                                  "type": "address",
+                                                  "value": "asset"
+                                                },
+                                                "id": 2563,
+                                                "name": "Identifier",
+                                                "src": "1524:5:14"
+                                              }
+                                            ],
+                                            "id": 2564,
+                                            "name": "FunctionCall",
+                                            "src": "1514:16:14"
+                                          }
+                                        ],
+                                        "id": 2565,
+                                        "name": "MemberAccess",
+                                        "src": "1514:31:14"
+                                      }
+                                    ],
+                                    "id": 2566,
+                                    "name": "FunctionCall",
+                                    "src": "1514:33:14"
+                                  }
+                                ],
+                                "id": 2567,
+                                "name": "ExpressionStatement",
+                                "src": "1514:33:14"
+                              }
+                            ],
+                            "id": 2568,
+                            "name": "Block",
+                            "src": "1500:58:14"
+                          },
+                          {
+                            "children": [
+                              {
+                                "attributes": {
+                                  "argumentTypes": null,
+                                  "commonType": {
+                                    "typeIdentifier": "t_enum$_NonFungibleAssetKind_$2443",
+                                    "typeString": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                  },
+                                  "isConstant": false,
+                                  "isLValue": false,
+                                  "isPure": false,
+                                  "lValueRequested": false,
+                                  "operator": "==",
+                                  "type": "bool"
+                                },
+                                "children": [
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "overloadedDeclarations": [
+                                        null
+                                      ],
+                                      "referencedDeclaration": 2545,
+                                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind",
+                                      "value": "kind"
+                                    },
+                                    "id": 2569,
+                                    "name": "Identifier",
+                                    "src": "1568:4:14"
+                                  },
+                                  {
+                                    "attributes": {
+                                      "argumentTypes": null,
+                                      "isConstant": false,
+                                      "isLValue": false,
+                                      "isPure": true,
+                                      "lValueRequested": false,
+                                      "member_name": "ERC721",
+                                      "referencedDeclaration": null,
+                                      "type": "enum NonFungibleAssetInterface.NonFungibleAssetKind"
+                                    },
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "overloadedDeclarations": [
+                                            null
+                                          ],
+                                          "referencedDeclaration": 2443,
+                                          "type": "type(enum NonFungibleAssetInterface.NonFungibleAssetKind)",
+                                          "value": "NonFungibleAssetKind"
+                                        },
+                                        "id": 2570,
+                                        "name": "Identifier",
+                                        "src": "1576:20:14"
+                                      }
+                                    ],
+                                    "id": 2571,
+                                    "name": "MemberAccess",
+                                    "src": "1576:27:14"
+                                  }
+                                ],
+                                "id": 2572,
+                                "name": "BinaryOperation",
+                                "src": "1568:35:14"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "isStructConstructorCall": false,
+                                          "lValueRequested": false,
+                                          "names": [
+                                            null
+                                          ],
+                                          "type": "tuple()",
+                                          "type_conversion": false
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": [
+                                                {
+                                                  "typeIdentifier": "t_uint256",
+                                                  "typeString": "uint256"
+                                                }
+                                              ],
+                                              "isConstant": false,
+                                              "isLValue": false,
+                                              "isPure": false,
+                                              "lValueRequested": false,
+                                              "member_name": "takeOwnership",
+                                              "referencedDeclaration": 447,
+                                              "type": "function (uint256) external"
+                                            },
+                                            "children": [
+                                              {
+                                                "attributes": {
+                                                  "argumentTypes": null,
+                                                  "isConstant": false,
+                                                  "isLValue": false,
+                                                  "isPure": false,
+                                                  "isStructConstructorCall": false,
+                                                  "lValueRequested": false,
+                                                  "names": [
+                                                    null
+                                                  ],
+                                                  "type": "contract ERC721",
+                                                  "type_conversion": true
+                                                },
+                                                "children": [
+                                                  {
+                                                    "attributes": {
+                                                      "argumentTypes": [
+                                                        {
+                                                          "typeIdentifier": "t_address",
+                                                          "typeString": "address"
+                                                        }
+                                                      ],
+                                                      "overloadedDeclarations": [
+                                                        null
+                                                      ],
+                                                      "referencedDeclaration": 455,
+                                                      "type": "type(contract ERC721)",
+                                                      "value": "ERC721"
+                                                    },
+                                                    "id": 2573,
+                                                    "name": "Identifier",
+                                                    "src": "1619:6:14"
+                                                  },
+                                                  {
+                                                    "attributes": {
+                                                      "argumentTypes": null,
+                                                      "overloadedDeclarations": [
+                                                        null
+                                                      ],
+                                                      "referencedDeclaration": 2547,
+                                                      "type": "address",
+                                                      "value": "asset"
+                                                    },
+                                                    "id": 2574,
+                                                    "name": "Identifier",
+                                                    "src": "1626:5:14"
+                                                  }
+                                                ],
+                                                "id": 2575,
+                                                "name": "FunctionCall",
+                                                "src": "1619:13:14"
+                                              }
+                                            ],
+                                            "id": 2576,
+                                            "name": "MemberAccess",
+                                            "src": "1619:27:14"
+                                          },
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 2549,
+                                              "type": "uint256",
+                                              "value": "assetExtra"
+                                            },
+                                            "id": 2577,
+                                            "name": "Identifier",
+                                            "src": "1647:10:14"
+                                          }
+                                        ],
+                                        "id": 2578,
+                                        "name": "FunctionCall",
+                                        "src": "1619:39:14"
+                                      }
+                                    ],
+                                    "id": 2579,
+                                    "name": "ExpressionStatement",
+                                    "src": "1619:39:14"
+                                  }
+                                ],
+                                "id": 2580,
+                                "name": "Block",
+                                "src": "1605:64:14"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "children": [
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "arguments": [
+                                            null
+                                          ],
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "isStructConstructorCall": false,
+                                          "lValueRequested": false,
+                                          "names": [
+                                            null
+                                          ],
+                                          "type": "tuple()",
+                                          "type_conversion": false
+                                        },
+                                        "children": [
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": [
+                                                null
+                                              ],
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 4358,
+                                              "type": "function () pure",
+                                              "value": "revert"
+                                            },
+                                            "id": 2581,
+                                            "name": "Identifier",
+                                            "src": "1689:6:14"
+                                          }
+                                        ],
+                                        "id": 2582,
+                                        "name": "FunctionCall",
+                                        "src": "1689:8:14"
+                                      }
+                                    ],
+                                    "id": 2583,
+                                    "name": "ExpressionStatement",
+                                    "src": "1689:8:14"
+                                  }
+                                ],
+                                "id": 2584,
+                                "name": "Block",
+                                "src": "1675:33:14"
+                              }
+                            ],
+                            "id": 2585,
+                            "name": "IfStatement",
+                            "src": "1564:144:14"
+                          }
+                        ],
+                        "id": 2586,
+                        "name": "IfStatement",
+                        "src": "1456:252:14"
+                      }
+                    ],
+                    "id": 2587,
+                    "name": "IfStatement",
+                    "src": "1380:328:14"
+                  }
+                ],
+                "id": 2588,
+                "name": "Block",
+                "src": "1370:344:14"
+              }
+            ],
+            "id": 2589,
+            "name": "FunctionDefinition",
+            "src": "1279:435:14"
+          }
+        ],
+        "id": 2590,
+        "name": "ContractDefinition",
+        "src": "237:1480:14"
+      }
+    ],
+    "id": 2591,
+    "name": "SourceUnit",
+    "src": "36:1682:14"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.4.18+commit.9cf6e910.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "1.0.1",
+  "updatedAt": "2018-01-01T03:03:04.530Z"
+}
