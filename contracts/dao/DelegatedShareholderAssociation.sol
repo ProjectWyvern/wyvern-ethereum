@@ -40,6 +40,8 @@
       A modicum of shares is required to create proposals to prevent proposal spam by shareholders only holding a tiny amount of tokens.
       This threshold can be adjusted by the DAO over time, so it shouldn't pose a capital barrier to proposal ideas.
 
+  ** CONSIDER additional deadline for execution after passage
+
 */
 
 pragma solidity 0.4.18;
@@ -89,7 +91,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         bytes metadataHash;
         uint timeCreated;
         uint votingDeadline;
-        bool executed;
+        bool finalized;
         bool proposalPassed;
         uint numberOfVotes;
         bytes32 proposalHash;
@@ -217,7 +219,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         p.proposalHash = keccak256(beneficiary, weiAmount, transactionBytecode);
         p.timeCreated = now;
         p.votingDeadline = now + debatingPeriodInMinutes * 1 minutes;
-        p.executed = false;
+        p.finalized = false;
         p.proposalPassed = false;
         p.numberOfVotes = 0;
         ProposalAdded(proposalID, beneficiary, weiAmount, jobMetadataHash);
@@ -318,18 +320,20 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     function executeProposal(uint proposalNumber, bytes transactionBytecode) public {
         Proposal storage p = proposals[proposalNumber];
 
-        /* If at or past deadline, not already executed, and code is correct, keep going. */
-        require((now >= p.votingDeadline) && !p.executed && p.proposalHash == keccak256(p.recipient, p.amount, transactionBytecode));
+        /* If at or past deadline, not already finalized, and code is correct, keep going. */
+        require((now >= p.votingDeadline) && !p.finalized && p.proposalHash == keccak256(p.recipient, p.amount, transactionBytecode));
 
         /* Count the votes. */
         var ( yea, nay, quorum ) = countVotes(proposalNumber);
 
         /* Assert that a minimum quorum has been reached. */
         require(quorum >= minimumQuorum);
+        
+        /* Mark proposal as finalized. */   
+        p.finalized = true;
 
         if (yea > nay) {
             /* Mark proposal as passed. */
-            p.executed = true;
             p.proposalPassed = true;
 
             /* Execute the function. */
