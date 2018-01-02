@@ -35,7 +35,6 @@ import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "../registry/Registry.sol";
 import "../escrow/EscrowProvider.sol";
 import "./SaleKindInterface.sol";
-import "./NonFungibleAssetInterface.sol";
 
 /**
  * @title Exchange
@@ -238,7 +237,7 @@ contract Exchange is Ownable, Pausable {
 
         id = numberOfItems;
         numberOfItems += 1;
-        items[id] = Item(msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, target, calldata, escrowProvider, false);
+        items.push(Item(msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, target, calldata, escrowProvider, false));
         ItemListed(id, msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, target, calldata, escrowProvider);
         return id;
   

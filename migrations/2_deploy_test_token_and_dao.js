@@ -2,6 +2,7 @@
 
 const TestToken = artifacts.require('./TestToken.sol')
 const TestDAO = artifacts.require('./TestDAO.sol')
+
 const { setConfig } = require('./config.js')
 
 module.exports = (deployer, network) => {
