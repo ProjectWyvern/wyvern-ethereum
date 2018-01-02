@@ -94,9 +94,9 @@ contract UTXORedeemableToken is StandardToken {
     }
 
     /**
-     * @dev Calculate the Bitcoin-style address associated with an uncompressed ECDSA public key
-     * @param pubKey Compressed ECDSA public key to convert
-     * @param isCompressed Whether or not the *Bitcoin* address was generated from a compressed key
+     * @dev Calculate the Bitcoin-style address associated with an ECDSA public key
+     * @param pubKey ECDSA public key to convert
+     * @param isCompressed Whether or not the Bitcoin address was generated from a compressed key
      * @return Raw Bitcoin address (no base58-check encoding)
      */
     function pubKeyToBitcoinAddress(bytes pubKey, bool isCompressed) public pure returns (bytes20) {

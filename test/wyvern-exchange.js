@@ -1,6 +1,7 @@
 /* global artifacts:false, it:false, contract:false, assert:false */
 
 const WyvernExchange = artifacts.require('WyvernExchange')
+const WyvernRegistry = artifacts.require('WyvernRegistry')
 const TestToken = artifacts.require('TestToken')
 const DirectEscrowProvider = artifacts.require('DirectEscrowProvider')
 // const BigNumber = require('bignumber.js')
@@ -84,7 +85,7 @@ contract('WyvernExchange', (accounts) => {
             return DirectEscrowProvider
               .deployed()
               .then(escrowProviderInstance => {
-                return exchangeInstance.listItem(1, '0x', 0, tokenInstance.address, 100, 0, 0, tokenInstance.address, '0x', escrowProviderInstance.address)
+                return exchangeInstance.listItem(1, '0x', 0, tokenInstance.address, 100, 0, 0, accounts[0], '0x', '0x0000000000000000000000000000000000000000')
                   .then(() => {
                     return exchangeInstance.items.call(0)
                       .then(item => {
@@ -112,14 +113,38 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        web3.eth.sign('0x', accounts[0]).then(signature => {
-          signature = signature.substr(2)
-          const r = '0x' + signature.slice(0, 64)
-          const s = '0x' + signature.slice(64, 128)
-          const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
-          return exchangeInstance.purchaseItem(0, exchangeInstance.address, '0x', '0x', 0, 0, v, r, s)
-            .then(() => {
+        return TestToken
+          .deployed()
+          .then(tokenInstance => {
+            return tokenInstance.approve(exchangeInstance.address, 100)
+          })
+        .then(() => {
+          return WyvernRegistry
+            .deployed()
+            .then(registryInstance => {
+              return registryInstance.register('account')
+                .then(() => {
+                })
             })
+        })
+        .then(() => {
+          const hash = web3.utils.soliditySha3(
+            {type: 'uint', value: 0},
+            {type: 'address', value: accounts[0]},
+            {type: 'bytes', value: '0x'},
+            {type: 'uint', value: 0},
+            {type: 'uint', value: 0},
+            {type: 'address', value: exchangeInstance.address}
+          ).toString('hex')
+          web3.eth.sign(hash, accounts[0]).then(signature => {
+            signature = signature.substr(2)
+            const r = '0x' + signature.slice(0, 64)
+            const s = '0x' + signature.slice(64, 128)
+            const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
+            return exchangeInstance.purchaseItem(0, accounts[0], '0x', '0x', 0, 0, v, r, s)
+              .then(() => {
+              })
+          })
         })
       })
   })

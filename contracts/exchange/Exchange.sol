@@ -207,7 +207,7 @@ contract Exchange is Ownable, Pausable {
     {
 
         /* Escrow provider must be whitelisted. */
-        require(escrowProviderWhitelist[escrowProvider]);
+        require((escrowProvider == address(0)) || escrowProviderWhitelist[escrowProvider]);
 
         /* Payment token must be whitelisted. */
         require(erc20Whitelist[paymentToken]);
@@ -365,8 +365,8 @@ contract Exchange is Ownable, Pausable {
             registry.proxies(item.side == Side.Buy ? msg.sender : item.initiator),
             /* Item ID, used to prevent replay attacks. */
             id,
-            /* Target: item specified target for buy-side, buyer for sell-side. */
-            item.side == Side.Buy ? item.target : msg.sender,
+            /* Item-specified target. */
+            item.target,
             /* Calldata: item calldata for buy-side, specified calldata for sell-side. */
             item.side == Side.Buy ? item.calldata : calldata,
             /* Remaining parameters. */
