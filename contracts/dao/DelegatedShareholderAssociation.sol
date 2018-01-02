@@ -40,8 +40,6 @@
       A modicum of shares is required to create proposals to prevent proposal spam by shareholders only holding a tiny amount of tokens.
       This threshold can be adjusted by the DAO over time, so it shouldn't pose a capital barrier to proposal ideas.
 
-  ** CONSIDER additional deadline for execution after passage
-
 */
 
 pragma solidity 0.4.18;
