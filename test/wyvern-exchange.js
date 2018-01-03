@@ -7,7 +7,7 @@ const DirectEscrowProvider = artifacts.require('DirectEscrowProvider')
 // const BigNumber = require('bignumber.js')
 
 const Web3 = require('web3')
-const provider = new Web3.providers.HttpProvider('http://localhost:8546')
+const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider)
 
 contract('WyvernExchange', (accounts) => {
@@ -108,7 +108,6 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
-  /*
   it('should allow item purchase', () => {
     return WyvernExchange
       .deployed()
@@ -124,6 +123,10 @@ contract('WyvernExchange', (accounts) => {
             .then(registryInstance => {
               return registryInstance.register('account')
                 .then(() => {
+                  return registryInstance.proxies.call(accounts[0]).then(proxyAddr => {
+                    return web3.eth.sendTransaction({from: accounts[0], to: proxyAddr, value: 1}).then(txHash => {
+                    })
+                  })
                 })
             })
         })
@@ -136,7 +139,7 @@ contract('WyvernExchange', (accounts) => {
             {type: 'uint', value: 0},
             {type: 'address', value: exchangeInstance.address}
           ).toString('hex')
-          web3.eth.sign(hash, accounts[0]).then(signature => {
+          return web3.eth.sign(hash, accounts[0]).then(signature => {
             signature = signature.substr(2)
             const r = '0x' + signature.slice(0, 64)
             const s = '0x' + signature.slice(64, 128)
@@ -148,5 +151,4 @@ contract('WyvernExchange', (accounts) => {
         })
       })
   })
-  */
 })

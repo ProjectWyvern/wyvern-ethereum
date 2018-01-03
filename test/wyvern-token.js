@@ -25,7 +25,7 @@ const randomUTXO = () => utxoSet[boundedRandom(0, utxoSet.length - 1)]
 contract('WyvernToken', (accounts) => {
   it('should deploy with zero tokens redeemed', () => {
     return WyvernToken
-      .deployed(utxoMerkleTree.getHexRoot())
+      .deployed()
       .then(instance => {
         return instance.totalRedeemed.call()
       })
