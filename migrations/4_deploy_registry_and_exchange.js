@@ -16,7 +16,7 @@ module.exports = (deployer, network) => {
           .then(() => {
             setConfig('deployed.' + network + '.SaleKindInterface', SaleKindInterface.address)
             deployer.link(SaleKindInterface, WyvernExchange)
-            return deployer.deploy(WyvernExchange, WyvernRegistry.address, WyvernToken.address, 0, 0, 0)
+            return deployer.deploy(WyvernExchange, WyvernRegistry.address, WyvernToken.address)
               .then(() => {
                 setConfig('deployed.' + network + '.WyvernExchange', WyvernExchange.address)
               })

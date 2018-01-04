@@ -13,43 +13,34 @@
 
   Solidity presently possesses neither a strong functional typesystem nor runtime reflection, so we must be a bit clever in implementation.
 
-  Buy intent    :: State transition, from address unspecified
-  Sell intent   :: State transition -> bool (must be true), from address specified
-
   TODO: 
   - Checks - effects - interactions
-  - Clarify sale kind interface, other auction types
    
-  (offchain => think about spam prevention, maybe intermediaries keep orderbooks, this *also* solves frontend fee enforcement since intermediary can enforce)
-
   *Build complete testnet prototype and user test before audit / mainnet deployment.*
 
 */
 
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 import "../registry/Registry.sol";
-import "../escrow/EscrowProvider.sol";
+import "../common/CachedBank.sol";
 import "./SaleKindInterface.sol";
 
 /**
  * @title Exchange
  * @author Project Wyvern Developers
  */
-contract Exchange is Ownable, Pausable {
+contract Exchange is Ownable, Pausable, CachedBank {
 
     /* The owner address of the exchange (a) can withdraw fees periodically and (b) can change the fee amounts, escrow settings, and whitelists. */
 
     /* Public benefit address. */
     address public publicBeneficiary; 
 
-    /* The fee required to list an item for sale. */
-    uint public feeList;
-  
     /* The fee required to bid on an item. */
     uint public feeBid;
 
@@ -62,97 +53,89 @@ contract Exchange is Ownable, Pausable {
     /* Transaction percentage fee paid to public beneficiary, in basis points. */
     uint public feePublicBenefit;
 
-    /* Transaction percentage fee paid to frontend, in basis points. */
-    uint public feeFrontend;
-
-    /* Current collected fees available for withdrawal, by owner, by token. */
-    mapping(address => mapping(address => uint)) public collectedFees;
-
-    // TODO Genericize this for middle transfer layer, withdraw pattern.
+    /* Transaction percentage fee paid to buy-side frontend, in basis points. */
+    uint public feeBuyFrontend;
+    
+    /* Transaction percentage fee paid to sell-side frontend, in basis points. */
+    uint public feeSellFrontend;
 
     /* The token used to pay exchange fees. */
     ERC20 public exchangeTokenAddress;
 
-    /* All items that have ever been listed. */
-    Item[] public items;
-
-    /* Number of items ever listed. */
-    uint public numberOfItems = 0;
-
-    /* All sales that have ever occurred. */
-    mapping(uint => Sale) public sales;
-
-    /* Top bids for all bid-supporting auctions. */
-    mapping(uint => SaleKindInterface.Bid) public topBids;
+    /* Top bids for all bid-supporting auctions, by hash. */
+    mapping(bytes32 => SaleKindInterface.Bid) public topBids;
 
     /* ERC20 whitelist. */
     mapping(address => bool) public erc20Whitelist;
 
-    /* Escrow provider whitelist. */
-    mapping(address => bool) public escrowProviderWhitelist;
-
     /* User registry. */
     Registry public registry;
+   
+    /* Cancelled / finalized orders, by hash. */
+    mapping(bytes32 => bool) cancelledOrFinalized;
+   
+    /* An ECDSA signature. */ 
+    struct Sig {
+        /* v parameter */
+        uint8 v;
+        /* r parameter */
+        bytes32 r;
+        /* s parameter */
+        bytes32 s;
+    }
 
-    /* Side enum. */
-    enum Side { Buy, Sell }
-
-    /* An item listed for sale on the exchange. */
-    struct Item {
+    /* An order on the exchange. */
+    struct Order {
         /* The address buying/selling the item. */
         address initiator;
-        /* Side of sell. */
-        Side side;
-        /* Item metadata IPFS hash. */
-        bytes metadataHash;
-        /* The kind of sale. */
+        /* Side (buy/sell). */
+        SaleKindInterface.Side side;
+        /* Kind of sale. */
         SaleKindInterface.SaleKind saleKind;
+        /* Target. */
+        address target;
+        /* HowToCall. */
+        AuthenticatedProxy.HowToCall howToCall;
+        /* Calldata. */
+        bytes calldata;
+        /* Replace start index. */
+        uint start;
+        /* Replace length. */
+        uint length;
+        /* Order metadata IPFS hash. */
+        bytes metadataHash;
         /* Token used to pay for the item. */
         ERC20 paymentToken;
         /* Base price of the item (tokens). */
         uint basePrice;
+        /* Auction extra parameter - minimum bid increment for English auctions, decay factor for Dutch auctions. */
+        uint extra;
         /* Listing timestamp. */
         uint listingTime;
         /* Expiration timestamp - 0 for no expiry. */
         uint expirationTime;
-        /* Auction extra parameter - minimum bid increment for English auctions, decay factor for Dutch auctions. */
-        uint extra;
-        /* Target, for buy-side orders. */
-        address target;
-        /* Calldata, for buy-side orders. */
-        bytes calldata;
-        /* The escrow provider contract, which is paid a fee to arbitrage escrow disputes and must provide specific functions. 0 for no escrow. */
-        EscrowProvider escrowProvider;
-        /* Whether or not the listing has been removed. */
-        bool removed;
-
-        /* Note: most of this (all except metadata hash, initiator, and removed?) could be stored on IPFS and validated with ecrecover on-demand. Not sure if the gas costs would be cheaper for the average use case or not. */
+        /* Order frontend. Fees split between buy / sell. */
+        address frontend;
     }
 
-    struct Sale {
-        /* Address of the buyer. */
-        address buyer;
-        /* Sale metadata IPFS hash. */
-        bytes metadataHash;
-    }
-
-    event ItemListed    (uint id, address indexed initiator, Side side, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint timestamp, uint expirationTime, uint extra, address indexed target, bytes calldata, EscrowProvider escrowProvider);
-    event ItemRemoved   (uint id);
-    event ItemBidOn     (uint id, address indexed bidder, uint amount, uint timestamp);
-    event ItemFinalized (uint id, address indexed finalizer, uint price);
-    event SaleFinalized (uint id, bytes metadataHash);
     event PublicBeneficiaryChanged (address indexed newAddress);
 
-    modifier requiresActiveItem (uint id) {
-        require((items[id].initiator != address(0)) && (!items[id].removed) && (sales[id].buyer == address(0)));
-        _;
-    }
+    event OrderCancelled  (bytes32 hash);
+    event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount, uint timestamp);
+    event OrdersMatched   (Order buy, Order sell);
 
     modifier costs (uint amount) {
         if (amount > 0) {
-            require(exchangeTokenAddress.transferFrom(msg.sender, this, amount));
-            collectedFees[owner][exchangeTokenAddress] += amount;
+            debit(msg.sender, exchangeTokenAddress, amount);
+            credit(owner, exchangeTokenAddress, amount);
         }
+        _;
+    }
+
+    modifier withValidOrder(Order order, Sig sig) {
+        bytes32 hash = keccak256(order);
+        require(!cancelledOrFinalized[hash]);
+        require(ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator);
         _;
     }
 
@@ -171,216 +154,158 @@ contract Exchange is Ownable, Pausable {
         erc20Whitelist[token] = value;
     }
 
-    function modifyEscrowProviderWhitelist(address provider, bool value)
+    function setFees(uint bidFee, uint buyFee, uint ownerFee, uint publicBenefitFee, uint frontendBuyFee, uint frontendSellFee)
         public
         onlyOwner
     {
-        escrowProviderWhitelist[provider] = value;
-    }
-
-    function withdrawFees(address dest, address token)
-        public
-        whenNotPaused
-    {
-        uint amount = collectedFees[msg.sender][token];
-        collectedFees[msg.sender][token] = 0;
-        require(ERC20(token).transfer(dest, amount));
-    }
-
-    function setFees(uint listFee, uint bidFee, uint buyFee, uint ownerFee, uint publicBenefitFee, uint frontendFee)
-        public
-        onlyOwner
-    {
-        feeList = listFee;
         feeBid = bidFee;
         feeBuy = buyFee;
         feeOwner = ownerFee;
         feePublicBenefit = publicBenefitFee;
-        feeFrontend = frontendFee;
+        feeBuyFrontend = frontendBuyFee;
+        feeSellFrontend = frontendSellFee;
     }
 
-    function listItem(Side side, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint extra, address target, bytes calldata, EscrowProvider escrowProvider)
-        public
-        whenNotPaused
-        costs (feeList)
-        returns (uint id)
-    {
-
-        /* Escrow provider must be whitelisted. */
-        require((escrowProvider == address(0)) || escrowProviderWhitelist[escrowProvider]);
-
-        /* Payment token must be whitelisted. */
-        require(erc20Whitelist[paymentToken]);
-
-        /* Buy-side listings cannot be English auctions. */
-        require(saleKind != SaleKindInterface.SaleKind.EnglishAuction || side == Side.Sell);
-
-        /* Parameters must validate. */
-        require(SaleKindInterface.validateParameters(saleKind, expirationTime));
-        
-        /* Expiration time must be zero or past now. */
-        require(expirationTime == 0 || expirationTime > now);
-
-        return writeItem(side, metadataHash, saleKind, paymentToken, price, expirationTime, extra, target, calldata, escrowProvider);
-
-    }
-
-    /**
-  
-      Separated due to Solidity compiler constraints.
-          
-     */
-    function writeItem(Side side, bytes metadataHash, SaleKindInterface.SaleKind saleKind, ERC20 paymentToken, uint price, uint expirationTime, uint extra, address target, bytes calldata, EscrowProvider escrowProvider)
+    function cancelOrder(Order order, Sig sig) 
         internal
-        returns (uint id)
+        withValidOrder(order, sig) 
     {
-
-        id = numberOfItems;
-        numberOfItems += 1;
-        items.push(Item(msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, target, calldata, escrowProvider, false));
-        ItemListed(id, msg.sender, side, metadataHash, saleKind, paymentToken, price, now, expirationTime, extra, target, calldata, escrowProvider);
-        return id;
-  
+        require(msg.sender == order.initiator);
+        bytes32 hash = keccak256(order);
+        cancelledOrFinalized[hash] = true;
+        OrderCancelled(hash);
     }
 
-    function removeItem (uint id)
-        public
-        requiresActiveItem(id)
-    {
-        Item storage item = items[id];
-        require(item.initiator == msg.sender);
-        item.removed = true;
-        ItemRemoved(id);
-    }
-
-    function bidOnItem (uint id, uint amount)
-        public
-        whenNotPaused
-        requiresActiveItem (id)
+    function bid (Order order, Sig sig, uint amount)
+        internal
         costs (feeBid)
+        withValidOrder(order, sig) 
     {
-        Item storage item = items[id];
-        SaleKindInterface.Bid storage topBid = topBids[id];
+        bytes32 hash = keccak256(order);
+
+        SaleKindInterface.Bid storage topBid = topBids[hash];
         
         /* Calculated required bid price. */
-        uint requiredBidPrice = SaleKindInterface.requiredBidPrice(item.saleKind, item.basePrice, item.extra, item.expirationTime, topBid);
+        uint requiredBidPrice = SaleKindInterface.requiredBidPrice(order.side, order.saleKind, order.basePrice, order.extra, order.expirationTime, topBid);
 
         /* Assert bid amount is sufficient. */
         require(amount >= requiredBidPrice);
 
         /* Store the new high bid. */
-        topBids[id] = SaleKindInterface.Bid(msg.sender, amount);
+        topBids[hash] = SaleKindInterface.Bid(msg.sender, amount);
 
         /* Log the bid event. */
-        ItemBidOn(id, msg.sender, amount, now);
+        OrderBidOn(hash, msg.sender, amount, now);
 
-        /* Return locked tokens to the previous high bidder, if existent. */
+        /* Unlock tokens to the previous high bidder, if existent. */
         if (topBid.bidder != address(0)) {
-            // TODO Swap me to withdraw pattern?
-            // could also allow to fail (tokens locked in that case)
-            require(item.paymentToken.transfer(topBid.bidder, topBid.amount));
+            unlock(topBid.bidder, order.paymentToken, topBid.amount);
         }
 
         /* Lock tokens for the new high bidder. */
-        require(item.paymentToken.transferFrom(msg.sender, this, amount));
- 
+        lock(msg.sender, order.paymentToken, amount);
     }
 
-    function validateTradeAndExecuteFundsTransfer (uint id, Item item, SaleKindInterface.Bid topBid, address frontend)
+    function executeFundsTransfer(Order buy, Order sell)
         internal
     {
-        /* Ensure that the item can be purchased. */
-        require(SaleKindInterface.canPurchaseItem(item.saleKind, item.expirationTime, topBid));
+        /* Fetch top bid, if existent. */
+        SaleKindInterface.Bid storage topBid = topBids[keccak256(sell)];
 
-        /* Ensure that the proxy exists. */
-        require(registry.proxies(item.side == Side.Buy ? msg.sender : item.initiator) != address(0));
+        /* Calculate sell price. */
+        uint sellPrice = SaleKindInterface.calculateFinalPrice(sell.side, sell.saleKind, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, topBid);
 
-        /* Calculate the purchase price and transfer the tokens from the buyer. */
-        uint price = SaleKindInterface.calculateFinalPrice(item.saleKind, item.basePrice, item.extra, item.listingTime, item.expirationTime, topBid);
+        /* Calculate buy price. */
+        uint buyPrice = SaleKindInterface.calculateFinalPrice(buy.side, buy.saleKind, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, topBid);
 
-        /* Select payer/payee. */
-        address payer = item.side == Side.Buy ? item.initiator : msg.sender;
-        address payee = item.side == Side.Buy ? msg.sender : item.initiator;
+        /* Require price cross. */
+        require(buyPrice >= sellPrice);
+        
+        /* Time priority. */
+        uint price = sell.listingTime < buy.listingTime ? sellPrice : buyPrice;
 
-        /* Calculate and credit the owner fee. */
+        /* Calculate and credit owner fee. */
         uint feeToOwner = price * feeOwner / 10000;
-        collectedFees[owner][item.paymentToken] += feeToOwner;
-      
-        /* Calculate and credit the public benefit fee. */
+        credit(owner, sell.paymentToken, feeToOwner);
+
+        /* Calculate and credit public benefit fee. */
         uint feeToPublicBenefit = price * feePublicBenefit / 10000;
-        collectedFees[publicBeneficiary][item.paymentToken] += feeToPublicBenefit;
+        credit(publicBeneficiary, sell.paymentToken, feeToPublicBenefit);
 
-        /* Calculate and credit the frontend fee. */
-        uint feeToFrontend = price * feeFrontend / 10000;
-        collectedFees[frontend][item.paymentToken] += feeToFrontend;
+        /* Calculate and credit sell frontend fee. */
+        uint feeToSellFrontend = price * feeSellFrontend / 10000;
+        credit(sell.frontend, sell.paymentToken, feeToSellFrontend);
 
-        /* Calculate final price (what the seller will receive). */
-        uint finalPrice = price - feeToOwner - feeToPublicBenefit - feeToFrontend;
+        /* Calculate and credit buy frontend fee. */
+        uint feeToBuyFrontend = price * feeBuyFrontend / 10000;
+        credit(buy.frontend, buy.paymentToken, feeToBuyFrontend);
 
-        /* Log the purchase event. */
-        ItemFinalized(id, msg.sender, price);
+        /* Calculate final price. */
+        uint finalPrice = price - feeToOwner - feeToPublicBenefit - feeToSellFrontend - feeToBuyFrontend;
 
-        /* Record the sale. */
-        sales[id] = Sale(msg.sender, new bytes(0));
-
-        /* Withdraw tokens from payer, unless tokens were already sent with the high bid. */
-        if (topBid.bidder == address(0)) {
-            require(item.paymentToken.transferFrom(payer, this, price));
+        /* Unlock tokens for top bidder, if existent. */
+        if (topBid.bidder != address(0)) {
+            unlock(topBid.bidder, sell.paymentToken, topBid.amount);
         }
 
-        /* Send funds to the escrow provider, if one is being used. Else send funds directly to seller. */
-        if (item.escrowProvider != address(0)) {
-            item.paymentToken.approve(item.escrowProvider, finalPrice);
-            require(item.escrowProvider.holdInEscrow(id, payer, payee, item.paymentToken, finalPrice));
-        } else {
-            require(item.paymentToken.transfer(payee, finalPrice));
+        /* Debit buyer. */
+        debit(buy.initiator, sell.paymentToken, price);
+
+        /* Credit seller. */
+        credit(sell.initiator, sell.paymentToken, finalPrice);
+    }
+
+    function atomicMatch(Order buy, Sig buySig, Order sell, Sig sellSig)
+        internal
+        withValidOrder(buy, buySig)
+        withValidOrder(sell, sellSig)
+    {
+        /* Must be opposite-side. */
+        require(buy.side == SaleKindInterface.Side.Buy && sell.side == SaleKindInterface.Side.Sell);
+
+        /* Must use same payment token. */
+        require(buy.paymentToken == sell.paymentToken);
+
+        /* Payment token must be whitelisted (or should frontends do this?). */
+        require(erc20Whitelist[buy.paymentToken]);
+
+        /* Must be settleable. */
+        SaleKindInterface.Bid storage topBid = topBids[keccak256(sell)];
+        require(SaleKindInterface.canSettleOrder(buy.side, buy.saleKind, sell.initiator, buy.expirationTime, SaleKindInterface.Bid({ bidder: address(0), amount: 0 })));
+        require(SaleKindInterface.canSettleOrder(sell.side, sell.saleKind, buy.initiator, sell.expirationTime, topBid));
+        
+        /* Must match target. */
+        require(buy.target == sell.target);
+
+        /* Must match howToCall. */
+        require(buy.howToCall == sell.howToCall);
+       
+        /* Must match calldata. */ 
+        require(buy.calldata.length == sell.calldata.length);
+
+        if (buy.length > 0) {
+            ArrayUtils.arrayCopy(buy.calldata, ArrayUtils.toBytes(sell.initiator), buy.start, buy.length);
+        }
+        if (sell.length > 0) {
+            ArrayUtils.arrayCopy(sell.calldata, ArrayUtils.toBytes(buy.initiator), sell.start, sell.length);
         }
         
-    }
+        require(ArrayUtils.arrayEq(buy.calldata, sell.calldata));
 
-    function proxyCall(AuthenticatedProxy proxy, uint id, address target, bytes calldata, bytes replace, uint start, uint length, uint8 v, bytes32 r, bytes32 s)
-        internal
-    {
-        /* Execute the function. */
-        require(proxy.proxy(id, target, calldata, replace, start, length, v, r, s));
-    }
+        AuthenticatedProxy proxy = registry.proxies(sell.initiator);
 
-    /* Called by a buyer to purchase an item or finalize an auction they have won. Frontend address provided by the frontend. */
-    function purchaseItem (uint id, address frontend, bytes calldata, bytes replace, uint start, uint length, uint8 v, bytes32 r, bytes32 s)
-        public
-        whenNotPaused
-        requiresActiveItem(id)
-        costs (feeBuy)
-    {
-      
-        Item storage item = items[id];
-        SaleKindInterface.Bid storage topBid = topBids[id];
+        /* Proxy must exist. */
+        require(proxy != address(0));
 
-        /* Execute funds transfer. */
-        validateTradeAndExecuteFundsTransfer(id, item, topBid, frontend);
+        /* Validate and transfer funds. */ 
+        executeFundsTransfer(buy, sell);
 
-        /* Proxy the call. */
-        proxyCall(
-            /* Source proxy: buyer for buy-side, seller for sell-side. */
-            registry.proxies(item.side == Side.Buy ? msg.sender : item.initiator),
-            /* Item ID, used to prevent replay attacks. */
-            id,
-            /* Item-specified target. */
-            item.target,
-            /* Calldata: item calldata for buy-side, specified calldata for sell-side. */
-            item.side == Side.Buy ? item.calldata : calldata,
-            /* Remaining parameters. */
-            replace, start, length, v, r, s);
+        /* Execute call through proxy. */
+        require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
 
-    }
+        OrdersMatched(buy, sell);
 
-    /* Called by the seller of an item to finalize sale to the buyer, linking the IPFS metadata. */
-    function finalizeSale (uint id, bytes saleMetadataHash)  
-        public
-    {
-        require(items[id].initiator == msg.sender);
-        sales[id].metadataHash = saleMetadataHash;
-        SaleFinalized(id, saleMetadataHash);
+        return;
     }
 
 }

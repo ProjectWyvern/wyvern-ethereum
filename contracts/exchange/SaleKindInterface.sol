@@ -6,13 +6,18 @@
 
 */
 
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 /**
  * @title SaleKindInterface
  * @author Project Wyvern Developers
  */
 library SaleKindInterface {
+
+    /**
+     * Side: buy or sell.
+     */
+    enum Side { Buy, Sell }
 
     /**
      * Currently supported kinds of sale: fixed price, English auction, Dutch auction. 
@@ -27,12 +32,12 @@ library SaleKindInterface {
         uint amount;
     }
 
-    function validateParameters(SaleKind saleKind, uint expirationTime) pure internal returns (bool) {
+    function validateParameters(Side side, SaleKind saleKind, uint expirationTime) pure internal returns (bool) {
         return (saleKind != SaleKind.EnglishAuction || expirationTime > 0);
     }
 
-    function requiredBidPrice(SaleKind saleKind, uint basePrice, uint extra, uint expirationTime, Bid currentTopBid) view internal returns (uint minimumBid) {
-        require((saleKind == SaleKind.EnglishAuction) && (now < expirationTime));
+    function requiredBidPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint expirationTime, Bid currentTopBid) view internal returns (uint minimumBid) {
+        require((side == Side.Sell) && (saleKind == SaleKind.EnglishAuction) && (now < expirationTime));
         if (currentTopBid.bidder == address(0)) {
             return basePrice;
         } else {
@@ -40,15 +45,15 @@ library SaleKindInterface {
         }
     }
 
-    function canPurchaseItem(SaleKind saleKind, uint expirationTime, Bid topBid) view internal returns (bool) {
+    function canSettleOrder(Side side, SaleKind saleKind, address counterpart, uint expirationTime, Bid topBid) view internal returns (bool) {
         if (saleKind == SaleKind.EnglishAuction) {
-            return ((msg.sender == topBid.bidder) && (now >= expirationTime));
+            return ((counterpart == topBid.bidder) && (now >= expirationTime));
         } else {
             return (expirationTime == 0 || now < expirationTime);
         }
     }
 
-    function calculateFinalPrice(SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime, Bid topBid) view internal returns (uint finalPrice) {
+    function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime, Bid topBid) view internal returns (uint finalPrice) {
         if (saleKind == SaleKind.FixedPrice) {
             return basePrice;
         } else if (saleKind == SaleKind.EnglishAuction) {

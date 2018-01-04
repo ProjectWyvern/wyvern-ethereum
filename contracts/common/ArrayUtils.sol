@@ -1,4 +1,4 @@
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 /**
  * @title ArrayUtils
@@ -6,15 +6,32 @@ pragma solidity 0.4.18;
  */
 library ArrayUtils {
 
-    function arrayCopy(bytes arr, bytes rep, uint start) 
+    function arrayCopy(bytes arr, bytes rep, uint start, uint length) 
         pure
         internal
         returns (bytes)
     {
-        for (uint i = 0; i < rep.length; i++) {
+        require(rep.length == length);
+        for (uint i = 0; i < length; i++) {
             arr[i + start] = rep[i];
         }
         return arr;
+    }
+
+    function arrayEq(bytes a, bytes b)
+        pure
+        internal
+        returns (bool)
+    {
+        if (a.length != b.length) {
+            return false;
+        }
+        for (uint i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     function toBytes(address a)

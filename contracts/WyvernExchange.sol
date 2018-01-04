@@ -4,7 +4,7 @@
 
 */
 
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import "./exchange/Exchange.sol";
 
@@ -16,17 +16,17 @@ contract WyvernExchange is Exchange {
 
     string public constant name = "Project Wyvern Exchange";
 
-    function WyvernExchange (Registry registryAddress, ERC20 tokenAddress, uint listFee, uint bidFee, uint buyFee) public {
+    function WyvernExchange (Registry registryAddress, ERC20 tokenAddress) public {
         owner = msg.sender;
         publicBeneficiary = msg.sender;
         exchangeTokenAddress = tokenAddress;
         registry = registryAddress;
-        feeList = listFee;
-        feeBid = bidFee;
-        feeBuy = buyFee;
+        feeBid = 0;
+        feeBuy = 0;
         feeOwner = 10;
         feePublicBenefit = 10;
-        feeFrontend = 10;
+        feeSellFrontend = 5;
+        feeBuyFrontend = 5;
     }
 
 }

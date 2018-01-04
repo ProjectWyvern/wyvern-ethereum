@@ -4,7 +4,7 @@ ERC721 (draft) non-fungible token interface. See https://github.com/ethereum/EIP
 
 */
 
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 /**
  * @title ERC721
