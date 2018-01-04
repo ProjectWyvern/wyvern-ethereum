@@ -2,11 +2,9 @@
 
   Proxy contract to hold access to assets on behalf of a user (e.g. ERC20 approve).
 
-  Includes replay prevention; each signature can only be used once and is only valid for the particular contract specified.
-
 */
 
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import "../common/ArrayUtils.sol";
 import "../common/TokenRecipient.sol";
@@ -19,35 +17,39 @@ contract AuthenticatedProxy is TokenRecipient {
 
     address public userAddr;
 
-    mapping(bytes32 => bool) sent;
+    address public authAddr;
 
-    event ProxiedCall(address indexed dest, bytes calldata, bytes32 signature);
+    enum HowToCall { Call, DelegateCall, StaticCall }
 
-    function AuthenticatedProxy(address addrUser) public {
+    event ProxiedCall(address indexed dest, HowToCall howToCall, bytes calldata);
+    event AuthAddrChanged(address indexed newAddrAuth);
+
+    function AuthenticatedProxy(address addrUser, address addrAuth) public {
         userAddr = addrUser;
+        authAddr = addrAuth;
     }
 
-    function validateAndSend(address dest, bytes calldata, bytes32 signature, uint8 v, bytes32 r, bytes32 s) internal returns (bool) {
-        require(!sent[signature]);
-        require(ecrecover(signature, v, r, s) == userAddr);
-        sent[signature] = true;
-        ProxiedCall(dest, calldata, signature);
-        return dest.call(calldata);
+    function changeAuth(address newAddrAuth) public {
+        require(msg.sender == userAddr);
+        authAddr = newAddrAuth;
+        AuthAddrChanged(newAddrAuth);
     }
 
-    /* User has signed :: Transaction -> Bool.
-       Requesting user wants to replace (bytes replace) */
-    function proxy(uint id, address dest, bytes calldata, bytes replace, uint start, uint length, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
-        require(replace.length == length);
-        bytes memory finalCalldata = ArrayUtils.arrayCopy(calldata, replace, start);
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 signature = keccak256(prefix, keccak256(id, dest, calldata, start, length, msg.sender));
-        return validateAndSend(dest, finalCalldata, signature, v, r, s);
-    }
-
-    /* User has signed :: Transaction */
-    function proxyUnaltered(uint id, address dest, bytes calldata, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
-        return proxy(id, dest, calldata, new bytes(0), 0, 0, v, r, s);
+    function proxy(address dest, HowToCall howToCall, bytes calldata) public returns (bool result) {
+        ProxiedCall(dest, howToCall, calldata);
+        if (howToCall == HowToCall.Call) {
+            return dest.call(calldata);
+        } else if (howToCall == HowToCall.DelegateCall) {
+            return dest.delegatecall(calldata);
+        } else if (howToCall == HowToCall.StaticCall) {
+            // Check this.
+            uint len = calldata.length;
+            assembly {
+                result := staticcall(gas, dest, calldata, len, calldata, 0)
+            }
+        } else {
+            revert();
+        }
     }
 
 }
