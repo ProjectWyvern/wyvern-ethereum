@@ -46,7 +46,7 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return exchangeInstance.setFees(0, 0, 11, 11, 11, 11)
+        return exchangeInstance.setFees(0, 11, 11, 11, 11)
           .then(() => {
             return exchangeInstance.feeSellFrontend.call()
               .then(fee => {

@@ -22,7 +22,6 @@ contract WyvernExchange is Exchange {
         exchangeTokenAddress = tokenAddress;
         registry = registryAddress;
         feeBid = 0;
-        feeBuy = 0;
         feeOwner = 10;
         feePublicBenefit = 10;
         feeSellFrontend = 5;
