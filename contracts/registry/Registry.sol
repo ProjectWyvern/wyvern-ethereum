@@ -4,8 +4,6 @@
   
   Abstracted away from the Exchange so that other contracts can utilize the same username mappings and authenticated proxies.
 
-  TODO this model breaks auth, refactor - either include Exchange address or ? versioning?
-
 */
 
 pragma solidity 0.4.19;
@@ -36,12 +34,12 @@ contract Registry {
         reverseUsernames[newUsername] = msg.sender;
     }
 
-    function register(string username) public returns (AuthenticatedProxy proxy) {
+    function register(string username, address auth) public returns (AuthenticatedProxy proxy) {
         require(proxies[msg.sender] == address(0));
         require(reverseUsernames[username] == address(0));
         usernames[msg.sender] = username;
         reverseUsernames[username] = msg.sender;
-        proxy = new AuthenticatedProxy(msg.sender, this);
+        proxy = new AuthenticatedProxy(msg.sender, auth);
         proxies[msg.sender] = proxy;
         return proxy;
     }

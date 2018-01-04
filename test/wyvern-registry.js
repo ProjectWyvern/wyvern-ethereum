@@ -3,13 +3,11 @@
 const WyvernRegistry = artifacts.require('WyvernRegistry')
 
 contract('WyvernRegistry', (accounts) => {
-  return
-
   it('should allow registration', () => {
     return WyvernRegistry
       .deployed()
       .then(registryInstance => {
-        return registryInstance.register('username')
+        return registryInstance.register('username', registryInstance.address)
           .then(() => {
             return registryInstance.reverseUsername.call('username')
               .then(addr => {

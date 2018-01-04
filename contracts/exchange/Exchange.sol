@@ -36,16 +36,13 @@ import "./SaleKindInterface.sol";
  */
 contract Exchange is Ownable, Pausable, CachedBank {
 
-    /* The owner address of the exchange (a) can withdraw fees periodically and (b) can change the fee amounts, escrow settings, and whitelists. */
+    /* The owner address of the exchange (a) receives fees (specified by feeOwner) and (b) can change the fee amounts and token whitelist. */
 
     /* Public benefit address. */
     address public publicBeneficiary; 
 
     /* The fee required to bid on an item. */
     uint public feeBid;
-
-    /* The fee required to buy an item. */
-    uint public feeBuy;
 
     /* Transaction percentage fee paid to contract owner, in basis points. */
     uint public feeOwner;
@@ -62,15 +59,15 @@ contract Exchange is Ownable, Pausable, CachedBank {
     /* The token used to pay exchange fees. */
     ERC20 public exchangeTokenAddress;
 
-    /* Top bids for all bid-supporting auctions, by hash. */
-    mapping(bytes32 => SaleKindInterface.Bid) public topBids;
+    /* User registry. */
+    Registry public registry;
 
     /* ERC20 whitelist. */
     mapping(address => bool) public erc20Whitelist;
 
-    /* User registry. */
-    Registry public registry;
-   
+    /* Top bids for all bid-supporting auctions, by hash. */
+    mapping(bytes32 => SaleKindInterface.Bid) public topBids;
+ 
     /* Cancelled / finalized orders, by hash. */
     mapping(bytes32 => bool) cancelledOrFinalized;
    
@@ -119,6 +116,8 @@ contract Exchange is Ownable, Pausable, CachedBank {
     }
 
     event PublicBeneficiaryChanged (address indexed newAddress);
+    event ERC20WhitelistChanged    (address indexed token, bool value);
+    event FeesChanged              (uint feeBid, uint feeOwner, uint feePublicBenefit, uint feeBuyFrontend, uint feeSellFrontend);
 
     event OrderCancelled  (bytes32 hash);
     event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount, uint timestamp);
@@ -152,18 +151,19 @@ contract Exchange is Ownable, Pausable, CachedBank {
         onlyOwner
     {
         erc20Whitelist[token] = value;
+        ERC20WhitelistChanged(token, value);
     }
 
-    function setFees(uint bidFee, uint buyFee, uint ownerFee, uint publicBenefitFee, uint frontendBuyFee, uint frontendSellFee)
+    function setFees(uint bidFee, uint ownerFee, uint publicBenefitFee, uint frontendBuyFee, uint frontendSellFee)
         public
         onlyOwner
     {
         feeBid = bidFee;
-        feeBuy = buyFee;
         feeOwner = ownerFee;
         feePublicBenefit = publicBenefitFee;
         feeBuyFrontend = frontendBuyFee;
         feeSellFrontend = frontendSellFee;
+        FeesChanged(feeBid, feeOwner, feePublicBenefit, feeBuyFrontend, feeSellFrontend);
     }
 
     function cancelOrder(Order order, Sig sig) 
