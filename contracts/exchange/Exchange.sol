@@ -166,7 +166,38 @@ contract Exchange is Ownable, Pausable, CachedBank {
         FeesChanged(feeBid, feeOwner, feePublicBenefit, feeBuyFrontend, feeSellFrontend);
     }
 
-    function cancelOrder(Order order, Sig sig) 
+    function validateOrder(Order memory order, Sig memory sig) 
+        pure
+        internal
+        returns (bool)
+    {
+        bytes32 hash = keccak256(order);
+        return ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator;
+    }
+
+    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    function validateOrder_ (
+        address[4] addrs,
+        uint[6] uints,
+        SaleKindInterface.Side side,
+        SaleKindInterface.SaleKind saleKind,
+        AuthenticatedProxy.HowToCall howToCall,
+        bytes calldata,
+        bytes metadataHash,
+        uint8 v,
+        bytes32 r,
+        bytes32 s)
+        pure
+        public
+        returns (bool)
+    {
+        return validateOrder(
+          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, uints[0], uints[1], metadataHash, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3]),
+          Sig(v, r, s)
+        );
+    }
+
+    function cancelOrder(Order memory order, Sig memory sig) 
         internal
         withValidOrder(order, sig) 
     {
@@ -174,6 +205,26 @@ contract Exchange is Ownable, Pausable, CachedBank {
         bytes32 hash = keccak256(order);
         cancelledOrFinalized[hash] = true;
         OrderCancelled(hash);
+    }
+
+    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    function cancelOrder_(
+        address[4] addrs,
+        uint[6] uints,
+        SaleKindInterface.Side side,
+        SaleKindInterface.SaleKind saleKind,
+        AuthenticatedProxy.HowToCall howToCall,
+        bytes calldata,
+        bytes metadataHash,
+        uint8 v,
+        bytes32 r,
+        bytes32 s)
+        public
+    {
+        return cancelOrder(
+          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, uints[0], uints[1], metadataHash, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3]),
+          Sig(v, r, s)
+        );
     }
 
     function bid (Order order, Sig sig, uint amount)
@@ -206,12 +257,33 @@ contract Exchange is Ownable, Pausable, CachedBank {
         lock(msg.sender, order.paymentToken, amount);
     }
 
-    function executeFundsTransfer(Order buy, Order sell)
-        internal
+    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    function bid_(
+        address[4] addrs,
+        uint[6] uints,
+        SaleKindInterface.Side side,
+        SaleKindInterface.SaleKind saleKind,
+        AuthenticatedProxy.HowToCall howToCall,
+        bytes calldata,
+        bytes metadataHash,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint amount)
+        public
     {
-        /* Fetch top bid, if existent. */
-        SaleKindInterface.Bid storage topBid = topBids[keccak256(sell)];
+        return bid(
+          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, uints[0], uints[1], metadataHash, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3]),
+          Sig(v, r, s),
+          amount
+        );
+    }
 
+    function calculateMatchPrice(Order buy, Order sell, SaleKindInterface.Bid storage topBid)
+        view
+        internal
+        returns (uint price)
+    {
         /* Calculate sell price. */
         uint sellPrice = SaleKindInterface.calculateFinalPrice(sell.side, sell.saleKind, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, topBid);
 
@@ -222,7 +294,19 @@ contract Exchange is Ownable, Pausable, CachedBank {
         require(buyPrice >= sellPrice);
         
         /* Time priority. */
-        uint price = sell.listingTime < buy.listingTime ? sellPrice : buyPrice;
+        price = sell.listingTime < buy.listingTime ? sellPrice : buyPrice;
+
+        return price;
+    }
+
+    function executeFundsTransfer(Order buy, Order sell)
+        internal
+    {
+        /* Fetch top bid, if existent. */
+        SaleKindInterface.Bid storage topBid = topBids[keccak256(sell)];
+
+        /* Calculate match price. */
+        uint price = calculateMatchPrice(buy, sell, topBid);
 
         /* Calculate and credit owner fee. */
         uint feeToOwner = price * feeOwner / 10000;
@@ -300,6 +384,10 @@ contract Exchange is Ownable, Pausable, CachedBank {
         /* Validate and transfer funds. */ 
         executeFundsTransfer(buy, sell);
 
+        /* Mark orders as finalized. */
+        cancelledOrFinalized[keccak256(buy)] = true;
+        cancelledOrFinalized[keccak256(sell)] = true;
+
         /* Execute call through proxy. */
         require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
 
@@ -307,5 +395,30 @@ contract Exchange is Ownable, Pausable, CachedBank {
 
         return;
     }
+
+    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    function atomicMatch_(
+        address[8] addrs,
+        uint[12] uints,
+        SaleKindInterface.Side[2] sides,
+        SaleKindInterface.SaleKind[2] saleKinds,
+        AuthenticatedProxy.HowToCall[2] howToCalls,
+        bytes calldataBuy,
+        bytes calldataSell,
+        bytes metadataHashBuy,
+        bytes metadataHashSell,
+        uint8[2] vs,
+        bytes32[4] rss)
+        public
+    {
+        return atomicMatch(
+          Order(addrs[0], sides[0], saleKinds[0], addrs[1], howToCalls[0], calldataBuy, uints[0], uints[1], metadataHashBuy, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3]),
+          Sig(vs[0], rss[0], rss[1]),
+          Order(addrs[4], sides[1], saleKinds[1], addrs[5], howToCalls[1], calldataSell, uints[6], uints[7], metadataHashSell, ERC20(addrs[6]), uints[8], uints[9], uints[10], uints[11], addrs[7]),
+          Sig(vs[1], rss[2], rss[3])
+        );
+    }
+
+
 
 }
