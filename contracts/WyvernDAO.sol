@@ -26,6 +26,7 @@ contract WyvernDAO is DelegatedShareholderAssociation {
         requiredSharesToBeBoardMember = REQUIRED_SHARES_TO_BE_BOARD_MEMBER;
         minimumQuorum = MINIMUM_QUORUM;
         debatingPeriodInMinutes = DEBATE_PERIOD_MINUTES;
+        tokenLocker = new TokenLocker(sharesAddress);
     }
 
 }

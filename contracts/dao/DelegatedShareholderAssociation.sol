@@ -46,6 +46,7 @@ pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "../common/TokenRecipient.sol";
+import "../common/TokenLocker.sol";
 
 /**
  * @title DelegatedShareholderAssociation
@@ -73,6 +74,9 @@ contract DelegatedShareholderAssociation is TokenRecipient {
 
     /* Threshold for the ability to create proposals. */
     uint public requiredSharesToBeBoardMember;
+
+    /* Token Locker contract. */
+    TokenLocker public tokenLocker;
 
     /* Events for all state changes. */
 
@@ -114,6 +118,12 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         _;
     }
 
+    /* Any account except the DAO itself can execute a function with this modifier. */
+    modifier notSelf {
+        require(msg.sender != address(this));
+        _;
+    }
+
     /* Only a shareholder who has *not* delegated his vote can execute a function with this modifier. */
     modifier onlyUndelegated {
         require(delegatesByDelegator[msg.sender] == address(0));
@@ -140,12 +150,18 @@ contract DelegatedShareholderAssociation is TokenRecipient {
       * @param tokensToLock number of tokens to be locked (sending address must have at least this many tokens)
       * @param delegate the address to which votes equal to the number of tokens locked will be delegated
       */
-    function setDelegateAndLockTokens(uint tokensToLock, address delegate) public onlyShareholders onlyUndelegated {
+    function setDelegateAndLockTokens(uint tokensToLock, address delegate)
+        public
+        onlyShareholders
+        onlyUndelegated
+        notSelf
+    {
         lockedDelegatingTokens[msg.sender] = tokensToLock;
         delegatedAmountsByDelegate[delegate] += tokensToLock;
         totalLockedTokens += tokensToLock;
         delegatesByDelegator[msg.sender] = delegate;
-        require(ERC20(sharesTokenAddress).transferFrom(msg.sender, address(this), tokensToLock));
+        require(sharesTokenAddress.transferFrom(msg.sender, tokenLocker, tokensToLock));
+        require(sharesTokenAddress.balanceOf(tokenLocker) == totalLockedTokens);
         TokensDelegated(msg.sender, tokensToLock, delegate);
     }
 
@@ -156,14 +172,20 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      * @dev Can only be called by a sending address currently delegating tokens, will transfer all locked tokens back to the sender
      * @return The number of tokens previously locked, now released
      */
-    function clearDelegateAndUnlockTokens() public onlyDelegated returns (uint lockedTokens) {
+    function clearDelegateAndUnlockTokens()
+        public
+        onlyDelegated
+        notSelf
+        returns (uint lockedTokens)
+    {
         address delegate = delegatesByDelegator[msg.sender];
         lockedTokens = lockedDelegatingTokens[msg.sender];
         lockedDelegatingTokens[msg.sender] = 0;
         delegatedAmountsByDelegate[delegate] -= lockedTokens;
         totalLockedTokens -= lockedTokens;
         delete delegatesByDelegator[msg.sender];
-        require(ERC20(sharesTokenAddress).transfer(msg.sender, lockedTokens));
+        require(tokenLocker.transfer(msg.sender, lockedTokens));
+        require(sharesTokenAddress.balanceOf(tokenLocker) == totalLockedTokens);
         TokensUndelegated(msg.sender, lockedTokens, delegate);
         return lockedTokens;
     }
@@ -179,7 +201,10 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      * @param minutesForDebate the minimum amount of delay between when a proposal is made and when it can be executed
      * @param sharesToBeBoardMember the minimum number of shares required to create proposals
      */
-    function changeVotingRules(uint minimumSharesToPassAVote, uint minutesForDebate, uint sharesToBeBoardMember) public onlySelf {
+    function changeVotingRules(uint minimumSharesToPassAVote, uint minutesForDebate, uint sharesToBeBoardMember)
+        public
+        onlySelf
+    {
         if (minimumSharesToPassAVote == 0 ) {
             minimumSharesToPassAVote = 1;
         }
@@ -194,6 +219,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      *
      * Propose to send `weiAmount / 1e18` ether to `beneficiary` for `jobMetadataHash`. `transactionBytecode ? Contains : Does not contain` code.
      *
+     * @dev Submit proposal for the DAO to execute a particular transaction. Submitter should check that the `beneficiary` account exists, unless the intent is to burn Ether.
      * @param beneficiary who to send the ether to
      * @param weiAmount amount of ether to send, in wei
      * @param jobMetadataHash Hash of job metadata (IPFS)
@@ -207,8 +233,11 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     )
         public
         onlyBoardMembers
+        notSelf
         returns (uint proposalID)
     {
+        /* Proposals cannot be directed to the token locking contract. */
+        require(beneficiary != address(tokenLocker));
         proposalID = proposals.length++;
         Proposal storage p = proposals[proposalID];
         p.recipient = beneficiary;
@@ -222,7 +251,6 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         p.numberOfVotes = 0;
         ProposalAdded(proposalID, beneficiary, weiAmount, jobMetadataHash);
         numProposals = proposalID+1;
-
         return proposalID;
     }
 
@@ -253,6 +281,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      *
      * Vote `supportsProposal? in support of : against` proposal #`proposalNumber`
      *
+     * @dev Vote in favor or against an existing proposal. Voter should check that the proposal destination account exists, unless the intent is to burn Ether.
      * @param proposalNumber number of proposal
      * @param supportsProposal either in favor or against it
      */
@@ -262,6 +291,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
     )
         public
         onlyShareholders
+        notSelf
         returns (uint voteID)
     {
         Proposal storage p = proposals[proposalNumber];
@@ -315,7 +345,10 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      * @param proposalNumber proposal number
      * @param transactionBytecode optional: if the transaction contained a bytecode, you need to send it
      */
-    function executeProposal(uint proposalNumber, bytes transactionBytecode) public {
+    function executeProposal(uint proposalNumber, bytes transactionBytecode)
+        public
+        notSelf
+    {
         Proposal storage p = proposals[proposalNumber];
 
         /* If at or past deadline, not already finalized, and code is correct, keep going. */
@@ -336,9 +369,6 @@ contract DelegatedShareholderAssociation is TokenRecipient {
 
             /* Execute the function. */
             require(p.recipient.call.value(p.amount)(transactionBytecode));
-
-            /* Prevent the DAO from sending the locked shares tokens (and thus potentially being unable to release locked tokens to delegating shareholders). */
-            require(ERC20(sharesTokenAddress).balanceOf(address(this)) >= totalLockedTokens);
 
         } else {
             /* Proposal failed. */

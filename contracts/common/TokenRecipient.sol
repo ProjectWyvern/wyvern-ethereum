@@ -1,6 +1,6 @@
 /*
 
-  Token receipient. Modified very slightly from the example on http://ethereum.org/dao (just to index log parameters).
+  Token recipient. Modified very slightly from the example on http://ethereum.org/dao (just to index log parameters).
 
 */
 

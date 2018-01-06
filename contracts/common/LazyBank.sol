@@ -1,6 +1,10 @@
 /*
 
-    LazyBank - minimize requisite token transfers.
+    LazyBank - keep user balances, support credit, debit, and locking, and minimize requisite token transfers.
+
+    TODO
+    - ERC223 support
+    - Analyze for ERC223 reentrancy bugs
 
 */
 
@@ -93,13 +97,13 @@ contract LazyBank {
         internal
     {
         locked[user][token] = SafeMath.add(locked[user][token], amount);
-        Locked(user, token, amount);
         if (locked[user][token] > balances[user][token]) {
             uint diff = SafeMath.sub(locked[user][token], balances[user][token]);
-            require(token.transferFrom(user, this, diff));
             balances[user][token] = SafeMath.add(balances[user][token], diff);
+            require(token.transferFrom(user, this, diff));
         }
         require(balances[user][token] >= locked[user][token]);
+        Locked(user, token, amount);
     }
 
     function unlock(address user, ERC20 token, uint amount)

@@ -1,6 +1,6 @@
 /*
 
-  User registry. Keeps a mapping of AuthenticatedProxy contracts. 
+  Proxy registry; keeps a mapping of AuthenticatedProxy contracts. 
   
   Abstracted away from the Exchange so that other contracts (and future versions of the Exchange) can utilize the same Registry contract.
 
