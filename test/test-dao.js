@@ -5,10 +5,23 @@ const BigNumber = require('bignumber.js')
 
 const TestDAO = artifacts.require('TestDAO')
 const TestToken = artifacts.require('TestToken')
+const TokenLocker = artifacts.require('TokenLocker')
 
 const web3 = new Web3()
 
 contract('TestDAO', (accounts) => {
+  it('should not allow undelegation before delegation', () => {
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        return daoInstance.clearDelegateAndUnlockTokens.call().then(() => {
+          assert.equal(true, false, 'Undelegation allowed without delegation')
+        }).catch(err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
   it('should not allow delegation of more shares than owned', () => {
     return TestDAO
       .deployed()
@@ -120,7 +133,23 @@ contract('TestDAO', (accounts) => {
       })
   })
 
-  it('should allow voting, count votes correctly, then allow proposal execution', () => {
+  it('should not allow anyone else to transfer from the tokenLocker contract', () => {
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        return daoInstance.tokenLocker.call().then(tokenLocker => {
+          const tokenLockerInstance = TokenLocker.at(tokenLocker)
+          return tokenLockerInstance.transfer(accounts[0], 0)
+            .then(() => {
+              assert.equal(true, false, 'Any account could transfer from the tokenLocker contract')
+            }).catch(err => {
+              assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+            })
+        })
+      })
+  })
+
+  it('should allow voting, only once, count votes correctly, then allow proposal execution', () => {
     const amount = new BigNumber(Math.pow(10, 18 + 7))
     return TestDAO
       .deployed()
@@ -143,7 +172,12 @@ contract('TestDAO', (accounts) => {
           })
           .then(ret => {
             assert.equal(ret, true, 'Account was not marked as having voted')
-            return daoInstance.checkProposalCode.call(0, daoInstance.address, 0, '0x')
+            return daoInstance.vote(0, true).then(() => {
+              assert.equal(true, false, 'Vote was allowed twice')
+            }).catch(err => {
+              assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+              return daoInstance.checkProposalCode.call(0, daoInstance.address, 0, '0x')
+            })
           })
           .then(ret => {
             assert.equal(ret, true, 'Proposal code did not match')
@@ -160,7 +194,7 @@ contract('TestDAO', (accounts) => {
     return TestDAO
       .deployed()
       .then(daoInstance => {
-        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(2, 0, 0).encodeABI()
+        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.changeVotingRules(0, 0, 0).encodeABI()
         return daoInstance.newProposal.sendTransaction(daoInstance.address, 0, '0x', abi)
           .then(() => {
             return daoInstance.vote.sendTransaction(1, true)
@@ -185,7 +219,7 @@ contract('TestDAO', (accounts) => {
             return daoInstance.minimumQuorum.call()
           })
           .then(ret => {
-            assert.equal(ret, 2, 'Voting rules were not changed')
+            assert.equal(ret, 1, 'Voting rules were not changed')
           })
       })
   })
@@ -220,7 +254,7 @@ contract('TestDAO', (accounts) => {
             return daoInstance.minimumQuorum.call()
           })
           .then(ret => {
-            assert.equal(ret, 2, 'The failed proposal was executed')
+            assert.equal(ret.toNumber(), 1, 'The failed proposal was executed')
           })
       })
   })
@@ -247,6 +281,43 @@ contract('TestDAO', (accounts) => {
                     assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
                   })
               })
+          })
+      })
+  })
+
+  it('should not allow self-delegation', () => {
+    const amount = new BigNumber(Math.pow(1, 18))
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        const abi = new web3.eth.Contract(daoInstance.abi, daoInstance.address).methods.setDelegateAndLockTokens(amount, accounts[0]).encodeABI()
+        return TestToken
+          .deployed()
+          .then(tokenInstance => {
+            return tokenInstance.transfer(daoInstance.address, amount).then(() => {
+              return daoInstance.newProposal.sendTransaction(daoInstance.address, 0, '0x', abi)
+            })
+          })
+          .then(() => {
+            return daoInstance.vote.sendTransaction(4, true)
+          })
+          .then(() => {
+            return daoInstance.countVotes.call(4)
+          })
+          .then(ret => {
+            const nay = ret[1]
+            assert.equal(nay.equals(0), true, 'Incorrect nay count')
+            return daoInstance.checkProposalCode.call(4, daoInstance.address, 0, abi)
+          })
+          .then(ret => {
+            assert.equal(ret, true, 'Proposal code did not match')
+            return daoInstance.executeProposal.sendTransaction(4, abi)
+          })
+          .then(() => {
+            assert.equal(true, false, 'Self-delegation was allowed!')
+          })
+          .catch(err => {
+            assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
           })
       })
   })
