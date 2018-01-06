@@ -3,29 +3,15 @@
 const WyvernRegistry = artifacts.require('WyvernRegistry')
 
 contract('WyvernRegistry', (accounts) => {
-  it('should allow registration', () => {
+  it('should allow proxy creation', () => {
     return WyvernRegistry
       .deployed()
       .then(registryInstance => {
-        return registryInstance.register('username', registryInstance.address)
+        return registryInstance.registerProxy(registryInstance.address)
           .then(() => {
-            return registryInstance.reverseUsername.call('username')
-              .then(addr => {
-                assert.equal(addr, accounts[0], 'Registration did not set reverseUsername')
-              })
-          })
-      })
-  })
-
-  it('should allow username change', () => {
-    return WyvernRegistry
-      .deployed()
-      .then(registryInstance => {
-        return registryInstance.changeUsername('username2')
-          .then(() => {
-            return registryInstance.reverseUsername.call('username2')
-              .then(addr => {
-                assert.equal(addr, accounts[0], 'Username change did not set reverseUsername')
+            return registryInstance.proxyFor(registryInstance.address, accounts[0])
+              .then(() => {
+                assert.equal(true, true, 'fixme')
               })
           })
       })

@@ -131,11 +131,42 @@ contract Exchange is Ownable, Pausable, CachedBank {
         _;
     }
 
-    modifier withValidOrder(Order order, Sig sig) {
-        bytes32 hash = keccak256(order);
+    function requireValidOrder(Order order, Sig sig)
+        internal
+        view
+        returns (bytes32)
+    {
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 hash = keccak256(prefix, hashOrder(order));
         require(!cancelledOrFinalized[hash]);
         require(ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator);
-        _;
+    }
+
+    function hashOrder(Order order)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(order.initiator, order.side, order.saleKind, order.target, order.howToCall, order.calldata, order.start, order.length,
+           order.metadataHash, order.paymentToken, order.basePrice, order.extra, order.expirationTime, order.frontend);
+        // need to also include order.listingTime, stack limits TODO
+    }
+
+    function hashOrder_(
+        address[4] addrs,
+        uint[6] uints,
+        SaleKindInterface.Side side,
+        SaleKindInterface.SaleKind saleKind,
+        AuthenticatedProxy.HowToCall howToCall,
+        bytes calldata,
+        bytes metadataHash)
+        public
+        pure
+        returns (bytes32)
+    { 
+        return hashOrder(
+          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, uints[0], uints[1], metadataHash, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3])
+        );
     }
 
     function setPublicBeneficiary(address newAddress)
@@ -171,7 +202,8 @@ contract Exchange is Ownable, Pausable, CachedBank {
         internal
         returns (bool)
     {
-        bytes32 hash = keccak256(order);
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 hash = keccak256(prefix, hashOrder(order));
         return ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator;
     }
 
@@ -199,10 +231,9 @@ contract Exchange is Ownable, Pausable, CachedBank {
 
     function cancelOrder(Order memory order, Sig memory sig) 
         internal
-        withValidOrder(order, sig) 
     {
+        bytes32 hash = requireValidOrder(order, sig);
         require(msg.sender == order.initiator);
-        bytes32 hash = keccak256(order);
         cancelledOrFinalized[hash] = true;
         OrderCancelled(hash);
     }
@@ -230,9 +261,8 @@ contract Exchange is Ownable, Pausable, CachedBank {
     function bid (Order order, Sig sig, uint amount)
         internal
         costs (feeBid)
-        withValidOrder(order, sig) 
     {
-        bytes32 hash = keccak256(order);
+        bytes32 hash = requireValidOrder(order, sig);
 
         SaleKindInterface.Bid storage topBid = topBids[hash];
         
@@ -303,7 +333,7 @@ contract Exchange is Ownable, Pausable, CachedBank {
         internal
     {
         /* Fetch top bid, if existent. */
-        SaleKindInterface.Bid storage topBid = topBids[keccak256(sell)];
+        SaleKindInterface.Bid storage topBid = topBids[hashOrder(sell)];
 
         /* Calculate match price. */
         uint price = calculateMatchPrice(buy, sell, topBid);
@@ -339,11 +369,13 @@ contract Exchange is Ownable, Pausable, CachedBank {
         credit(sell.initiator, sell.paymentToken, finalPrice);
     }
 
+    /* TODO: re-entrancy prevention */
     function atomicMatch(Order buy, Sig buySig, Order sell, Sig sellSig)
         internal
-        withValidOrder(buy, buySig)
-        withValidOrder(sell, sellSig)
     {
+        bytes32 buyHash = requireValidOrder(buy, buySig);
+        bytes32 sellHash = requireValidOrder(sell, sellSig); 
+
         /* Must be opposite-side. */
         require(buy.side == SaleKindInterface.Side.Buy && sell.side == SaleKindInterface.Side.Sell);
 
@@ -354,7 +386,7 @@ contract Exchange is Ownable, Pausable, CachedBank {
         require(erc20Whitelist[buy.paymentToken]);
 
         /* Must be settleable. */
-        SaleKindInterface.Bid storage topBid = topBids[keccak256(sell)];
+        SaleKindInterface.Bid storage topBid = topBids[sellHash];
         require(SaleKindInterface.canSettleOrder(buy.side, buy.saleKind, sell.initiator, buy.expirationTime, SaleKindInterface.Bid({ bidder: address(0), amount: 0 })));
         require(SaleKindInterface.canSettleOrder(sell.side, sell.saleKind, buy.initiator, sell.expirationTime, topBid));
         
@@ -376,7 +408,7 @@ contract Exchange is Ownable, Pausable, CachedBank {
         
         require(ArrayUtils.arrayEq(buy.calldata, sell.calldata));
 
-        AuthenticatedProxy proxy = registry.proxies(sell.initiator);
+        AuthenticatedProxy proxy = registry.proxyFor(this, sell.initiator);
 
         /* Proxy must exist. */
         require(proxy != address(0));
@@ -385,15 +417,13 @@ contract Exchange is Ownable, Pausable, CachedBank {
         executeFundsTransfer(buy, sell);
 
         /* Mark orders as finalized. */
-        cancelledOrFinalized[keccak256(buy)] = true;
-        cancelledOrFinalized[keccak256(sell)] = true;
+        cancelledOrFinalized[buyHash] = true;
+        cancelledOrFinalized[sellHash] = true;
 
         /* Execute call through proxy. */
         require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
 
         OrdersMatched(buy, sell);
-
-        return;
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */

@@ -3,7 +3,7 @@
 const WyvernExchange = artifacts.require('WyvernExchange')
 // const WyvernRegistry = artifacts.require('WyvernRegistry')
 const TestToken = artifacts.require('TestToken')
-// const BigNumber = require('bignumber.js')
+const BigNumber = require('bignumber.js')
 
 const Web3 = require('web3')
 const provider = new Web3.providers.HttpProvider('http://localhost:8545')
@@ -17,14 +17,14 @@ const hashOrder = (order) => {
     {type: 'address', value: order.target},
     {type: 'uint8', value: order.howToCall},
     {type: 'bytes', value: order.calldata},
-    {type: 'uint', value: order.start},
-    {type: 'uint', value: order.length},
+    {type: 'uint', value: new BigNumber(order.start)},
+    {type: 'uint', value: new BigNumber(order.length)},
     {type: 'bytes', value: order.metadataHash},
     {type: 'address', value: order.paymentToken},
-    {type: 'uint', value: order.basePrice},
-    {type: 'uint', value: order.extra},
-    {type: 'uint', value: order.listingTime},
-    {type: 'uint', value: order.expirationTime},
+    {type: 'uint', value: new BigNumber(order.basePrice)},
+    {type: 'uint', value: new BigNumber(order.extra)},
+    // {type: 'uint', value: new BigNumber(order.listingTime)},
+    {type: 'uint', value: new BigNumber(order.expirationTime)},
     {type: 'address', value: order.frontend}
   ).toString('hex')
 }
@@ -46,6 +46,25 @@ contract('WyvernExchange', (accounts) => {
     listingTime: 0,
     expirationTime: 0,
     frontend: accounts[0]
+  })
+
+  it('should match order hash', () => {
+    const order = makeOrder()
+    const hash = hashOrder(order)
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.hashOrder_.call(
+            [order.initiator, order.target, order.paymentToken, order.frontend],
+            [order.start, order.lenth, order.basePrice, order.extra, order.listingTime, order.expirationTime],
+            order.side,
+            order.saleKind,
+            order.howToCall,
+            order.calldata,
+            order.metadataHash).then(solHash => {
+              assert.equal(solHash, hash, 'Hashes were not equal')
+            })
+      })
   })
 
   it('should validate order', () => {
