@@ -24,6 +24,7 @@ contract TestDAO is DelegatedShareholderAssociation {
         requiredSharesToBeBoardMember = REQUIRED_SHARES_TO_BE_BOARD_MEMBER;
         minimumQuorum = 1000 * (10 ** TOKEN_DECIMALS);
         debatingPeriodInMinutes = 0;
+        tokenLocker = new TokenLocker(sharesAddress);
     }
 
 }

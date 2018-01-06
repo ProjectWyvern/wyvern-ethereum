@@ -105,6 +105,21 @@ contract('TestDAO', (accounts) => {
       })
   })
 
+  it('should not allow proposal creation targeting the tokenLocker contract', () => {
+    return TestDAO
+      .deployed()
+      .then(daoInstance => {
+        return daoInstance.tokenLocker.call().then(tokenLocker => {
+          return daoInstance.newProposal.call(tokenLocker, 0, '0x', '0x')
+            .then(() => {
+              assert.equal(true, false, 'Proposal creation was allowed targeting the tokenLocker contract')
+            }).catch(err => {
+              assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+            })
+        })
+      })
+  })
+
   it('should allow voting, count votes correctly, then allow proposal execution', () => {
     const amount = new BigNumber(Math.pow(10, 18 + 7))
     return TestDAO
