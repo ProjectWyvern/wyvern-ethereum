@@ -219,6 +219,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      *
      * Propose to send `weiAmount / 1e18` ether to `beneficiary` for `jobMetadataHash`. `transactionBytecode ? Contains : Does not contain` code.
      *
+     * @dev Submit proposal for the DAO to execute a particular transaction. Submitter should check that the `beneficiary` account exists, unless the intent is to burn Ether.
      * @param beneficiary who to send the ether to
      * @param weiAmount amount of ether to send, in wei
      * @param jobMetadataHash Hash of job metadata (IPFS)
@@ -280,6 +281,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
      *
      * Vote `supportsProposal? in support of : against` proposal #`proposalNumber`
      *
+     * @dev Vote in favor or against an existing proposal. Voter should check that the proposal destination account exists, unless the intent is to burn Ether.
      * @param proposalNumber number of proposal
      * @param supportsProposal either in favor or against it
      */
