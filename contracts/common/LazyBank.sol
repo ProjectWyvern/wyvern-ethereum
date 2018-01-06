@@ -1,25 +1,30 @@
 /*
 
-    CachedBank - minimize requisite token transfers.
+    LazyBank - minimize requisite token transfers.
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
- * @title CachedBank
+ * @title LazyBank
  * @author Project Wyvern Developers
  */
-contract CachedBank {
+contract LazyBank {
 
     /* Token balances, by owner, by token. */
     mapping(address => mapping(address => uint)) public balances;
 
     /* Locked tokens, by owner, by token. */
     mapping(address => mapping(address => uint)) public locked;
+
+    event Credited(address indexed user, address indexed token, uint amount);
+    event Debited(address indexed user, address indexed token, uint amount);
+    event Locked(address indexed user, address indexed token, uint amount);
+    event Unlocked(address indexed user, address indexed token, uint amount);
 
     function balanceFor(address user, ERC20 token)
         public
@@ -67,12 +72,14 @@ contract CachedBank {
         internal
     {
         balances[user][token] = SafeMath.add(balances[user][token], amount);        
+        Credited(user, token, amount);
     }
 
-    function debit(address user, ERC20 token, uint amount) 
+    function lazyDebit(address user, ERC20 token, uint amount) 
         internal
     {
         uint available = SafeMath.sub(balances[user][token], locked[user][token]);
+        Debited(user, token, amount);
         if (available >= amount) {
             balances[user][token] = SafeMath.sub(balances[user][token], amount);
         } else {
@@ -82,10 +89,11 @@ contract CachedBank {
         }
     }
 
-    function lock(address user, ERC20 token, uint amount)
+    function lazyLock(address user, ERC20 token, uint amount)
         internal
     {
         locked[user][token] = SafeMath.add(locked[user][token], amount);
+        Locked(user, token, amount);
         if (locked[user][token] > balances[user][token]) {
             uint diff = SafeMath.sub(locked[user][token], balances[user][token]);
             require(token.transferFrom(user, this, diff));
@@ -99,6 +107,7 @@ contract CachedBank {
     {
         locked[user][token] = SafeMath.sub(locked[user][token], amount);
         require(locked[user][token] >= 0);
+        Unlocked(user, token, amount);
     }
 
 }

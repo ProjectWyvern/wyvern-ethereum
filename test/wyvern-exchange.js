@@ -1,7 +1,7 @@
 /* global artifacts:false, it:false, contract:false, assert:false */
 
 const WyvernExchange = artifacts.require('WyvernExchange')
-// const WyvernRegistry = artifacts.require('WyvernRegistry')
+const WyvernRegistry = artifacts.require('WyvernRegistry')
 const TestToken = artifacts.require('TestToken')
 const BigNumber = require('bignumber.js')
 
@@ -101,9 +101,11 @@ contract('WyvernExchange', (accounts) => {
         return WyvernExchange
           .deployed()
           .then(exchangeInstance => {
-            return exchangeInstance.modifyERC20Whitelist(tokenInstance.address, true)
+            // const addr = tokenInstance.address
+            const addr = accounts[0]
+            return exchangeInstance.modifyERC20Whitelist(addr, true)
               .then(() => {
-                return exchangeInstance.erc20Whitelist.call(tokenInstance.address)
+                return exchangeInstance.erc20Whitelist.call(addr)
                   .then(ret => {
                     assert.equal(ret, true, 'Whitelist was not updated')
                   })
@@ -140,49 +142,60 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
-  /*
-  it('should allow item purchase', () => {
+  it('should allow proxy creation', () => {
+    return WyvernRegistry
+      .deployed()
+      .then(registryInstance => {
+        return WyvernExchange
+          .deployed()
+          .then(exchangeInstance => {
+            return registryInstance.registerProxy(exchangeInstance.address)
+              .then(() => {
+                return registryInstance.proxyFor(exchangeInstance.address, accounts[0])
+                  .then(() => {
+                    assert.equal(true, true, 'fixme')
+                  })
+              })
+          })
+      })
+  })
+
+  it('should allow order matching', () => {
+    var buy = makeOrder()
+    var sell = makeOrder()
+    sell.side = 1
+    const buyHash = hashOrder(buy)
+    const sellHash = hashOrder(sell)
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return TestToken
-          .deployed()
-          .then(tokenInstance => {
-            return tokenInstance.approve(exchangeInstance.address, 100)
-          })
-        .then(() => {
-          return WyvernRegistry
-            .deployed()
-            .then(registryInstance => {
-              return registryInstance.register('account')
-                .then(() => {
-                  return registryInstance.proxies.call(accounts[0]).then(proxyAddr => {
-                    return web3.eth.sendTransaction({from: accounts[0], to: proxyAddr, value: 1}).then(txHash => {
-                    })
-                  })
-                })
-            })
-        })
-        .then(() => {
-          const hash = web3.utils.soliditySha3(
-            {type: 'uint', value: 0},
-            {type: 'address', value: accounts[0]},
-            {type: 'bytes', value: '0x'},
-            {type: 'uint', value: 0},
-            {type: 'uint', value: 0},
-            {type: 'address', value: exchangeInstance.address}
-          ).toString('hex')
-          return web3.eth.sign(hash, accounts[0]).then(signature => {
+        return web3.eth.sign(buyHash, accounts[0]).then(signature => {
+          signature = signature.substr(2)
+          const br = '0x' + signature.slice(0, 64)
+          const bs = '0x' + signature.slice(64, 128)
+          const bv = 27 + parseInt('0x' + signature.slice(128, 130), 16)
+          return web3.eth.sign(sellHash, accounts[0]).then(signature => {
             signature = signature.substr(2)
-            const r = '0x' + signature.slice(0, 64)
-            const s = '0x' + signature.slice(64, 128)
-            const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
-            return exchangeInstance.purchaseItem(0, accounts[0], '0x', '0x', 0, 0, v, r, s)
-              .then(() => {
-              })
+            const sr = '0x' + signature.slice(0, 64)
+            const ss = '0x' + signature.slice(64, 128)
+            const sv = 27 + parseInt('0x' + signature.slice(128, 130), 16)
+            return exchangeInstance.atomicMatch_(
+              [buy.initiator, buy.target, buy.paymentToken, buy.frontend, sell.initiator, sell.target, sell.paymentToken, sell.frontend],
+              [buy.start, buy.length, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, sell.start, sell.length, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime],
+              [buy.side, sell.side],
+              [buy.saleKind, sell.saleKind],
+              [buy.howToCall, sell.howToCall],
+              buy.calldata,
+              sell.calldata,
+              buy.metadataHash,
+              sell.metadataHash,
+              [bv, sv],
+              [br, bs, sr, ss]
+            ).then(r => {
+              assert.equal(r.logs.length, 0, 'Order did not match')
+            })
           })
         })
       })
   })
-  */
 })

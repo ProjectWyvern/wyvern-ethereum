@@ -20,21 +20,21 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 import "../registry/Registry.sol";
-import "../common/CachedBank.sol";
+import "../common/LazyBank.sol";
 import "./SaleKindInterface.sol";
 
 /**
  * @title Exchange
  * @author Project Wyvern Developers
  */
-contract Exchange is Ownable, Pausable, CachedBank {
+contract Exchange is Ownable, Pausable, LazyBank {
 
     /* The owner address of the exchange (a) receives fees (specified by feeOwner) and (b) can change the fee amounts and token whitelist. */
 
@@ -125,7 +125,7 @@ contract Exchange is Ownable, Pausable, CachedBank {
 
     modifier costs (uint amount) {
         if (amount > 0) {
-            debit(msg.sender, exchangeTokenAddress, amount);
+            lazyDebit(msg.sender, exchangeTokenAddress, amount);
             credit(owner, exchangeTokenAddress, amount);
         }
         _;
@@ -139,6 +139,8 @@ contract Exchange is Ownable, Pausable, CachedBank {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 hash = keccak256(prefix, hashOrder(order));
         require(!cancelledOrFinalized[hash]);
+        // require(order.listingTime >= now);
+        // ^ ??
         require(ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator);
     }
 
@@ -284,7 +286,7 @@ contract Exchange is Ownable, Pausable, CachedBank {
         }
 
         /* Lock tokens for the new high bidder. */
-        lock(msg.sender, order.paymentToken, amount);
+        lazyLock(msg.sender, order.paymentToken, amount);
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
@@ -363,7 +365,7 @@ contract Exchange is Ownable, Pausable, CachedBank {
         }
 
         /* Debit buyer. */
-        debit(buy.initiator, sell.paymentToken, price);
+        lazyDebit(buy.initiator, sell.paymentToken, price);
 
         /* Credit seller. */
         credit(sell.initiator, sell.paymentToken, finalPrice);

@@ -4,7 +4,7 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.18;
 
 import "../common/ArrayUtils.sol";
 import "../common/TokenRecipient.sol";
