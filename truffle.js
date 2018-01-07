@@ -18,6 +18,14 @@ module.exports = {
       port: 8545,
       network_id: '*',
       gas: 4600000
+    },
+    main: {
+      host: 'localhost',
+      port: 8545,
+      from: '0x0084a81668B9A978416aBEB88bC1572816cc7cAC',
+      network_id: 1,
+      gas: 4600000,
+      gasPrice: 50000000000
     }
   },
   solc: {
