@@ -45,6 +45,7 @@
 pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "../common/TokenRecipient.sol";
 import "../common/TokenLocker.sol";
 
@@ -157,8 +158,8 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         notSelf
     {
         lockedDelegatingTokens[msg.sender] = tokensToLock;
-        delegatedAmountsByDelegate[delegate] += tokensToLock;
-        totalLockedTokens += tokensToLock;
+        delegatedAmountsByDelegate[delegate] = SafeMath.add(delegatedAmountsByDelegate[delegate], tokensToLock);
+        totalLockedTokens = SafeMath.add(totalLockedTokens, tokensToLock);
         delegatesByDelegator[msg.sender] = delegate;
         require(sharesTokenAddress.transferFrom(msg.sender, tokenLocker, tokensToLock));
         require(sharesTokenAddress.balanceOf(tokenLocker) == totalLockedTokens);
@@ -181,8 +182,8 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         address delegate = delegatesByDelegator[msg.sender];
         lockedTokens = lockedDelegatingTokens[msg.sender];
         lockedDelegatingTokens[msg.sender] = 0;
-        delegatedAmountsByDelegate[delegate] -= lockedTokens;
-        totalLockedTokens -= lockedTokens;
+        delegatedAmountsByDelegate[delegate] = SafeMath.sub(delegatedAmountsByDelegate[delegate], lockedTokens);
+        totalLockedTokens = SafeMath.sub(totalLockedTokens, lockedTokens);
         delete delegatesByDelegator[msg.sender];
         require(tokenLocker.transfer(msg.sender, lockedTokens));
         require(sharesTokenAddress.balanceOf(tokenLocker) == totalLockedTokens);
@@ -327,12 +328,12 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         quorum = 0;
         for (uint i = 0; i < p.votes.length; ++i) {
             Vote storage v = p.votes[i];
-            uint voteWeight = sharesTokenAddress.balanceOf(v.voter) + delegatedAmountsByDelegate[v.voter];
-            quorum += voteWeight;
+            uint voteWeight = SafeMath.add(sharesTokenAddress.balanceOf(v.voter), delegatedAmountsByDelegate[v.voter]);
+            quorum = SafeMath.add(quorum, voteWeight);
             if (v.inSupport) {
-                yea += voteWeight;
+                yea = SafeMath.add(yea, voteWeight);
             } else {
-                nay += voteWeight;
+                nay = SafeMath.add(nay, voteWeight);
             }
         }
     }
