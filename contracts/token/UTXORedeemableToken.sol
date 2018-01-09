@@ -19,6 +19,7 @@
 pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/StandardToken.sol";
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/MerkleProof.sol";
 
 /**
@@ -190,16 +191,16 @@ contract UTXORedeemableToken is StandardToken {
         redeemedUTXOs[merkleLeafHash] = true;
 
         /* Calculate the redeemed tokens. */
-        tokensRedeemed = satoshis * multiplier;
+        tokensRedeemed = SafeMath.mul(satoshis, multiplier);
 
         /* Track total redeemed tokens. */
-        totalRedeemed += tokensRedeemed;
+        totalRedeemed = SafeMath.add(totalRedeemed, tokensRedeemed);
 
         /* Sanity check. */
         require(totalRedeemed <= maximumRedeemable);
 
         /* Credit the redeemer. */ 
-        balances[msg.sender] += tokensRedeemed;   
+        balances[msg.sender] = SafeMath.add(balances[msg.sender], tokensRedeemed);
 
         /* Mark the transfer event. */
         Transfer(address(0), msg.sender, tokensRedeemed);

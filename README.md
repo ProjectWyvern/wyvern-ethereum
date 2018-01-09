@@ -12,6 +12,11 @@ These are the official Ethereum smart contracts for the Wyvern ERC20 token (WYV)
 
 ### Deployed Contracts
 
+#### Mainnet
+
+[Wyvern Token](https://etherscan.io/address/wyverntoken.eth)
+[Wyvern DAO](https://etherscan.io/address/wyverndao.eth)
+
 #### Rinkeby Testnet
 
 [Wyvern Token](https://rinkeby.etherscan.io/address/0xd1be358dab323802a3c469b0787476fdcb8af5d6)
