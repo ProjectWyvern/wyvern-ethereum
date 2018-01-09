@@ -8,6 +8,7 @@ const { setConfig } = require('./config.js')
 const { utxoMerkleRoot, utxoAmount } = require('../test/aux.js')
 
 module.exports = (deployer, network) => {
+  if (network === 'main') return
   return deployer.deploy(MerkleProof).then(() => {
     setConfig('deployed.' + network + '.MerkleProof', MerkleProof.address)
     deployer.link(MerkleProof, WyvernToken)
