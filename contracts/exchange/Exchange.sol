@@ -28,6 +28,7 @@ import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 import "../registry/Registry.sol";
 import "../common/LazyBank.sol";
+import "../common/ArrayUtils.sol";
 import "./SaleKindInterface.sol";
 
 /**
