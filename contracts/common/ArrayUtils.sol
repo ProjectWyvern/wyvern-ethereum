@@ -1,3 +1,10 @@
+/*
+
+  Various functions for manipulating arrays in Solidity.
+  This library is completely inlined and does not need to be deployed or linked.
+
+*/
+
 pragma solidity 0.4.18;
 
 /**
@@ -6,16 +13,19 @@ pragma solidity 0.4.18;
  */
 library ArrayUtils {
 
-    function arrayCopy(bytes arr, bytes rep, uint start, uint length) 
+    function guardedArrayReplace(bytes array, bytes desired, bytes mask)
         pure
         internal
         returns (bytes)
     {
-        require(rep.length == length);
-        for (uint i = 0; i < length; i++) {
-            arr[i + start] = rep[i];
+        byte[8] memory bitmasks = [byte(2 ** 7), byte(2 ** 6), byte(2 ** 5), byte(2 ** 4), byte(2 ** 3), byte(2 ** 2), byte(2 ** 1), byte(2 ** 0)];
+        require(array.length == desired.length);
+        require(mask.length == array.length / 8);
+        for (uint i = 0; i < array.length; i++ ) {
+            bool masked = (mask[i / 8] & bitmasks[i % 8]) == 0; // 1-bit means value can be changed
+            array[i] = masked ? array[i] : desired[i];
         }
-        return arr;
+        return array;
     }
 
     function arrayEq(bytes a, bytes b)

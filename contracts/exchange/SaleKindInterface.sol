@@ -33,9 +33,15 @@ library SaleKindInterface {
     }
 
     function validateParameters(Side side, SaleKind saleKind, uint expirationTime) pure internal returns (bool) {
-        return (saleKind != SaleKind.EnglishAuction || expirationTime > 0);
+        return (
+            /* Only sell-side orders can be English auctions. */
+            (saleKind != SaleKind.EnglishAuction || side == Side.Sell) &&
+            /* Auctions must have a set expiration date. */
+            (saleKind == SaleKind.FixedPrice || expirationTime > 0)
+        );
     }
 
+    /* Precondition: parameters have passed validateParameters. */
     function requiredBidPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint expirationTime, Bid currentTopBid) view internal returns (uint minimumBid) {
         require((side == Side.Sell) && (saleKind == SaleKind.EnglishAuction) && (now < expirationTime));
         if (currentTopBid.bidder == address(0)) {
@@ -45,7 +51,8 @@ library SaleKindInterface {
         }
     }
 
-    function canSettleOrder(Side side, SaleKind saleKind, address counterpart, uint expirationTime, Bid topBid) view internal returns (bool) {
+    /* Precondition: parameters have passed validateParameters. */
+    function canSettleOrder(SaleKind saleKind, address counterpart, uint expirationTime, Bid topBid) view internal returns (bool) {
         if (saleKind == SaleKind.EnglishAuction) {
             return ((counterpart == topBid.bidder) && (now >= expirationTime));
         } else {
@@ -53,6 +60,7 @@ library SaleKindInterface {
         }
     }
 
+    /* Precondition: parameters have passed validateParameters. */
     function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime, Bid topBid) view internal returns (uint finalPrice) {
         if (saleKind == SaleKind.FixedPrice) {
             return basePrice;
@@ -60,8 +68,14 @@ library SaleKindInterface {
             require(topBid.bidder != address(0));
             return topBid.amount;
         } else if (saleKind == SaleKind.DutchAuction) {
-            /* Start price: basePrice. End price: basePrice - extra. */
-            return basePrice - (extra * (now - listingTime) / (expirationTime - listingTime));
+            uint diff = (extra * (now - listingTime) / (expirationTime - listingTime));
+            if (side == Side.Sell) {
+                /* Sell-side - start price: basePrice. End price: basePrice - extra. */
+                return basePrice - diff;
+            } else {
+                /* Buy-side - start price: basePrice. End price: basePrice + extra. */
+                return basePrice + diff;
+            }
         } else {
             revert();
         }

@@ -1,6 +1,6 @@
 /*
 
-  Decentralized digital item exchange.
+  Decentralized digital item exchange. Supports any digital asset that can be represented on the Ethereum blockchain.
 
   Let us suppose two agents interacting with a distributed ledger have utility functions preferencing certain states of that ledger over others.
   Aiming to maximize their utility, these agents may construct with their utility functions along with the present ledger state a mapping of state transitions (transactions) to marginal utilities.
@@ -9,22 +9,16 @@
 
   Relative to this model, the present Exchange instantiation makes two concessions to practicality:
   - State transition preferences are not matched directly but instead intermediated by a standard of tokenized value.
-  - A small fee is charged in the token of payment, split equally between protocol development, frontend compensation, and a chosen public beneficiary.
+  - A small fee is charged in the token of payment, split between protocol development and frontend compensation.
 
-  Solidity presently possesses neither a strong functional typesystem nor runtime reflection, so we must be a bit clever in implementation.
-
-  TODO: 
-  - Checks - effects - interactions
-   
-  *Build complete testnet prototype and user test before audit / mainnet deployment.*
-
+  Solidity presently possesses neither a strong functional typesystem nor runtime reflection (ABI encoding in Solidity), so we must be a bit clever in implementation.
+  
 */
 
 pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 import "../registry/Registry.sol";
 import "../common/LazyBank.sol";
@@ -35,7 +29,7 @@ import "./SaleKindInterface.sol";
  * @title Exchange
  * @author Project Wyvern Developers
  */
-contract Exchange is Ownable, Pausable, LazyBank {
+contract Exchange is Ownable, LazyBank {
 
     /* The owner address of the exchange (a) receives fees (specified by feeOwner) and (b) can change the fee amounts and token whitelist. */
 
@@ -45,16 +39,13 @@ contract Exchange is Ownable, Pausable, LazyBank {
     /* The fee required to bid on an item. */
     uint public feeBid;
 
-    /* Transaction percentage fee paid to contract owner, in basis points. */
+    /* Transaction percentage fee paid to contract owner, in thousandths of a percent. */
     uint public feeOwner;
 
-    /* Transaction percentage fee paid to public beneficiary, in basis points. */
-    uint public feePublicBenefit;
-
-    /* Transaction percentage fee paid to buy-side frontend, in basis points. */
+    /* Transaction percentage fee paid to buy-side frontend, in thousandths of a percent. */
     uint public feeBuyFrontend;
     
-    /* Transaction percentage fee paid to sell-side frontend, in basis points. */
+    /* Transaction percentage fee paid to sell-side frontend, in thousandths of a percent. */
     uint public feeSellFrontend;
 
     /* The token used to pay exchange fees. */
@@ -63,15 +54,12 @@ contract Exchange is Ownable, Pausable, LazyBank {
     /* User registry. */
     Registry public registry;
 
-    /* ERC20 whitelist. */
-    mapping(address => bool) public erc20Whitelist;
-
     /* Top bids for all bid-supporting auctions, by hash. */
     mapping(bytes32 => SaleKindInterface.Bid) public topBids;
  
     /* Cancelled / finalized orders, by hash. */
     mapping(bytes32 => bool) cancelledOrFinalized;
-   
+
     /* An ECDSA signature. */ 
     struct Sig {
         /* v parameter */
@@ -96,10 +84,8 @@ contract Exchange is Ownable, Pausable, LazyBank {
         AuthenticatedProxy.HowToCall howToCall;
         /* Calldata. */
         bytes calldata;
-        /* Replace start index. */
-        uint start;
-        /* Replace length. */
-        uint length;
+        /* replacementPattern pattern. */
+        bytes replacementPattern;
         /* Order metadata IPFS hash. */
         bytes metadataHash;
         /* Token used to pay for the item. */
@@ -116,10 +102,7 @@ contract Exchange is Ownable, Pausable, LazyBank {
         address frontend;
     }
 
-    event PublicBeneficiaryChanged (address indexed newAddress);
-    event ERC20WhitelistChanged    (address indexed token, bool value);
-    event FeesChanged              (uint feeBid, uint feeOwner, uint feePublicBenefit, uint feeBuyFrontend, uint feeSellFrontend);
-
+    event FeesChanged     (uint feeBid, uint feeOwner, uint feeBuyFrontend, uint feeSellFrontend);
     event OrderCancelled  (bytes32 hash);
     event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount, uint timestamp);
     event OrdersMatched   (Order buy, Order sell);
@@ -132,17 +115,15 @@ contract Exchange is Ownable, Pausable, LazyBank {
         _;
     }
 
-    function requireValidOrder(Order order, Sig sig)
-        internal
-        view
-        returns (bytes32)
+    function setFees(uint bidFee, uint ownerFee, uint frontendBuyFee, uint frontendSellFee)
+        public
+        onlyOwner
     {
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 hash = keccak256(prefix, hashOrder(order));
-        require(!cancelledOrFinalized[hash]);
-        // require(order.listingTime >= now);
-        // ^ ??
-        require(ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator);
+        feeBid = bidFee;
+        feeOwner = ownerFee;
+        feeBuyFrontend = frontendBuyFee;
+        feeSellFrontend = frontendSellFee;
+        FeesChanged(feeBid, feeOwner, feeBuyFrontend, feeSellFrontend);
     }
 
     function hashOrder(Order order)
@@ -150,84 +131,81 @@ contract Exchange is Ownable, Pausable, LazyBank {
         pure
         returns (bytes32)
     {
-        return keccak256(order.initiator, order.side, order.saleKind, order.target, order.howToCall, order.calldata, order.start, order.length,
-           order.metadataHash, order.paymentToken, order.basePrice, order.extra, order.expirationTime, order.frontend);
-        // need to also include order.listingTime, stack limits TODO
+        return keccak256(order.initiator, order.side, order.saleKind, order.target, order.howToCall, order.calldata, order.replacementPattern,
+           order.metadataHash, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.frontend);
     }
 
     function hashOrder_(
         address[4] addrs,
-        uint[6] uints,
+        uint[4] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
+        bytes replacementPattern,
         bytes metadataHash)
         public
         pure
         returns (bytes32)
     { 
         return hashOrder(
-          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, uints[0], uints[1], metadataHash, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3])
+          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[2]), uints[0], uints[1], uints[2], uints[3], addrs[3])
         );
     }
 
-    function setPublicBeneficiary(address newAddress)
-        public
-        onlyOwner
-    {
-        publicBeneficiary = newAddress;
-        PublicBeneficiaryChanged(newAddress);
-    }
-
-    function modifyERC20Whitelist(address token, bool value)
-        public
-        onlyOwner
-    {
-        erc20Whitelist[token] = value;
-        ERC20WhitelistChanged(token, value);
-    }
-
-    function setFees(uint bidFee, uint ownerFee, uint publicBenefitFee, uint frontendBuyFee, uint frontendSellFee)
-        public
-        onlyOwner
-    {
-        feeBid = bidFee;
-        feeOwner = ownerFee;
-        feePublicBenefit = publicBenefitFee;
-        feeBuyFrontend = frontendBuyFee;
-        feeSellFrontend = frontendSellFee;
-        FeesChanged(feeBid, feeOwner, feePublicBenefit, feeBuyFrontend, feeSellFrontend);
-    }
-
-    function validateOrder(Order memory order, Sig memory sig) 
-        pure
+    function hashToSign(Order order)
         internal
-        returns (bool)
+        pure
+        returns (bytes32)
     {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 hash = keccak256(prefix, hashOrder(order));
-        return ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator;
+        return hash;
+    }
+
+    function requireValidOrder(Order order, Sig sig)
+        internal
+        view
+        returns (bytes32)
+    {
+        bytes32 hash = hashToSign(order);
+        require(validateOrder(hash, order, sig));
+        return hash;
+    }
+
+    function validateOrder(bytes32 hash, Order memory order, Sig memory sig) 
+        view
+        internal
+        returns (bool)
+    {
+        return(
+            !cancelledOrFinalized[hash] && 
+            ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator &&
+            SaleKindInterface.validateParameters(order.side, order.saleKind, order.expirationTime)
+        );
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function validateOrder_ (
         address[4] addrs,
-        uint[6] uints,
+        uint[4] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
+        bytes replacementPattern,
         bytes metadataHash,
         uint8 v,
         bytes32 r,
         bytes32 s)
-        pure
+        view
         public
         returns (bool)
     {
+        Order memory order = Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[2]), uints[0], uints[1], uints[2], uints[3], addrs[3]);
         return validateOrder(
-          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, uints[0], uints[1], metadataHash, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3]),
+          hashToSign(order),
+          order,
           Sig(v, r, s)
         );
     }
@@ -235,20 +213,25 @@ contract Exchange is Ownable, Pausable, LazyBank {
     function cancelOrder(Order memory order, Sig memory sig) 
         internal
     {
+        /* CHECKS */
         bytes32 hash = requireValidOrder(order, sig);
         require(msg.sender == order.initiator);
+  
+        /* EFFECTS */
         cancelledOrFinalized[hash] = true;
+
         OrderCancelled(hash);
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function cancelOrder_(
         address[4] addrs,
-        uint[6] uints,
+        uint[4] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
+        bytes replacementPattern,
         bytes metadataHash,
         uint8 v,
         bytes32 r,
@@ -256,7 +239,7 @@ contract Exchange is Ownable, Pausable, LazyBank {
         public
     {
         return cancelOrder(
-          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, uints[0], uints[1], metadataHash, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3]),
+          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[2]), uints[0], uints[1], uints[2], uints[3], addrs[3]),
           Sig(v, r, s)
         );
     }
@@ -265,6 +248,8 @@ contract Exchange is Ownable, Pausable, LazyBank {
         internal
         costs (feeBid)
     {
+        /* CHECKS */
+  
         bytes32 hash = requireValidOrder(order, sig);
 
         SaleKindInterface.Bid storage topBid = topBids[hash];
@@ -275,11 +260,10 @@ contract Exchange is Ownable, Pausable, LazyBank {
         /* Assert bid amount is sufficient. */
         require(amount >= requiredBidPrice);
 
+        /* EFFECTS */
+
         /* Store the new high bid. */
         topBids[hash] = SaleKindInterface.Bid(msg.sender, amount);
-
-        /* Log the bid event. */
-        OrderBidOn(hash, msg.sender, amount, now);
 
         /* Unlock tokens to the previous high bidder, if existent. */
         if (topBid.bidder != address(0)) {
@@ -288,16 +272,20 @@ contract Exchange is Ownable, Pausable, LazyBank {
 
         /* Lock tokens for the new high bidder. */
         lazyLock(msg.sender, order.paymentToken, amount);
+
+        /* Log the bid event. */
+        OrderBidOn(hash, msg.sender, amount, now);
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function bid_(
         address[4] addrs,
-        uint[6] uints,
+        uint[4] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
+        bytes replacementPattern,
         bytes metadataHash,
         uint8 v,
         bytes32 r,
@@ -306,7 +294,7 @@ contract Exchange is Ownable, Pausable, LazyBank {
         public
     {
         return bid(
-          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, uints[0], uints[1], metadataHash, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3]),
+          Order(addrs[0], side, saleKind, addrs[1], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[2]), uints[0], uints[1], uints[2], uints[3], addrs[3]),
           Sig(v, r, s),
           amount
         );
@@ -342,23 +330,19 @@ contract Exchange is Ownable, Pausable, LazyBank {
         uint price = calculateMatchPrice(buy, sell, topBid);
 
         /* Calculate and credit owner fee. */
-        uint feeToOwner = price * feeOwner / 10000;
+        uint feeToOwner = price * feeOwner / 100000;
         credit(owner, sell.paymentToken, feeToOwner);
 
-        /* Calculate and credit public benefit fee. */
-        uint feeToPublicBenefit = price * feePublicBenefit / 10000;
-        credit(publicBeneficiary, sell.paymentToken, feeToPublicBenefit);
-
         /* Calculate and credit sell frontend fee. */
-        uint feeToSellFrontend = price * feeSellFrontend / 10000;
+        uint feeToSellFrontend = price * feeSellFrontend / 100000;
         credit(sell.frontend, sell.paymentToken, feeToSellFrontend);
 
         /* Calculate and credit buy frontend fee. */
-        uint feeToBuyFrontend = price * feeBuyFrontend / 10000;
+        uint feeToBuyFrontend = price * feeBuyFrontend / 100000;
         credit(buy.frontend, buy.paymentToken, feeToBuyFrontend);
 
         /* Calculate final price. */
-        uint finalPrice = price - feeToOwner - feeToPublicBenefit - feeToSellFrontend - feeToBuyFrontend;
+        uint finalPrice = price - feeToOwner - feeToSellFrontend - feeToBuyFrontend;
 
         /* Unlock tokens for top bidder, if existent. */
         if (topBid.bidder != address(0)) {
@@ -372,10 +356,11 @@ contract Exchange is Ownable, Pausable, LazyBank {
         credit(sell.initiator, sell.paymentToken, finalPrice);
     }
 
-    /* TODO: re-entrancy prevention */
     function atomicMatch(Order buy, Sig buySig, Order sell, Sig sellSig)
         internal
     {
+        /* CHECKS */
+      
         bytes32 buyHash = requireValidOrder(buy, buySig);
         bytes32 sellHash = requireValidOrder(sell, sellSig); 
 
@@ -385,13 +370,10 @@ contract Exchange is Ownable, Pausable, LazyBank {
         /* Must use same payment token. */
         require(buy.paymentToken == sell.paymentToken);
 
-        /* Payment token must be whitelisted (or should frontends do this?). */
-        require(erc20Whitelist[buy.paymentToken]);
-
         /* Must be settleable. */
         SaleKindInterface.Bid storage topBid = topBids[sellHash];
-        require(SaleKindInterface.canSettleOrder(buy.side, buy.saleKind, sell.initiator, buy.expirationTime, SaleKindInterface.Bid({ bidder: address(0), amount: 0 })));
-        require(SaleKindInterface.canSettleOrder(sell.side, sell.saleKind, buy.initiator, sell.expirationTime, topBid));
+        require(SaleKindInterface.canSettleOrder(buy.saleKind, sell.initiator, buy.expirationTime, SaleKindInterface.Bid({ bidder: address(0), amount: 0 })));
+        require(SaleKindInterface.canSettleOrder(sell.saleKind, buy.initiator, sell.expirationTime, topBid));
         
         /* Must match target. */
         require(buy.target == sell.target);
@@ -399,45 +381,45 @@ contract Exchange is Ownable, Pausable, LazyBank {
         /* Must match howToCall. */
         require(buy.howToCall == sell.howToCall);
        
-        /* Must match calldata. */ 
-        require(buy.calldata.length == sell.calldata.length);
-
-        if (buy.length > 0) {
-            ArrayUtils.arrayCopy(buy.calldata, ArrayUtils.toBytes(sell.initiator), buy.start, buy.length);
-        }
-        if (sell.length > 0) {
-            ArrayUtils.arrayCopy(sell.calldata, ArrayUtils.toBytes(buy.initiator), sell.start, sell.length);
-        }
-        
+        /* Must match calldata after replacementPattern. */ 
+        ArrayUtils.guardedArrayReplace(buy.calldata, sell.calldata, buy.replacementPattern);
+        ArrayUtils.guardedArrayReplace(sell.calldata, buy.calldata, sell.replacementPattern);
         require(ArrayUtils.arrayEq(buy.calldata, sell.calldata));
 
+        /* Retrieve proxy (the registry contract is trusted). */
         AuthenticatedProxy proxy = registry.proxyFor(this, sell.initiator);
 
         /* Proxy must exist. */
         require(proxy != address(0));
 
-        /* Validate and transfer funds. */ 
-        executeFundsTransfer(buy, sell);
+        /* EFFECTS */
 
         /* Mark orders as finalized. */
         cancelledOrFinalized[buyHash] = true;
         cancelledOrFinalized[sellHash] = true;
 
-        /* Execute call through proxy. */
+        /* Validate and transfer funds. */ 
+        executeFundsTransfer(buy, sell);
+
+        /* INTERACTIONS */
+
+        /* Execute call through proxy. is is though? lazyDebit? safer to reentrancy guard?
+           This is the *only* external call to untrusted contract(s) in this function. */
         require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
 
+        /* Log match event. */
         OrdersMatched(buy, sell);
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function atomicMatch_(
         address[8] addrs,
-        uint[12] uints,
-        SaleKindInterface.Side[2] sides,
-        SaleKindInterface.SaleKind[2] saleKinds,
-        AuthenticatedProxy.HowToCall[2] howToCalls,
+        uint[8] uints,
+        uint8[6] sidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
+        bytes replacementPatternBuy,
+        bytes replacementPatternSell,
         bytes metadataHashBuy,
         bytes metadataHashSell,
         uint8[2] vs,
@@ -445,13 +427,11 @@ contract Exchange is Ownable, Pausable, LazyBank {
         public
     {
         return atomicMatch(
-          Order(addrs[0], sides[0], saleKinds[0], addrs[1], howToCalls[0], calldataBuy, uints[0], uints[1], metadataHashBuy, ERC20(addrs[2]), uints[2], uints[3], uints[4], uints[5], addrs[3]),
+          Order(addrs[0], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[1], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[2]), uints[0], uints[1], uints[2], uints[3], addrs[3]),
           Sig(vs[0], rss[0], rss[1]),
-          Order(addrs[4], sides[1], saleKinds[1], addrs[5], howToCalls[1], calldataSell, uints[6], uints[7], metadataHashSell, ERC20(addrs[6]), uints[8], uints[9], uints[10], uints[11], addrs[7]),
+          Order(addrs[4], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[5], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], addrs[7]),
           Sig(vs[1], rss[2], rss[3])
         );
     }
-
-
 
 }

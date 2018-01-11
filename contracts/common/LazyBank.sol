@@ -19,6 +19,8 @@ import "zeppelin-solidity/contracts/math/SafeMath.sol";
  */
 contract LazyBank {
 
+    // TODO checks effects interactions, presume untrusted tokens
+
     /* Token balances, by owner, by token. */
     mapping(address => mapping(address => uint)) public balances;
 
@@ -51,7 +53,7 @@ contract LazyBank {
         view
         returns (uint)
     {
-        return balances[user][token] - locked[user][token];
+        return SafeMath.sub(balances[user][token], locked[user][token]);
     }
 
     function deposit(address user, ERC20 token, uint amount)

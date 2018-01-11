@@ -35,6 +35,7 @@ contract AuthenticatedProxy is TokenRecipient {
     }
 
     function proxy(address dest, HowToCall howToCall, bytes calldata) public returns (bool result) {
+        require(msg.sender == authAddr || msg.sender == userAddr);
         address created;
         if (howToCall == HowToCall.Call) {
             result = dest.call(calldata);
