@@ -18,18 +18,21 @@ contract AuthenticatedProxy is TokenRecipient {
 
     address public authAddr;
 
+    address public registryAddr;
+
     enum HowToCall { Call, DelegateCall, StaticCall, Create }
 
     event ProxiedCall(address indexed dest, HowToCall howToCall, bytes calldata, address indexed created, bool success);
     event AuthAddrChanged(address indexed newAddrAuth);
 
-    function AuthenticatedProxy(address addrUser, address addrAuth) public {
+    function AuthenticatedProxy(address addrUser, address addrAuth, address addrRegistry) public {
         userAddr = addrUser;
         authAddr = addrAuth;
+        registryAddr = addrRegistry;
     }
 
     function changeAuth(address newAddrAuth) public {
-        require(msg.sender == userAddr);
+        require(msg.sender == registryAddr);
         authAddr = newAddrAuth;
         AuthAddrChanged(newAddrAuth);
     }

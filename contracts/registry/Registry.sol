@@ -28,9 +28,20 @@ contract Registry {
         returns (AuthenticatedProxy proxy)
     {
         require(proxies[auth][msg.sender] == address(0));
-        proxy = new AuthenticatedProxy(msg.sender, auth);
+        proxy = new AuthenticatedProxy(msg.sender, auth, this);
         proxies[auth][msg.sender] = proxy;
         return proxy;
+    }
+
+    function changeProxyAuth(address oldAuth, address newAuth)
+        public
+    {
+        require(proxies[oldAuth][msg.sender] != address(0));
+        require(proxies[newAuth][msg.sender] == address(0));
+        AuthenticatedProxy proxy = proxies[oldAuth][msg.sender];
+        proxies[newAuth][msg.sender] = proxy;
+        delete proxies[oldAuth][msg.sender];
+        proxy.changeAuth(newAuth); 
     }
 
 }
