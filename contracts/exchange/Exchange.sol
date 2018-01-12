@@ -29,24 +29,7 @@ import "./SaleKindInterface.sol";
  * @title Exchange
  * @author Project Wyvern Developers
  */
-contract Exchange is Ownable, LazyBank {
-
-    /* The owner address of the exchange (a) receives fees (specified by feeOwner) and (b) can change the fee amounts and token whitelist. */
-
-    /* Public benefit address. */
-    address public publicBeneficiary; 
-
-    /* The fee required to bid on an item. */
-    uint public feeBid;
-
-    /* Transaction percentage fee paid to contract owner, in thousandths of a percent. */
-    uint public feeOwner;
-
-    /* Transaction percentage fee paid to buy-side frontend, in thousandths of a percent. */
-    uint public feeBuyFrontend;
-    
-    /* Transaction percentage fee paid to sell-side frontend, in thousandths of a percent. */
-    uint public feeSellFrontend;
+contract Exchange is LazyBank {
 
     /* The token used to pay exchange fees. */
     ERC20 public exchangeTokenAddress;
@@ -94,40 +77,27 @@ contract Exchange is Ownable, LazyBank {
         ERC20 paymentToken;
         /* Base price of the item (tokens). */
         uint basePrice;
+        /* Base fee of the item (Exchange fee tokens). */
+        uint baseFee;
         /* Auction extra parameter - minimum bid increment for English auctions, decay factor for Dutch auctions. */
         uint extra;
         /* Listing timestamp. */
         uint listingTime;
         /* Expiration timestamp - 0 for no expiry. */
         uint expirationTime;
-        /* Order frontend. Fees split between buy / sell. */
+        /* Order frontend. */
         address frontend;
     }
 
-    event FeesChanged     (uint feeBid, uint feeOwner, uint feeBuyFrontend, uint feeSellFrontend);
     event OrderCancelled  (bytes32 hash);
     event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount, uint timestamp);
     event OrdersMatched   (Order buy, Order sell);
 
-    modifier costs (uint amount) {
-        if (amount > 0) {
-            lazyDebit(msg.sender, exchangeTokenAddress, amount);
-            credit(owner, exchangeTokenAddress, amount);
-        }
-        _;
-    }
-
-    function setFees(uint bidFee, uint ownerFee, uint frontendBuyFee, uint frontendSellFee)
-        public
-        onlyOwner
+    function chargeFee(address from, address to, uint amount)
+        internal
     {
-        feeBid = bidFee;
-        feeOwner = ownerFee;
-        feeBuyFrontend = frontendBuyFee;
-        feeSellFrontend = frontendSellFee;
-        FeesChanged(feeBid, feeOwner, feeBuyFrontend, feeSellFrontend);
+        transferTo(from, to, exchangeTokenAddress, amount);
     }
-
 
     function hashOrderPartOne(Order order)
         internal
@@ -142,7 +112,7 @@ contract Exchange is Ownable, LazyBank {
         pure
         returns (bytes32)
     {
-        return keccak256(order.metadataHash, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.frontend);
+        return keccak256(order.metadataHash, order.paymentToken, order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime, order.frontend);
     }
 
     function hashOrder(Order order)
@@ -156,7 +126,7 @@ contract Exchange is Ownable, LazyBank {
 
     function hashOrder_(
         address[5] addrs,
-        uint[4] uints,
+        uint[5] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -168,7 +138,7 @@ contract Exchange is Ownable, LazyBank {
         returns (bytes32)
     { 
         return hashOrder(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], addrs[4])
+          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4])
         );
     }
 
@@ -198,6 +168,7 @@ contract Exchange is Ownable, LazyBank {
         returns (bool)
     {
         return(
+            order.exchange == address(this) &&
             !cancelledOrFinalized[hash] && 
             ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator &&
             SaleKindInterface.validateParameters(order.side, order.saleKind, order.expirationTime)
@@ -207,7 +178,7 @@ contract Exchange is Ownable, LazyBank {
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function validateOrder_ (
         address[5] addrs,
-        uint[4] uints,
+        uint[5] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -221,7 +192,7 @@ contract Exchange is Ownable, LazyBank {
         public
         returns (bool)
     {
-        Order memory order = Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], addrs[4]);
+        Order memory order = Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4]);
         return validateOrder(
           hashToSign(order),
           order,
@@ -245,7 +216,7 @@ contract Exchange is Ownable, LazyBank {
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function cancelOrder_(
         address[5] addrs,
-        uint[4] uints,
+        uint[5] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -258,14 +229,13 @@ contract Exchange is Ownable, LazyBank {
         public
     {
         return cancelOrder(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], addrs[4]),
+          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4]),
           Sig(v, r, s)
         );
     }
 
     function bid (Order order, Sig sig, uint amount)
         internal
-        costs (feeBid)
     {
         /* CHECKS */
   
@@ -299,7 +269,7 @@ contract Exchange is Ownable, LazyBank {
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function bid_(
         address[5] addrs,
-        uint[4] uints,
+        uint[5] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -313,7 +283,7 @@ contract Exchange is Ownable, LazyBank {
         public
     {
         return bid(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], addrs[4]),
+          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4]),
           Sig(v, r, s),
           amount
         );
@@ -348,20 +318,9 @@ contract Exchange is Ownable, LazyBank {
         /* Calculate match price. */
         uint price = calculateMatchPrice(buy, sell, topBid);
 
-        /* Calculate and credit owner fee. */
-        uint feeToOwner = price * feeOwner / 100000;
-        credit(owner, sell.paymentToken, feeToOwner);
-
-        /* Calculate and credit sell frontend fee. */
-        uint feeToSellFrontend = price * feeSellFrontend / 100000;
-        credit(sell.frontend, sell.paymentToken, feeToSellFrontend);
-
-        /* Calculate and credit buy frontend fee. */
-        uint feeToBuyFrontend = price * feeBuyFrontend / 100000;
-        credit(buy.frontend, buy.paymentToken, feeToBuyFrontend);
-
-        /* Calculate final price. */
-        uint finalPrice = price - feeToOwner - feeToSellFrontend - feeToBuyFrontend;
+        /* Charge fees. */
+        chargeFee(buy.initiator, buy.frontend, buy.baseFee);
+        chargeFee(sell.initiator, sell.frontend, sell.baseFee);
 
         /* Unlock tokens for top bidder, if existent. */
         if (topBid.bidder != address(0)) {
@@ -372,7 +331,7 @@ contract Exchange is Ownable, LazyBank {
         lazyDebit(buy.initiator, sell.paymentToken, price);
 
         /* Credit seller. */
-        credit(sell.initiator, sell.paymentToken, finalPrice);
+        credit(sell.initiator, sell.paymentToken, price);
     }
 
     function atomicMatch(Order buy, Sig buySig, Order sell, Sig sellSig)
@@ -433,7 +392,7 @@ contract Exchange is Ownable, LazyBank {
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function atomicMatch_(
         address[10] addrs,
-        uint[8] uints,
+        uint[10] uints,
         uint8[6] sidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
@@ -446,9 +405,9 @@ contract Exchange is Ownable, LazyBank {
         public
     {
         return atomicMatch(
-          Order(addrs[0], addrs[1], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[2], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], addrs[4]),
+          Order(addrs[0], addrs[1], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[2], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4]),
           Sig(vs[0], rss[0], rss[1]),
-          Order(addrs[5], addrs[6], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[7], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[8]), uints[4], uints[5], uints[6], uints[7], addrs[9]),
+          Order(addrs[5], addrs[6], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[7], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[8]), uints[5], uints[6], uints[7], uints[8], uints[9], addrs[9]),
           Sig(vs[1], rss[2], rss[3])
         );
     }

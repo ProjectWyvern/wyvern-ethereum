@@ -95,6 +95,13 @@ contract LazyBank {
         }
     }
 
+    function transferTo(address from, address to, ERC20 token, uint amount)
+        internal
+    {
+        lazyDebit(from, token, amount);
+        credit(to, token, amount);
+    }
+
     function lazyLock(address user, ERC20 token, uint amount)
         internal
     {
