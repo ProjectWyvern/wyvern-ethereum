@@ -18,7 +18,6 @@
 pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "../registry/Registry.sol";
 import "../common/LazyBank.sol";
@@ -365,7 +364,7 @@ contract Exchange is LazyBank {
         require(ArrayUtils.arrayEq(buy.calldata, sell.calldata));
 
         /* Retrieve proxy (the registry contract is trusted). */
-        AuthenticatedProxy proxy = registry.proxyFor(this, sell.initiator);
+        AuthenticatedProxy proxy = registry.proxies(sell.initiator);
 
         /* Proxy must exist. */
         require(proxy != address(0));

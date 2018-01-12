@@ -4,7 +4,7 @@
 
     TODO
     - ERC223 support
-    - Analyze for ERC223 reentrancy bugs
+    - Analyze for ERC223 reentrancy bugs - should be a nonissue, only *this* contract will be called.
 
 */
 

@@ -7,6 +7,7 @@
 pragma solidity 0.4.18;
 
 import "../common/TokenRecipient.sol";
+import "./Registry.sol";
 
 /**
  * @title AuthenticatedProxy
@@ -14,31 +15,30 @@ import "../common/TokenRecipient.sol";
  */
 contract AuthenticatedProxy is TokenRecipient {
 
-    address public userAddr;
+    address public user;
 
-    address public authAddr;
+    Registry public registry;
 
-    address public registryAddr;
+    bool revoked = false;
 
     enum HowToCall { Call, DelegateCall, StaticCall, Create }
 
     event ProxiedCall(address indexed dest, HowToCall howToCall, bytes calldata, address indexed created, bool success);
-    event AuthAddrChanged(address indexed newAddrAuth);
 
-    function AuthenticatedProxy(address addrUser, address addrAuth, address addrRegistry) public {
-        userAddr = addrUser;
-        authAddr = addrAuth;
-        registryAddr = addrRegistry;
+    function AuthenticatedProxy(address addrUser, Registry addrRegistry) public {
+        user = addrUser;
+        registry = addrRegistry;
     }
 
-    function changeAuth(address newAddrAuth) public {
-        require(msg.sender == registryAddr);
-        authAddr = newAddrAuth;
-        AuthAddrChanged(newAddrAuth);
+    function setRevoke(bool revoke)
+        public
+    {
+        require(msg.sender == user);
+        revoked = revoke;
     }
 
     function proxy(address dest, HowToCall howToCall, bytes calldata) public returns (bool result) {
-        require(msg.sender == authAddr || msg.sender == userAddr);
+        require(msg.sender == user || (!revoked && registry.contracts(msg.sender)));
         address created;
         if (howToCall == HowToCall.Call) {
             result = dest.call(calldata);

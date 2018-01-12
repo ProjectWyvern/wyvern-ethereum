@@ -7,9 +7,9 @@ contract('WyvernRegistry', (accounts) => {
     return WyvernRegistry
       .deployed()
       .then(registryInstance => {
-        return registryInstance.registerProxy(registryInstance.address)
+        return registryInstance.registerProxy()
           .then(() => {
-            return registryInstance.proxyFor(registryInstance.address, accounts[0])
+            return registryInstance.proxies(accounts[0])
               .then(() => {
                 assert.equal(true, true, 'fixme')
               })
