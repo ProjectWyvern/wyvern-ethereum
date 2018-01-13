@@ -12,6 +12,8 @@ These are the official Ethereum smart contracts for the Wyvern ERC20 token (WYV)
 
 ### Deployed Contracts
 
+*Please note: correct deployed contract addresses will always be in config.json. If you wish to import this repository directly, please use that file. The addresses in Truffle build output are not necessarily accurate.*
+
 #### Mainnet
 
 [Wyvern Token](https://etherscan.io/address/wyverntoken.eth)
