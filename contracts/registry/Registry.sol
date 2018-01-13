@@ -19,7 +19,14 @@ contract Registry is Ownable {
 
     /* Contracts allowed to call those proxies. */
     mapping(address => bool) public contracts;
-    
+
+    /**
+     * Change whether or not a given contract is allowed to access proxies registered with this Registry
+     *
+     * @dev Registry owner only
+     * @param addr Address to set permissions for
+     * @param allowed Whether or not that address will be allowed to access proxies
+     */    
     function updateContract(address addr, bool allowed)
         public
         onlyOwner
@@ -27,6 +34,12 @@ contract Registry is Ownable {
         contracts[addr] = allowed;
     }
 
+    /**
+     * Register a proxy contract with this registry
+     *
+     * @dev Must be called by the user which the proxy is for, creates a new AuthenticatedProxy
+     * @return New AuthenticatedProxy contract
+     */
     function registerProxy()
         public
         returns (AuthenticatedProxy proxy)

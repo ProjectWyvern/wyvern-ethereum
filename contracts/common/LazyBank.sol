@@ -1,10 +1,6 @@
 /*
 
-    LazyBank - keep user balances, support credit, debit, and locking, and minimize requisite token transfers.
-
-    TODO
-    - ERC223 support
-    - Analyze for ERC223 reentrancy bugs - should be a nonissue, only *this* contract will be called.
+  LazyBank - keep user balances, support credit, debit, and locking, and minimize requisite token transfers whilst doing so.
 
 */
 
@@ -19,8 +15,6 @@ import "zeppelin-solidity/contracts/math/SafeMath.sol";
  */
 contract LazyBank {
 
-    // TODO checks effects interactions, presume untrusted tokens
-
     /* Token balances, by owner, by token. */
     mapping(address => mapping(address => uint)) public balances;
 
@@ -32,6 +26,13 @@ contract LazyBank {
     event Locked(address indexed user, address indexed token, uint amount);
     event Unlocked(address indexed user, address indexed token, uint amount);
 
+    /**
+     * Return the balance a user has of a token
+     * 
+     * @param user User address to query
+     * @param token Token address to query
+     * @return Balance of the user
+     */
     function balanceFor(address user, ERC20 token)
         public
         view
@@ -40,6 +41,13 @@ contract LazyBank {
         return balances[user][token];
     }
 
+    /**
+     * Return the locked amount a user has of a token
+     *
+     * @param user User address to query
+     * @param token Token address to query
+     * @return Amount of tokens locked for the user
+     */
     function lockedFor(address user, ERC20 token)
         public
         view
@@ -48,6 +56,13 @@ contract LazyBank {
         return locked[user][token];
     }
 
+    /**
+     * Returns the amount of a token a user could withdraw immediately
+     * 
+     * @param user User address to query
+     * @param token Token address to query
+     * @return Amount of tokens available for withdrawal
+     */
     function availableFor(address user, ERC20 token)
         public
         view
@@ -56,6 +71,13 @@ contract LazyBank {
         return SafeMath.sub(balances[user][token], locked[user][token]);
     }
 
+    /**
+     * Deposit a specified amount of tokens for a specified user
+     *
+     * @param user User to deposit for (must execute the call)
+     * @param token ERC20 token to deposit
+     * @param amount Amount of tokens to deposit
+     */
     function deposit(address user, ERC20 token, uint amount)
         public
     {
@@ -64,16 +86,32 @@ contract LazyBank {
         require(token.transferFrom(user, this, amount));
     }
 
-    function withdraw(address user, ERC20 token, uint amount)
+    /**
+     * Withdraw a specified amount of tokens to a specified address
+     *
+     * @param user User to withdraw from (must execute the call)
+     * @param token ERC20 token to withdraw
+     * @param amount Amount of tokens to withdraw
+     * @param dest Address to which to send the tokens
+    */
+    function withdraw(address user, ERC20 token, uint amount, address dest)
         public
     {
         require(msg.sender == user);
         uint available = SafeMath.sub(balances[user][token], locked[user][token]);
         require(amount <= available);
-        balances[user][token] = SafeMath.sub(balances[user][token], amount);
-        token.transfer(user, amount); 
+        lazyDebit(user, token, amount);
+        token.transfer(dest, amount); 
     }
 
+    /**
+     * Credit a user with a specified amount of a token
+     *
+     * @dev Internal only
+     * @param user User address to credit
+     * @param token ERC20 address to credit
+     * @param amount Amount of tokens to credit
+     */
     function credit(address user, ERC20 token, uint amount)
         internal
     {
@@ -81,6 +119,15 @@ contract LazyBank {
         Credited(user, token, amount);
     }
 
+    /**
+     * Lazy-debit a user a specified amount of a token
+     * Uses internal balance if available, executes ERC20 transferFrom otherwise
+     * 
+     * @dev Internal only
+     * @param user User address to debit
+     * @param token ERC20 address to debit
+     * @param amount Amount to debit
+     */
     function lazyDebit(address user, ERC20 token, uint amount) 
         internal
     {
@@ -95,13 +142,31 @@ contract LazyBank {
         }
     }
 
+    /**
+     * Transfer balance of a token from one user to another
+     *
+     * @dev Internal only
+     * @param from Address to debit
+     * @param to Address to credit
+     * @param token Token to transfer
+     * @param amount Amount of tokens
+     */
     function transferTo(address from, address to, ERC20 token, uint amount)
         internal
     {
-        lazyDebit(from, token, amount);
         credit(to, token, amount);
+        lazyDebit(from, token, amount);
     }
 
+    /**
+     * Lazy-lock an amount of a token for a user
+     * Uses internal balance if available, executes ERC20 transferFrom otherwise
+     *
+     * @dev Internal only
+     * @param user User address to lock for
+     * @param token ERC20 address to lock
+     * @param amount Amount of tokens to lock
+     */
     function lazyLock(address user, ERC20 token, uint amount)
         internal
     {
@@ -111,10 +176,17 @@ contract LazyBank {
             balances[user][token] = SafeMath.add(balances[user][token], diff);
             require(token.transferFrom(user, this, diff));
         }
-        require(balances[user][token] >= locked[user][token]);
         Locked(user, token, amount);
     }
 
+    /**
+     * Unlock an amount of a token for a user
+     *
+     * @dev Internal only
+     * @param user User address to unlock tokens for
+     * @param token ERC20 address
+     * @param amount Amount of tokens to unlock
+     */
     function unlock(address user, ERC20 token, uint amount)
         internal
     {

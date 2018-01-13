@@ -1,3 +1,9 @@
+/*
+
+  Simple contract extension to provide a contract-global reentrancy guard on functions.
+
+*/
+
 pragma solidity 0.4.18;
 
 /**
