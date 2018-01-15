@@ -86,6 +86,8 @@ contract Exchange is LazyBank {
         uint expirationTime;
         /* Order frontend. */
         address frontend;
+        /* Order salt, used to prevent duplicate hashes. */
+        uint salt;
     }
 
     event OrderCancelled  (bytes32 hash);
@@ -111,7 +113,7 @@ contract Exchange is LazyBank {
         pure
         returns (bytes32)
     {
-        return keccak256(order.metadataHash, order.paymentToken, order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime, order.frontend);
+        return keccak256(order.metadataHash, order.paymentToken, order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime, order.frontend, order.salt);
     }
 
     function hashOrder(Order order)
@@ -125,7 +127,7 @@ contract Exchange is LazyBank {
 
     function hashOrder_(
         address[5] addrs,
-        uint[5] uints,
+        uint[6] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -137,7 +139,7 @@ contract Exchange is LazyBank {
         returns (bytes32)
     { 
         return hashOrder(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4])
+          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5])
         );
     }
 
@@ -177,7 +179,7 @@ contract Exchange is LazyBank {
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function validateOrder_ (
         address[5] addrs,
-        uint[5] uints,
+        uint[6] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -191,7 +193,7 @@ contract Exchange is LazyBank {
         public
         returns (bool)
     {
-        Order memory order = Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4]);
+        Order memory order = Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]);
         return validateOrder(
           hashToSign(order),
           order,
@@ -215,7 +217,7 @@ contract Exchange is LazyBank {
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function cancelOrder_(
         address[5] addrs,
-        uint[5] uints,
+        uint[6] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -228,7 +230,7 @@ contract Exchange is LazyBank {
         public
     {
         return cancelOrder(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4]),
+          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]),
           Sig(v, r, s)
         );
     }
@@ -268,7 +270,7 @@ contract Exchange is LazyBank {
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function bid_(
         address[5] addrs,
-        uint[5] uints,
+        uint[6] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -282,7 +284,7 @@ contract Exchange is LazyBank {
         public
     {
         return bid(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4]),
+          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]),
           Sig(v, r, s),
           amount
         );
@@ -391,7 +393,7 @@ contract Exchange is LazyBank {
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function atomicMatch_(
         address[10] addrs,
-        uint[10] uints,
+        uint[12] uints,
         uint8[6] sidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
@@ -404,9 +406,9 @@ contract Exchange is LazyBank {
         public
     {
         return atomicMatch(
-          Order(addrs[0], addrs[1], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[2], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4]),
+          Order(addrs[0], addrs[1], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[2], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]),
           Sig(vs[0], rss[0], rss[1]),
-          Order(addrs[5], addrs[6], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[7], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[8]), uints[5], uints[6], uints[7], uints[8], uints[9], addrs[9]),
+          Order(addrs[5], addrs[6], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[7], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[8]), uints[6], uints[7], uints[8], uints[9], uints[10], addrs[9], uints[11]),
           Sig(vs[1], rss[2], rss[3])
         );
     }

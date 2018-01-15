@@ -30,7 +30,8 @@ const hashOrder = (order) => {
       {type: 'uint', value: new BigNumber(order.extra)},
       {type: 'uint', value: new BigNumber(order.listingTime)},
       {type: 'uint', value: new BigNumber(order.expirationTime)},
-      {type: 'address', value: order.frontend}
+      {type: 'address', value: order.frontend},
+      {type: 'uint', value: order.salt}
     ).toString('hex')}
   ).toString('hex')
 }
@@ -52,7 +53,8 @@ contract('WyvernExchange', (accounts) => {
     extra: 0,
     listingTime: 0,
     expirationTime: 0,
-    frontend: accounts[0]
+    frontend: accounts[0],
+    salt: 0
   })
 
   it('should match order hash', () => {
@@ -63,7 +65,7 @@ contract('WyvernExchange', (accounts) => {
         const hash = hashOrder(order)
         return exchangeInstance.hashOrder_.call(
             [order.exchange, order.initiator, order.target, order.paymentToken, order.frontend],
-            [order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime],
+            [order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime, order.salt],
             order.side,
             order.saleKind,
             order.howToCall,
@@ -88,7 +90,7 @@ contract('WyvernExchange', (accounts) => {
           const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
           return exchangeInstance.validateOrder_.call(
             [order.exchange, order.initiator, order.target, order.paymentToken, order.frontend],
-            [order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime],
+            [order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime, order.salt],
             order.side,
             order.saleKind,
             order.howToCall,
@@ -155,7 +157,7 @@ contract('WyvernExchange', (accounts) => {
             const sv = 27 + parseInt('0x' + signature.slice(128, 130), 16)
             return exchangeInstance.atomicMatch_(
               [buy.exchange, buy.initiator, buy.target, buy.paymentToken, buy.frontend, sell.exchange, sell.initiator, sell.target, sell.paymentToken, sell.frontend],
-              [buy.basePrice, buy.baseFee, buy.extra, buy.listingTime, buy.expirationTime, sell.basePrice, sell.baseFee, sell.extra, sell.listingTime, sell.expirationTime],
+              [buy.basePrice, buy.baseFee, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.basePrice, sell.baseFee, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
               [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
               buy.calldata,
               sell.calldata,
