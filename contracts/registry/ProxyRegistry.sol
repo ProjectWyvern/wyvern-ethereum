@@ -12,7 +12,7 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "./AuthenticatedProxy.sol";
 
-contract Registry is Ownable {
+contract ProxyRegistry is Ownable {
 
     /* Authenticated proxies by user. */
     mapping(address => AuthenticatedProxy) public proxies;

@@ -7,7 +7,7 @@
 pragma solidity 0.4.18;
 
 import "../common/TokenRecipient.sol";
-import "./Registry.sol";
+import "./ProxyRegistry.sol";
 
 /**
  * @title AuthenticatedProxy
@@ -17,7 +17,7 @@ contract AuthenticatedProxy is TokenRecipient {
 
     address public user;
 
-    Registry public registry;
+    ProxyRegistry public registry;
 
     bool revoked = false;
 
@@ -29,15 +29,15 @@ contract AuthenticatedProxy is TokenRecipient {
      * Create an AuthenticatedProxy
      *
      * @param addrUser Address of user on whose behalf this proxy will act
-     * @param addrRegistry Address of Registry contract which will manage this proxy
+     * @param addrRegistry Address of ProxyRegistry contract which will manage this proxy
      */
-    function AuthenticatedProxy(address addrUser, Registry addrRegistry) public {
+    function AuthenticatedProxy(address addrUser, ProxyRegistry addrRegistry) public {
         user = addrUser;
         registry = addrRegistry;
     }
 
     /**
-     * Set the revoked flag (allows a user to revoke Registry access)
+     * Set the revoked flag (allows a user to revoke ProxyRegistry access)
      *
      * @dev Can be called by the user only
      * @param revoke Whether or not to revoke access

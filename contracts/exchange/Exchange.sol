@@ -19,7 +19,7 @@ pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 
-import "../registry/Registry.sol";
+import "../registry/ProxyRegistry.sol";
 import "../common/LazyBank.sol";
 import "../common/ArrayUtils.sol";
 import "./SaleKindInterface.sol";
@@ -34,13 +34,16 @@ contract Exchange is LazyBank {
     ERC20 public exchangeTokenAddress;
 
     /* User registry. */
-    Registry public registry;
+    ProxyRegistry public registry;
 
     /* Top bids for all bid-supporting auctions, by hash. */
     mapping(bytes32 => SaleKindInterface.Bid) public topBids;
  
     /* Cancelled / finalized orders, by hash. */
     mapping(bytes32 => bool) cancelledOrFinalized;
+
+    /* Orders verified by on-chain approval (alternative to ECDSA signatures so that smart contracts can place orders directly). */
+    mapping(bytes32 => bool) approvedOrders;
 
     /* An ECDSA signature. */ 
     struct Sig {
@@ -90,6 +93,7 @@ contract Exchange is LazyBank {
         uint salt;
     }
 
+    event OrderApproved   (bytes32 hash, address indexed approver, Order order, bool orderbookInclusionDesired);
     event OrderCancelled  (bytes32 hash);
     event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount, uint timestamp);
     event OrdersMatched   (Order buy, Order sell);
@@ -171,7 +175,7 @@ contract Exchange is LazyBank {
         return(
             order.exchange == address(this) &&
             !cancelledOrFinalized[hash] && 
-            ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator &&
+            (approvedOrders[hash] || ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator) &&
             SaleKindInterface.validateParameters(order.side, order.saleKind, order.expirationTime)
         );
     }
@@ -199,6 +203,33 @@ contract Exchange is LazyBank {
           order,
           Sig(v, r, s)
         );
+    }
+
+    function approveOrder(Order memory order, bool orderbookInclusionDesired)
+        internal
+    {
+        require(msg.sender == order.initiator);
+        bytes32 hash = hashToSign(order);
+        require(!approvedOrders[hash]);
+        approvedOrders[hash] = true;
+        OrderApproved(hash, msg.sender, order, orderbookInclusionDesired);
+    }
+
+    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    function approveOrder_ (
+        address[5] addrs,
+        uint[6] uints,
+        SaleKindInterface.Side side,
+        SaleKindInterface.SaleKind saleKind,
+        AuthenticatedProxy.HowToCall howToCall,
+        bytes calldata,
+        bytes replacementPattern,
+        bytes metadataHash,
+        bool orderbookInclusionDesired) 
+        public
+    {
+        Order memory order = Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]);
+        return approveOrder(order, orderbookInclusionDesired);
     }
 
     function cancelOrder(Order memory order, Sig memory sig) 

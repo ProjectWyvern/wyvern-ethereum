@@ -1,10 +1,10 @@
 /* global artifacts:false, it:false, contract:false, assert:false */
 
-const WyvernRegistry = artifacts.require('WyvernRegistry')
+const WyvernProxyRegistry = artifacts.require('WyvernProxyRegistry')
 
-contract('WyvernRegistry', (accounts) => {
+contract('WyvernProxyRegistry', (accounts) => {
   it('should allow proxy creation', () => {
-    return WyvernRegistry
+    return WyvernProxyRegistry
       .deployed()
       .then(registryInstance => {
         return registryInstance.registerProxy()

@@ -1,7 +1,7 @@
 /* global artifacts:false, it:false, contract:false, assert:false */
 
 const WyvernExchange = artifacts.require('WyvernExchange')
-const WyvernRegistry = artifacts.require('WyvernRegistry')
+const WyvernProxyRegistry = artifacts.require('WyvernProxyRegistry')
 const BigNumber = require('bignumber.js')
 
 const Web3 = require('web3')
@@ -106,7 +106,7 @@ contract('WyvernExchange', (accounts) => {
   })
 
   it('should allow proxy creation', () => {
-    return WyvernRegistry
+    return WyvernProxyRegistry
       .deployed()
       .then(registryInstance => {
         return registryInstance.registerProxy()
@@ -120,7 +120,7 @@ contract('WyvernExchange', (accounts) => {
   })
 
   it('should allow auth alteration', () => {
-    return WyvernRegistry
+    return WyvernProxyRegistry
       .deployed()
       .then(registryInstance => {
         return WyvernExchange
