@@ -9,7 +9,7 @@
 
   Relative to this model, the present Exchange instantiation makes two concessions to practicality:
   - State transition preferences are not matched directly but instead intermediated by a standard of tokenized value.
-  - A small fee is charged in the token of payment, split between protocol development and frontend compensation.
+  - A small fee is charged in WYV for order settlement, with an amount configurable by the frontend hosting the orderbook.
 
   Solidity presently possesses neither a strong functional typesystem nor runtime reflection (ABI encoding in Solidity), so we must be a bit clever in implementation.
   
@@ -92,6 +92,26 @@ contract Exchange is LazyBank {
         /* Order salt, used to prevent duplicate hashes. */
         uint salt;
     }
+    
+    bytes32 public constant orderSchemaKeccak256 = keccak256(
+      "address exchange",
+      "address initiator",
+      "uint8 side",
+      "uint8 saleKind",
+      "address target",
+      "uint8 howToCall",
+      "bytes calldata",
+      "bytes replacementPattern",
+      "bytes metadataHash",
+      "address paymentToken",
+      "uint basePrice",
+      "uint baseFee",
+      "uint extra",
+      "uint listingTime",
+      "uint expirationTime",
+      "address frontend",
+      "uint salt"
+    );
 
     event OrderApproved   (bytes32 hash, address indexed approver, Order order, bool orderbookInclusionDesired);
     event OrderCancelled  (bytes32 hash);
@@ -127,6 +147,8 @@ contract Exchange is LazyBank {
     {
         /* This is silly, but necessary due to Solidity compiler stack size constraints. */
         return keccak256(hashOrderPartOne(order), hashOrderPartTwo(order));
+        // packing is wrong
+        // return keccak256(orderSchemaKeccak256, order);
     }
 
     function hashOrder_(
@@ -173,9 +195,13 @@ contract Exchange is LazyBank {
         returns (bool)
     {
         return(
+            /* Order targeted at this protocol version. */
             order.exchange == address(this) &&
+            /* Order has not been canceled or already filled. */
             !cancelledOrFinalized[hash] && 
-            (approvedOrders[hash] || ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator) &&
+            /* Order authentication. Either (a) sent by initiator, (b) previously approved, or (c) ECDSA-signed by initiator. */
+            (msg.sender == order.initiator || approvedOrders[hash] || ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator) &&
+            /* Valid sale kind parameter combination. */
             SaleKindInterface.validateParameters(order.side, order.saleKind, order.expirationTime)
         );
     }

@@ -36,6 +36,30 @@ const hashOrder = (order) => {
   ).toString('hex')
 }
 
+/*
+const hashOrder = (order) => {
+  return web3.utils.soliditySha3(
+    {type: 'address', value: order.exchange},
+    {type: 'address', value: order.initiator},
+    {type: 'uint8', value: order.side},
+    {type: 'uint8', value: order.saleKind},
+    {type: 'address', value: order.target},
+    {type: 'uint8', value: order.howToCall},
+    {type: 'bytes', value: order.calldata},
+    {type: 'bytes', value: order.replacementPattern},
+    {type: 'bytes', value: order.metadataHash},
+    {type: 'address', value: order.paymentToken},
+    {type: 'uint', value: new BigNumber(order.basePrice)},
+    {type: 'uint', value: new BigNumber(order.baseFee)},
+    {type: 'uint', value: new BigNumber(order.extra)},
+    {type: 'uint', value: new BigNumber(order.listingTime)},
+    {type: 'uint', value: new BigNumber(order.expirationTime)},
+    {type: 'address', value: order.frontend},
+    {type: 'uint', value: order.salt}
+  ).toString('hex')
+}
+*/
+
 contract('WyvernExchange', (accounts) => {
   const makeOrder = (exchange) => ({
     exchange: exchange,
