@@ -13,7 +13,11 @@ const hashOrder = (order) => {
     {type: 'bytes32',
       value: web3.utils.soliditySha3(
       {type: 'address', value: order.exchange},
-      {type: 'address', value: order.initiator},
+      {type: 'address', value: order.maker},
+      {type: 'address', value: order.taker},
+      {type: 'uint', value: new BigNumber(order.makerFee)},
+      {type: 'uint', value: new BigNumber(order.takerFee)},
+      {type: 'address', value: order.feeRecipient},
       {type: 'uint8', value: order.side},
       {type: 'uint8', value: order.saleKind},
       {type: 'address', value: order.target},
@@ -26,12 +30,10 @@ const hashOrder = (order) => {
       {type: 'bytes', value: order.metadataHash},
       {type: 'address', value: order.paymentToken},
       {type: 'uint', value: new BigNumber(order.basePrice)},
-      {type: 'uint', value: new BigNumber(order.baseFee)},
       {type: 'uint', value: new BigNumber(order.extra)},
       {type: 'uint', value: new BigNumber(order.listingTime)},
       {type: 'uint', value: new BigNumber(order.expirationTime)},
-      {type: 'address', value: order.frontend},
-      {type: 'uint', value: order.salt}
+      {type: 'uint', value: new BigNumber(order.salt)}
     ).toString('hex')}
   ).toString('hex')
 }
@@ -63,7 +65,11 @@ const hashOrder = (order) => {
 contract('WyvernExchange', (accounts) => {
   const makeOrder = (exchange) => ({
     exchange: exchange,
-    initiator: accounts[0],
+    maker: accounts[0],
+    taker: accounts[0],
+    makerFee: 0,
+    takerFee: 0,
+    feeRecipient: accounts[0],
     side: 0,
     saleKind: 0,
     target: accounts[0],
@@ -73,11 +79,9 @@ contract('WyvernExchange', (accounts) => {
     metadataHash: '0x',
     paymentToken: accounts[0],
     basePrice: 0,
-    baseFee: 0,
     extra: 0,
     listingTime: 0,
     expirationTime: 0,
-    frontend: accounts[0],
     salt: 0
   })
 
@@ -88,8 +92,8 @@ contract('WyvernExchange', (accounts) => {
         const order = makeOrder(exchangeInstance.address)
         const hash = hashOrder(order)
         return exchangeInstance.hashOrder_.call(
-            [order.exchange, order.initiator, order.target, order.paymentToken, order.frontend],
-            [order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.paymentToken],
+            [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
             order.side,
             order.saleKind,
             order.howToCall,
@@ -113,8 +117,8 @@ contract('WyvernExchange', (accounts) => {
           const s = '0x' + signature.slice(64, 128)
           const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
           return exchangeInstance.validateOrder_.call(
-            [order.exchange, order.initiator, order.target, order.paymentToken, order.frontend],
-            [order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.paymentToken],
+            [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
             order.side,
             order.saleKind,
             order.howToCall,
@@ -180,8 +184,8 @@ contract('WyvernExchange', (accounts) => {
             const ss = '0x' + signature.slice(64, 128)
             const sv = 27 + parseInt('0x' + signature.slice(128, 130), 16)
             return exchangeInstance.atomicMatch_(
-              [buy.exchange, buy.initiator, buy.target, buy.paymentToken, buy.frontend, sell.exchange, sell.initiator, sell.target, sell.paymentToken, sell.frontend],
-              [buy.basePrice, buy.baseFee, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.basePrice, sell.baseFee, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+              [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+              [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
               [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
               buy.calldata,
               sell.calldata,

@@ -12,6 +12,8 @@
   - A small fee is charged in WYV for order settlement, with an amount configurable by the frontend hosting the orderbook.
 
   Solidity presently possesses neither a strong functional typesystem nor runtime reflection (ABI encoding in Solidity), so we must be a bit clever in implementation.
+
+  TODO: Clarify maker/taker distinction, require fee agreement, see if we can implement negative fees. Consider implementing frontend order signatures.
   
 */
 
@@ -22,13 +24,14 @@ import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "../registry/ProxyRegistry.sol";
 import "../common/LazyBank.sol";
 import "../common/ArrayUtils.sol";
+import "../common/ReentrancyGuarded.sol";
 import "./SaleKindInterface.sol";
 
 /**
  * @title Exchange
  * @author Project Wyvern Developers
  */
-contract Exchange is LazyBank {
+contract Exchange is LazyBank, ReentrancyGuarded {
 
     /* The token used to pay exchange fees. */
     ERC20 public exchangeTokenAddress;
@@ -59,8 +62,16 @@ contract Exchange is LazyBank {
     struct Order {
         /* Exchange address, intended as a versioning mechanism. */
         address exchange;
-        /* The address buying/selling the item. */
-        address initiator;
+        /* Order maker address. */
+        address maker;
+        /* Order taker address, if specified. */
+        address taker;
+        /* Maker fee of the order (in Exchange fee tokens). */
+        uint makerFee;
+        /* Taker fee of the order (in Exchange fee tokens). */
+        uint takerFee;
+        /* Order fee recipient. */
+        address feeRecipient;
         /* Side (buy/sell). */
         SaleKindInterface.Side side;
         /* Kind of sale. */
@@ -75,44 +86,20 @@ contract Exchange is LazyBank {
         bytes replacementPattern;
         /* Order metadata IPFS hash. */
         bytes metadataHash;
-        /* Token used to pay for the item. */
+        /* Token used to pay for the order. */
         ERC20 paymentToken;
-        /* Base price of the item (tokens). */
+        /* Base price of the order (in paymentTokens). */
         uint basePrice;
-        /* Base fee of the item (Exchange fee tokens). */
-        uint baseFee;
         /* Auction extra parameter - minimum bid increment for English auctions, decay factor for Dutch auctions. */
         uint extra;
         /* Listing timestamp. */
         uint listingTime;
         /* Expiration timestamp - 0 for no expiry. */
         uint expirationTime;
-        /* Order frontend. */
-        address frontend;
         /* Order salt, used to prevent duplicate hashes. */
         uint salt;
     }
     
-    bytes32 public constant orderSchemaKeccak256 = keccak256(
-      "address exchange",
-      "address initiator",
-      "uint8 side",
-      "uint8 saleKind",
-      "address target",
-      "uint8 howToCall",
-      "bytes calldata",
-      "bytes replacementPattern",
-      "bytes metadataHash",
-      "address paymentToken",
-      "uint basePrice",
-      "uint baseFee",
-      "uint extra",
-      "uint listingTime",
-      "uint expirationTime",
-      "address frontend",
-      "uint salt"
-    );
-
     event OrderApproved   (bytes32 hash, address indexed approver, Order order, bool orderbookInclusionDesired);
     event OrderCancelled  (bytes32 hash);
     event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount, uint timestamp);
@@ -121,7 +108,9 @@ contract Exchange is LazyBank {
     function chargeFee(address from, address to, uint amount)
         internal
     {
-        transferTo(from, to, exchangeTokenAddress, amount);
+        if (amount > 0) {
+            transferTo(from, to, exchangeTokenAddress, amount);
+        }
     }
 
     function hashOrderPartOne(Order order)
@@ -129,7 +118,7 @@ contract Exchange is LazyBank {
         pure
         returns (bytes32)
     {
-        return keccak256(order.exchange, order.initiator, order.side, order.saleKind, order.target, order.howToCall, order.calldata, order.replacementPattern);
+        return keccak256(order.exchange, order.maker, order.taker, order.makerFee, order.takerFee, order.feeRecipient, order.side, order.saleKind, order.target, order.howToCall, order.calldata, order.replacementPattern);
     }
 
     function hashOrderPartTwo(Order order)
@@ -137,7 +126,7 @@ contract Exchange is LazyBank {
         pure
         returns (bytes32)
     {
-        return keccak256(order.metadataHash, order.paymentToken, order.basePrice, order.baseFee, order.extra, order.listingTime, order.expirationTime, order.frontend, order.salt);
+        return keccak256(order.metadataHash, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
     }
 
     function hashOrder(Order order)
@@ -145,15 +134,13 @@ contract Exchange is LazyBank {
         pure
         returns (bytes32)
     {
-        /* This is silly, but necessary due to Solidity compiler stack size constraints. */
+        /* This is silly, but necessary due to Solidity compiler stack size constraints. FIXME, waste of gas. */
         return keccak256(hashOrderPartOne(order), hashOrderPartTwo(order));
-        // packing is wrong
-        // return keccak256(orderSchemaKeccak256, order);
     }
 
     function hashOrder_(
-        address[5] addrs,
-        uint[6] uints,
+        address[6] addrs,
+        uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -165,7 +152,7 @@ contract Exchange is LazyBank {
         returns (bytes32)
     { 
         return hashOrder(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5])
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6])
         );
     }
 
@@ -195,21 +182,21 @@ contract Exchange is LazyBank {
         returns (bool)
     {
         return(
-            /* Order targeted at this protocol version. */
+            /* Order must be targeted at this protocol version (this Exchange contract). */
             order.exchange == address(this) &&
-            /* Order has not been canceled or already filled. */
+            /* Order must have not been canceled or already filled. */
             !cancelledOrFinalized[hash] && 
-            /* Order authentication. Either (a) sent by initiator, (b) previously approved, or (c) ECDSA-signed by initiator. */
-            (msg.sender == order.initiator || approvedOrders[hash] || ecrecover(hash, sig.v, sig.r, sig.s) == order.initiator) &&
-            /* Valid sale kind parameter combination. */
+            /* Order authentication. Order must be either (a) sent by maker, (b) previously approved, or (c) ECDSA-signed by maker. */
+            (msg.sender == order.maker || approvedOrders[hash] || ecrecover(hash, sig.v, sig.r, sig.s) == order.maker) &&
+            /* Order must possess valid sale kind parameter combination. */
             SaleKindInterface.validateParameters(order.side, order.saleKind, order.expirationTime)
         );
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function validateOrder_ (
-        address[5] addrs,
-        uint[6] uints,
+        address[6] addrs,
+        uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -223,7 +210,7 @@ contract Exchange is LazyBank {
         public
         returns (bool)
     {
-        Order memory order = Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]);
+        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]);
         return validateOrder(
           hashToSign(order),
           order,
@@ -234,7 +221,7 @@ contract Exchange is LazyBank {
     function approveOrder(Order memory order, bool orderbookInclusionDesired)
         internal
     {
-        require(msg.sender == order.initiator);
+        require(msg.sender == order.maker);
         bytes32 hash = hashToSign(order);
         require(!approvedOrders[hash]);
         approvedOrders[hash] = true;
@@ -243,8 +230,8 @@ contract Exchange is LazyBank {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function approveOrder_ (
-        address[5] addrs,
-        uint[6] uints,
+        address[6] addrs,
+        uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -254,7 +241,7 @@ contract Exchange is LazyBank {
         bool orderbookInclusionDesired) 
         public
     {
-        Order memory order = Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]);
+        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]);
         return approveOrder(order, orderbookInclusionDesired);
     }
 
@@ -263,7 +250,7 @@ contract Exchange is LazyBank {
     {
         /* CHECKS */
         bytes32 hash = requireValidOrder(order, sig);
-        require(msg.sender == order.initiator);
+        require(msg.sender == order.maker);
   
         /* EFFECTS */
         cancelledOrFinalized[hash] = true;
@@ -273,8 +260,8 @@ contract Exchange is LazyBank {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function cancelOrder_(
-        address[5] addrs,
-        uint[6] uints,
+        address[6] addrs,
+        uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -286,14 +273,16 @@ contract Exchange is LazyBank {
         bytes32 s)
         public
     {
+
         return cancelOrder(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]),
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]),
           Sig(v, r, s)
         );
     }
 
     function bid (Order order, Sig sig, uint amount)
         internal
+        reentrancyGuard
     {
         /* CHECKS */
   
@@ -326,8 +315,8 @@ contract Exchange is LazyBank {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function bid_(
-        address[5] addrs,
-        uint[6] uints,
+        address[6] addrs,
+        uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -341,7 +330,7 @@ contract Exchange is LazyBank {
         public
     {
         return bid(
-          Order(addrs[0], addrs[1], side, saleKind, addrs[2], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]),
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]),
           Sig(v, r, s),
           amount
         );
@@ -376,9 +365,9 @@ contract Exchange is LazyBank {
         /* Calculate match price. */
         uint price = calculateMatchPrice(buy, sell, topBid);
 
-        /* Charge fees. */
-        chargeFee(buy.initiator, buy.frontend, buy.baseFee);
-        chargeFee(sell.initiator, sell.frontend, sell.baseFee);
+        /* TODO: Charge fees. */
+        chargeFee(buy.maker, buy.feeRecipient, buy.makerFee);
+        chargeFee(sell.maker, sell.feeRecipient, sell.makerFee);
 
         /* Unlock tokens for top bidder, if existent. */
         if (topBid.bidder != address(0)) {
@@ -386,14 +375,15 @@ contract Exchange is LazyBank {
         }
 
         /* Debit buyer. */
-        lazyDebit(buy.initiator, sell.paymentToken, price);
+        lazyDebit(buy.maker, sell.paymentToken, price);
 
         /* Credit seller. */
-        credit(sell.initiator, sell.paymentToken, price);
+        credit(sell.maker, sell.paymentToken, price);
     }
 
     function atomicMatch(Order buy, Sig buySig, Order sell, Sig sellSig)
         internal
+        reentrancyGuard
     {
         /* CHECKS */
       
@@ -406,10 +396,14 @@ contract Exchange is LazyBank {
         /* Must use same payment token. */
         require(buy.paymentToken == sell.paymentToken);
 
+        /* Must match maker/taker. */
+        require(sell.taker == buy.maker || sell.taker == address(0));
+        require(buy.taker == sell.maker || buy.taker == address(0));
+
         /* Must be settleable. */
         SaleKindInterface.Bid storage topBid = topBids[sellHash];
-        require(SaleKindInterface.canSettleOrder(buy.saleKind, sell.initiator, buy.expirationTime, SaleKindInterface.Bid({ bidder: address(0), amount: 0 })));
-        require(SaleKindInterface.canSettleOrder(sell.saleKind, buy.initiator, sell.expirationTime, topBid));
+        require(SaleKindInterface.canSettleOrder(buy.saleKind, sell.maker, buy.expirationTime, SaleKindInterface.Bid({ bidder: address(0), amount: 0 })));
+        require(SaleKindInterface.canSettleOrder(sell.saleKind, buy.maker, sell.expirationTime, topBid));
         
         /* Must match target. */
         require(buy.target == sell.target);
@@ -423,7 +417,7 @@ contract Exchange is LazyBank {
         require(ArrayUtils.arrayEq(buy.calldata, sell.calldata));
 
         /* Retrieve proxy (the registry contract is trusted). */
-        AuthenticatedProxy proxy = registry.proxies(sell.initiator);
+        AuthenticatedProxy proxy = registry.proxies(sell.maker);
 
         /* Proxy must exist. */
         require(proxy != address(0));
@@ -439,8 +433,7 @@ contract Exchange is LazyBank {
 
         /* INTERACTIONS */
 
-        /* Execute call through proxy. is is though? lazyDebit? safer to reentrancy guard?
-           This is the *only* external call to untrusted contract(s) in this function. */
+        /* Execute call through proxy. */
         require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
 
         /* Log match event. */
@@ -449,8 +442,8 @@ contract Exchange is LazyBank {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function atomicMatch_(
-        address[10] addrs,
-        uint[12] uints,
+        address[12] addrs,
+        uint[14] uints,
         uint8[6] sidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
@@ -463,9 +456,9 @@ contract Exchange is LazyBank {
         public
     {
         return atomicMatch(
-          Order(addrs[0], addrs[1], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[2], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[3]), uints[0], uints[1], uints[2], uints[3], uints[4], addrs[4], uints[5]),
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]),
           Sig(vs[0], rss[0], rss[1]),
-          Order(addrs[5], addrs[6], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[7], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[8]), uints[6], uints[7], uints[8], uints[9], uints[10], addrs[9], uints[11]),
+          Order(addrs[6], addrs[7], addrs[8], uints[7], uints[8], addrs[9], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[10], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[11]), uints[9], uints[10], uints[11], uints[12], uints[13]),
           Sig(vs[1], rss[2], rss[3])
         );
     }

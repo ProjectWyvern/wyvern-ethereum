@@ -4,6 +4,8 @@
   
   Abstracted away from the Exchange so that other contracts (and future versions of the Exchange) can utilize the same Registry contract.
 
+  TODO: Add delay in adding contract to auth to prevent class of economic attacks on Wyvern DAO.
+
 */
 
 pragma solidity 0.4.18;
