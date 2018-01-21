@@ -17,4 +17,7 @@ contract ERC721 {
     function approve(address _to, uint256 _tokenId) public;
     function takeOwnership(uint256 _tokenId) public;
     function transfer(address _to, uint256 _tokenId) public;
+
+    event Transfer(address indexed from, address indexed to, uint256 tokenId);
+    event Approval(address indexed owner, address indexed approved, uint256 tokenId);
 }

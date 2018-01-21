@@ -102,20 +102,64 @@
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "approved",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Approval",
+      "type": "event"
     }
   ],
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "/* \n\nERC721 (draft) non-fungible token interface. See https://github.com/ethereum/EIPs/issues/721.\n\n*/\n\npragma solidity 0.4.18;\n\n/**\n * @title ERC721\n * @author Project Wyvern Developers\n */\ncontract ERC721 {\n    function totalSupply() public view returns (uint256 _totalSupply);\n    function balanceOf(address _owner) public view returns (uint256 balance);\n    function ownerOf(uint256 _tokenId) public view returns (address owner);\n    function approve(address _to, uint256 _tokenId) public;\n    function takeOwnership(uint256 _tokenId) public;\n    function transfer(address _to, uint256 _tokenId) public;\n}\n",
+  "source": "/* \n\nERC721 (draft) non-fungible token interface. See https://github.com/ethereum/EIPs/issues/721.\n\n*/\n\npragma solidity 0.4.18;\n\n/**\n * @title ERC721\n * @author Project Wyvern Developers\n */\ncontract ERC721 {\n    function totalSupply() public view returns (uint256 _totalSupply);\n    function balanceOf(address _owner) public view returns (uint256 balance);\n    function ownerOf(uint256 _tokenId) public view returns (address owner);\n    function approve(address _to, uint256 _tokenId) public;\n    function takeOwnership(uint256 _tokenId) public;\n    function transfer(address _to, uint256 _tokenId) public;\n\n    event Transfer(address indexed from, address indexed to, uint256 tokenId);\n    event Approval(address indexed owner, address indexed approved, uint256 tokenId);\n}\n",
   "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ERC721.sol",
   "ast": {
     "attributes": {
       "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ERC721.sol",
       "exportedSymbols": {
         "ERC721": [
-          572
+          588
         ]
       }
     },
@@ -144,10 +188,10 @@
           "documentation": "@title ERC721\n@author Project Wyvern Developers",
           "fullyImplemented": false,
           "linearizedBaseContracts": [
-            572
+            588
           ],
           "name": "ERC721",
-          "scope": 573
+          "scope": 589
         },
         "children": [
           {
@@ -161,7 +205,7 @@
               ],
               "name": "totalSupply",
               "payable": false,
-              "scope": 572,
+              "scope": 588,
               "stateMutability": "view",
               "superFunction": null,
               "visibility": "public"
@@ -227,7 +271,7 @@
               ],
               "name": "balanceOf",
               "payable": false,
-              "scope": 572,
+              "scope": 588,
               "stateMutability": "view",
               "superFunction": null,
               "visibility": "public"
@@ -315,7 +359,7 @@
               ],
               "name": "ownerOf",
               "payable": false,
-              "scope": 572,
+              "scope": 588,
               "stateMutability": "view",
               "superFunction": null,
               "visibility": "public"
@@ -403,7 +447,7 @@
               ],
               "name": "approve",
               "payable": false,
-              "scope": 572,
+              "scope": 588,
               "stateMutability": "nonpayable",
               "superFunction": null,
               "visibility": "public"
@@ -495,7 +539,7 @@
               ],
               "name": "takeOwnership",
               "payable": false,
-              "scope": 572,
+              "scope": 588,
               "stateMutability": "nonpayable",
               "superFunction": null,
               "visibility": "public"
@@ -561,7 +605,7 @@
               ],
               "name": "transfer",
               "payable": false,
-              "scope": 572,
+              "scope": 588,
               "stateMutability": "nonpayable",
               "superFunction": null,
               "visibility": "public"
@@ -641,16 +685,214 @@
             "id": 571,
             "name": "FunctionDefinition",
             "src": "551:56:9"
+          },
+          {
+            "attributes": {
+              "anonymous": false,
+              "name": "Transfer"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "indexed": true,
+                      "name": "from",
+                      "scope": 579,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 572,
+                        "name": "ElementaryTypeName",
+                        "src": "628:7:9"
+                      }
+                    ],
+                    "id": 573,
+                    "name": "VariableDeclaration",
+                    "src": "628:20:9"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "indexed": true,
+                      "name": "to",
+                      "scope": 579,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 574,
+                        "name": "ElementaryTypeName",
+                        "src": "650:7:9"
+                      }
+                    ],
+                    "id": 575,
+                    "name": "VariableDeclaration",
+                    "src": "650:18:9"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "indexed": false,
+                      "name": "tokenId",
+                      "scope": 579,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "uint256",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "uint256",
+                          "type": "uint256"
+                        },
+                        "id": 576,
+                        "name": "ElementaryTypeName",
+                        "src": "670:7:9"
+                      }
+                    ],
+                    "id": 577,
+                    "name": "VariableDeclaration",
+                    "src": "670:15:9"
+                  }
+                ],
+                "id": 578,
+                "name": "ParameterList",
+                "src": "627:59:9"
+              }
+            ],
+            "id": 579,
+            "name": "EventDefinition",
+            "src": "613:74:9"
+          },
+          {
+            "attributes": {
+              "anonymous": false,
+              "name": "Approval"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "indexed": true,
+                      "name": "owner",
+                      "scope": 587,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 580,
+                        "name": "ElementaryTypeName",
+                        "src": "707:7:9"
+                      }
+                    ],
+                    "id": 581,
+                    "name": "VariableDeclaration",
+                    "src": "707:21:9"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "indexed": true,
+                      "name": "approved",
+                      "scope": 587,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "address",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "address",
+                          "type": "address"
+                        },
+                        "id": 582,
+                        "name": "ElementaryTypeName",
+                        "src": "730:7:9"
+                      }
+                    ],
+                    "id": 583,
+                    "name": "VariableDeclaration",
+                    "src": "730:24:9"
+                  },
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "indexed": false,
+                      "name": "tokenId",
+                      "scope": 587,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "uint256",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "name": "uint256",
+                          "type": "uint256"
+                        },
+                        "id": 584,
+                        "name": "ElementaryTypeName",
+                        "src": "756:7:9"
+                      }
+                    ],
+                    "id": 585,
+                    "name": "VariableDeclaration",
+                    "src": "756:15:9"
+                  }
+                ],
+                "id": 586,
+                "name": "ParameterList",
+                "src": "706:66:9"
+              }
+            ],
+            "id": 587,
+            "name": "EventDefinition",
+            "src": "692:81:9"
           }
         ],
-        "id": 572,
+        "id": 588,
         "name": "ContractDefinition",
-        "src": "191:418:9"
+        "src": "191:584:9"
       }
     ],
-    "id": 573,
+    "id": 589,
     "name": "SourceUnit",
-    "src": "104:506:9"
+    "src": "104:672:9"
   },
   "compiler": {
     "name": "solc",
@@ -658,5 +900,5 @@
   },
   "networks": {},
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-01-18T21:57:26.350Z"
+  "updatedAt": "2018-01-21T05:02:46.003Z"
 }
