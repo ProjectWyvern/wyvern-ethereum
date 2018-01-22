@@ -29,7 +29,7 @@ library ArrayUtils {
     {
         byte[8] memory bitmasks = [byte(2 ** 7), byte(2 ** 6), byte(2 ** 5), byte(2 ** 4), byte(2 ** 3), byte(2 ** 2), byte(2 ** 1), byte(2 ** 0)];
         require(array.length == desired.length);
-        require(mask.length == array.length / 8);
+        require(mask.length >= array.length / 8);
         for (uint i = 0; i < array.length; i++ ) {
             /* 1-bit means value can be changed. */
             bool masked = (mask[i / 8] & bitmasks[i % 8]) == 0;

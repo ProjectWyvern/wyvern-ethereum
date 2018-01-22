@@ -63,6 +63,26 @@ const hashOrder = (order) => {
 */
 
 contract('WyvernExchange', (accounts) => {
+  it('should allow simple array replacement', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.guardedArrayReplace.call('0xff', '0x00', '0xff').then(res => {
+          assert.equal(res, '0x00', 'Array was not properly replaced!')
+        })
+      })
+  })
+
+  it('should disallow array replacement', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.guardedArrayReplace.call('0xff', '0x00', '0x00').then(res => {
+          assert.equal(res, '0xff', 'Array replacement was not disallowed!')
+        })
+      })
+  })
+
   const makeOrder = (exchange) => ({
     exchange: exchange,
     maker: accounts[0],

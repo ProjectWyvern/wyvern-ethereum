@@ -105,6 +105,14 @@ contract Exchange is LazyBank, ReentrancyGuarded {
     event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount, uint timestamp);
     event OrdersMatched   (Order buy, Order sell);
 
+    function guardedArrayReplace(bytes array, bytes desired, bytes mask)
+        public
+        pure
+        returns (bytes)
+    {
+        return ArrayUtils.guardedArrayReplace(array, desired, mask);
+    }
+
     function chargeFee(address from, address to, uint amount)
         internal
     {
