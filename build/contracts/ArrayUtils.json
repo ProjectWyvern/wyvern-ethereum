@@ -1,11 +1,11 @@
 {
   "contractName": "ArrayUtils",
   "abi": [],
-  "bytecode": "0x60606040523415600e57600080fd5b603580601b6000396000f3006060604052600080fd00a165627a7a7230582033305b3e283bee6bec3607306d89142e15c68720184304ca7a1e60c51882abe10029",
-  "deployedBytecode": "0x6060604052600080fd00a165627a7a7230582033305b3e283bee6bec3607306d89142e15c68720184304ca7a1e60c51882abe10029",
+  "bytecode": "0x60606040523415600e57600080fd5b603580601b6000396000f3006060604052600080fd00a165627a7a7230582030df2041929e76104e1d5ededfcbdef1bc42654f4d851e6bcca2bd2fb5a336d80029",
+  "deployedBytecode": "0x6060604052600080fd00a165627a7a7230582030df2041929e76104e1d5ededfcbdef1bc42654f4d851e6bcca2bd2fb5a336d80029",
   "sourceMap": "238:2124:8:-;;;;;;;;;;;;;;;;;",
   "deployedSourceMap": "238:2124:8:-;;;;;",
-  "source": "/*\n\n  Various functions for manipulating arrays in Solidity.\n  This library is completely inlined and does not need to be deployed or linked.\n\n*/\n\npragma solidity 0.4.18;\n\n/**\n * @title ArrayUtils\n * @author Project Wyvern Developers\n */\nlibrary ArrayUtils {\n\n    /**\n     * Replace bytes in an array with bytes in another array, guarded by a \"bytemask\"\n     * \n     * @dev Mask must be 1/8th the size of the byte array. A 1-bit means the byte array can be changed.\n     * @param array The original array\n     * @param desired The target array\n     * @param mask The mask specifying which bytes can be changed\n     * @return The updated byte array (the parameter will be modified inplace)\n     */\n    function guardedArrayReplace(bytes array, bytes desired, bytes mask)\n        pure\n        internal\n        returns (bytes)\n    {\n        byte[8] memory bitmasks = [byte(2 ** 7), byte(2 ** 6), byte(2 ** 5), byte(2 ** 4), byte(2 ** 3), byte(2 ** 2), byte(2 ** 1), byte(2 ** 0)];\n        require(array.length == desired.length);\n        require(mask.length == array.length / 8);\n        for (uint i = 0; i < array.length; i++ ) {\n            /* 1-bit means value can be changed. */\n            bool masked = (mask[i / 8] & bitmasks[i % 8]) == 0;\n            array[i] = masked ? array[i] : desired[i];\n        }\n        return array;\n    }\n\n    /**\n     * Test if two arrays are equal\n     * \n     * @dev Arrays must be of equal length, otherwise will return false\n     * @param a First array\n     * @param b Second array\n     * @return Whether or not all bytes in the arrays are equal\n     */\n    function arrayEq(bytes a, bytes b)\n        pure\n        internal\n        returns (bool)\n    {\n        if (a.length != b.length) {\n            return false;\n        }\n        for (uint i = 0; i < a.length; i++) {\n            if (a[i] != b[i]) {\n                return false;\n            }\n        }\n        return true;\n    }\n\n    /**\n     * Convert an address to bytes\n     *\n     * @param a Address to convert\n     * @return The address as a byte array\n     */\n    function toBytes(address a)\n        pure\n        internal\n        returns (bytes b)\n    {\n        assembly {\n            let m := mload(0x40)\n            mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))\n            mstore(0x40, add(m, 52))\n            b := m\n        }\n    }\n\n}\n",
+  "source": "/*\n\n  Various functions for manipulating arrays in Solidity.\n  This library is completely inlined and does not need to be deployed or linked.\n\n*/\n\npragma solidity 0.4.18;\n\n/**\n * @title ArrayUtils\n * @author Project Wyvern Developers\n */\nlibrary ArrayUtils {\n\n    /**\n     * Replace bytes in an array with bytes in another array, guarded by a \"bytemask\"\n     * \n     * @dev Mask must be 1/8th the size of the byte array. A 1-bit means the byte array can be changed.\n     * @param array The original array\n     * @param desired The target array\n     * @param mask The mask specifying which bytes can be changed\n     * @return The updated byte array (the parameter will be modified inplace)\n     */\n    function guardedArrayReplace(bytes array, bytes desired, bytes mask)\n        pure\n        internal\n        returns (bytes)\n    {\n        byte[8] memory bitmasks = [byte(2 ** 7), byte(2 ** 6), byte(2 ** 5), byte(2 ** 4), byte(2 ** 3), byte(2 ** 2), byte(2 ** 1), byte(2 ** 0)];\n        require(array.length == desired.length);\n        require(mask.length >= array.length / 8);\n        for (uint i = 0; i < array.length; i++ ) {\n            /* 1-bit means value can be changed. */\n            bool masked = (mask[i / 8] & bitmasks[i % 8]) == 0;\n            array[i] = masked ? array[i] : desired[i];\n        }\n        return array;\n    }\n\n    /**\n     * Test if two arrays are equal\n     * \n     * @dev Arrays must be of equal length, otherwise will return false\n     * @param a First array\n     * @param b Second array\n     * @return Whether or not all bytes in the arrays are equal\n     */\n    function arrayEq(bytes a, bytes b)\n        pure\n        internal\n        returns (bool)\n    {\n        if (a.length != b.length) {\n            return false;\n        }\n        for (uint i = 0; i < a.length; i++) {\n            if (a[i] != b[i]) {\n                return false;\n            }\n        }\n        return true;\n    }\n\n    /**\n     * Convert an address to bytes\n     *\n     * @param a Address to convert\n     * @return The address as a byte array\n     */\n    function toBytes(address a)\n        pure\n        internal\n        returns (bytes b)\n    {\n        assembly {\n            let m := mload(0x40)\n            mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))\n            mstore(0x40, add(m, 52))\n            b := m\n        }\n    }\n\n}\n",
   "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ArrayUtils.sol",
   "ast": {
     "attributes": {
@@ -1036,7 +1036,7 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 5127,
+                              "referencedDeclaration": 5146,
                               "type": "function (bool) pure",
                               "value": "require"
                             },
@@ -1164,7 +1164,7 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 5127,
+                              "referencedDeclaration": 5146,
                               "type": "function (bool) pure",
                               "value": "require"
                             },
@@ -1183,7 +1183,7 @@
                               "isLValue": false,
                               "isPure": false,
                               "lValueRequested": false,
-                              "operator": "==",
+                              "operator": ">=",
                               "type": "bool"
                             },
                             "children": [
@@ -2693,5 +2693,5 @@
   },
   "networks": {},
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-01-21T05:02:46.003Z"
+  "updatedAt": "2018-01-22T02:41:10.303Z"
 }
