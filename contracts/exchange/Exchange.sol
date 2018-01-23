@@ -475,7 +475,7 @@ contract Exchange is LazyBank, ReentrancyGuarded {
         cancelledOrFinalized[buyHash] = true;
         cancelledOrFinalized[sellHash] = true;
 
-        /* Validate and transfer funds. */ 
+        /* Validate balances and transfer funds. */ 
         executeFundsTransfer(buy, sell);
 
         /* INTERACTIONS */

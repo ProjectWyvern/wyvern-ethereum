@@ -22,6 +22,12 @@ module.exports = (deployer, network) => {
               return deployer.deploy(WyvernExchange, WyvernProxyRegistry.address, '0x056017c55ae7ae32d12aef7c679df83a85ca75ff')
                 .then(() => {
                   setConfig('deployed.' + network + '.WyvernExchange', WyvernExchange.address)
+                }).then(() => {
+                  return WyvernProxyRegistry.deployed().then(proxyRegistry => {
+                    return WyvernExchange.deployed().then(exchange => {
+                      return proxyRegistry.updateContract(exchange.address, true)
+                    })
+                  })
                 })
             })
         })
