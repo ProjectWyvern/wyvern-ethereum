@@ -57,7 +57,10 @@ contract AuthenticatedProxy is TokenRecipient {
      * @param howToCall Which kind of call to make
      * @param calldata Calldata to send
      */
-    function proxy(address dest, HowToCall howToCall, bytes calldata) public returns (bool result) {
+    function proxy(address dest, HowToCall howToCall, bytes calldata)
+        public
+        returns (bool result)
+    {
         require(msg.sender == user || (!revoked && registry.contracts(msg.sender)));
         address created;
         if (howToCall == HowToCall.Call) {
@@ -80,6 +83,15 @@ contract AuthenticatedProxy is TokenRecipient {
         }
         ProxiedCall(dest, howToCall, calldata, created, result);
         return result;
+    }
+
+    /**
+     * Execute a message call and assert success
+     */
+    function proxyAssert(address dest, HowToCall howToCall, bytes calldata)
+        public
+    {
+        require(proxy(dest, howToCall, calldata));
     }
 
 }
