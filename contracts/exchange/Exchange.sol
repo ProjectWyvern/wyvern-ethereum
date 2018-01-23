@@ -389,6 +389,57 @@ contract Exchange is LazyBank, ReentrancyGuarded {
         credit(sell.maker, sell.paymentToken, price);
     }
 
+    function ordersCanMatch(Order buy, Order sell)
+        internal
+        pure
+        returns (bool)
+    {
+        return (
+            /* Must be opposite-side. */
+            (buy.side == SaleKindInterface.Side.Buy && sell.side == SaleKindInterface.Side.Sell) &&     
+            /* Must use same payment token. */
+            (buy.paymentToken == sell.paymentToken) &&
+            /* Must match maker/taker. */
+            (sell.taker == address(0) || sell.taker == buy.maker) &&
+            (buy.taker == address(0) || buy.taker == sell.maker) &&
+            /* Must match target. */
+            (buy.target == sell.target) &&
+            /* Must match howToCall. */
+            (buy.howToCall == sell.howToCall)
+        );
+    }
+
+    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    function ordersCanMatch_(
+        address[12] addrs,
+        uint[14] uints,
+        uint8[6] sidesKindsHowToCalls,
+        bytes calldataBuy,
+        bytes calldataSell,
+        bytes replacementPatternBuy,
+        bytes replacementPatternSell,
+        bytes metadataHashBuy,
+        bytes metadataHashSell)
+        public
+        pure
+        returns (bool)
+    {
+        return ordersCanMatch(
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]),
+          Order(addrs[6], addrs[7], addrs[8], uints[7], uints[8], addrs[9], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[10], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[11]), uints[9], uints[10], uints[11], uints[12], uints[13])
+        );
+    }
+
+    function orderCalldataCanMatch(bytes buyCalldata, bytes buyReplacementPattern, bytes sellCalldata, bytes sellReplacementPattern)
+        public
+        pure
+        returns (bool)
+    {
+        ArrayUtils.guardedArrayReplace(buyCalldata, sellCalldata, buyReplacementPattern);
+        ArrayUtils.guardedArrayReplace(sellCalldata, buyCalldata, sellReplacementPattern);
+        return ArrayUtils.arrayEq(buyCalldata, sellCalldata);
+    }
+
     function atomicMatch(Order buy, Sig buySig, Order sell, Sig sellSig)
         internal
         reentrancyGuard
@@ -398,26 +449,13 @@ contract Exchange is LazyBank, ReentrancyGuarded {
         bytes32 buyHash = requireValidOrder(buy, buySig);
         bytes32 sellHash = requireValidOrder(sell, sellSig); 
 
-        /* Must be opposite-side. */
-        require(buy.side == SaleKindInterface.Side.Buy && sell.side == SaleKindInterface.Side.Sell);
-
-        /* Must use same payment token. */
-        require(buy.paymentToken == sell.paymentToken);
-
-        /* Must match maker/taker. */
-        require(sell.taker == buy.maker || sell.taker == address(0));
-        require(buy.taker == sell.maker || buy.taker == address(0));
-
+        /* Must be matcheable. */
+        require(ordersCanMatch(buy, sell));
+        
         /* Must be settleable. */
         SaleKindInterface.Bid storage topBid = topBids[sellHash];
         require(SaleKindInterface.canSettleOrder(buy.saleKind, sell.maker, buy.expirationTime, SaleKindInterface.Bid({ bidder: address(0), amount: 0 })));
         require(SaleKindInterface.canSettleOrder(sell.saleKind, buy.maker, sell.expirationTime, topBid));
-        
-        /* Must match target. */
-        require(buy.target == sell.target);
-
-        /* Must match howToCall. */
-        require(buy.howToCall == sell.howToCall);
        
         /* Must match calldata after replacementPattern. */ 
         ArrayUtils.guardedArrayReplace(buy.calldata, sell.calldata, buy.replacementPattern);
