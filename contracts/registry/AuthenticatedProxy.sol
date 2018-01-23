@@ -19,10 +19,11 @@ contract AuthenticatedProxy is TokenRecipient {
 
     ProxyRegistry public registry;
 
-    bool revoked = false;
+    bool public revoked;
 
     enum HowToCall { Call, DelegateCall, StaticCall, Create }
 
+    event Revoked(bool revoked);
     event ProxiedCall(address indexed dest, HowToCall howToCall, bytes calldata, address indexed created, bool success);
 
     /**
@@ -47,6 +48,7 @@ contract AuthenticatedProxy is TokenRecipient {
     {
         require(msg.sender == user);
         revoked = revoke;
+        Revoked(revoke);
     }
 
     /**
