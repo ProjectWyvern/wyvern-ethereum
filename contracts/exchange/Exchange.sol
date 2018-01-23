@@ -110,7 +110,8 @@ contract Exchange is LazyBank, ReentrancyGuarded {
         pure
         returns (bytes)
     {
-        return ArrayUtils.guardedArrayReplace(array, desired, mask);
+        ArrayUtils.guardedArrayReplace(array, desired, mask);
+        return array;
     }
 
     function chargeFee(address from, address to, uint amount)

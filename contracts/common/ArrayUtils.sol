@@ -25,7 +25,6 @@ library ArrayUtils {
     function guardedArrayReplace(bytes array, bytes desired, bytes mask)
         pure
         internal
-        returns (bytes)
     {
         byte[8] memory bitmasks = [byte(2 ** 7), byte(2 ** 6), byte(2 ** 5), byte(2 ** 4), byte(2 ** 3), byte(2 ** 2), byte(2 ** 1), byte(2 ** 0)];
         require(array.length == desired.length);
@@ -35,7 +34,6 @@ library ArrayUtils {
             bool masked = (mask[i / 8] & bitmasks[i % 8]) == 0;
             array[i] = masked ? array[i] : desired[i];
         }
-        return array;
     }
 
     /**

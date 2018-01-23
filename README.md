@@ -6,9 +6,9 @@
 
 ### Synopsis
 
-*Autonomously governed decentralized digital item exchange.*
+*Autonomously governed decentralized digital asset exchange.*
 
-These are the official Ethereum smart contracts for the Wyvern ERC20 token (WYV), the Wyvern Exchange, and the Wyvern DAO. For general information on the Wyvern project, please see [the official website](https://projectwyvern.com).
+These are the official Ethereum smart contracts for the Wyvern Protocol, the Wyvern ERC20 token (WYV), and the Wyvern DAO. For general information on the Wyvern project, please see [the official website](https://projectwyvern.com).
 
 ### Deployed Contracts
 

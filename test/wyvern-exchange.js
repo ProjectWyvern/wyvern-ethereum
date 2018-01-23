@@ -59,6 +59,46 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should allow complex array replacment', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.guardedArrayReplace.call('0x0000000000000000', '0xffffffffffffffff', '0x55').then(res => {
+          assert.equal(res, '0x00ff00ff00ff00ff', 'Complex array replacement did not replace properly!')
+        })
+      })
+  })
+
+  it('should allow simple calldata match', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x00', '0xff', '0xff', '0x00').then(res => {
+          assert.equal(res, true, 'Simple calldata match was not allowed')
+        })
+      })
+  })
+
+  it('should allow flexible calldata match', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x00', '0xff', '0xff', '0xff').then(res => {
+          assert.equal(res, true, 'Flexible calldata match was not allowed')
+        })
+      })
+  })
+
+  it('should allow complex calldata match', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x55', '0x00ff00ff00ff00ff', '0x00').then(res => {
+          assert.equal(res, true, 'Complex calldata match was not allowed')
+        })
+      })
+  })
+
   const makeOrder = (exchange) => ({
     exchange: exchange,
     maker: accounts[0],
