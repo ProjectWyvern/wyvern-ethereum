@@ -1,6 +1,6 @@
 /*
 
-  Proxy registry; keeps a mapping of AuthenticatedProxy contracts. 
+  Proxy registry; keeps a mapping of AuthenticatedProxy contracts and a single AuthenticatedLazyBank instance. 
   
   Abstracted away from the Exchange so that other contracts (and future versions of the Exchange) can utilize the same Registry contract.
 
@@ -13,8 +13,12 @@ pragma solidity 0.4.18;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "./AuthenticatedProxy.sol";
+import "./AuthenticatedLazyBank.sol";
 
 contract ProxyRegistry is Ownable {
+
+    /* Authenticated lazy bank. */
+    AuthenticatedLazyBank public lazyBank;
 
     /* Authenticated proxies by user. */
     mapping(address => AuthenticatedProxy) public proxies;

@@ -19,6 +19,7 @@ contract WyvernExchange is Exchange {
     function WyvernExchange (ProxyRegistry registryAddress, ERC20 tokenAddress) public {
         exchangeTokenAddress = tokenAddress;
         registry = registryAddress;
+        bank = registry.lazyBank();
     }
 
 }

@@ -22,7 +22,7 @@ contract('TestBank', (accounts) => {
     return TokenAndBank(({ tokenInstance, bankInstance }) => {
       return tokenInstance.balanceOf.call(accounts[0]).then(amount => {
         return tokenInstance.approve(bankInstance.address, amount).then(() => {
-          return bankInstance.deposit(accounts[0], tokenInstance.address, amount)
+          return bankInstance.deposit(tokenInstance.address, amount)
         }).then(() => {
           return bankInstance.balanceFor.call(accounts[0], tokenInstance.address).then(balance => {
             assert.equal(balance.equals(amount), true, 'Balance was not set correctly after deposit')
@@ -125,7 +125,7 @@ contract('TestBank', (accounts) => {
   it('should set correct balance, available, and locked after withdrawal', () => {
     const amount = new BigNumber(10).pow(25).mul(2)
     return TokenAndBank(({ tokenInstance, bankInstance }) => {
-      return bankInstance.withdraw(accounts[0], tokenInstance.address, amount, accounts[0]).then(() => {
+      return bankInstance.withdraw(tokenInstance.address, amount, accounts[0]).then(() => {
         return tokenInstance.balanceOf.call(accounts[0]).then(balance => {
           assert.equal(balance.equals(amount), true, 'Token balance was not set correctly after withdrawal')
         }).then(() => {

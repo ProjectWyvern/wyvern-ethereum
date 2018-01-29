@@ -1,6 +1,6 @@
 /*
 
-  Abstract over fixed-price sales and various kinds of auction.
+  Abstract over fixed-price sales, English auctions, and Dutch auctions, with the intent of easily supporting additional methods of sale later.
 
   Separated into a library for convenience, all the functions are inlined.
 

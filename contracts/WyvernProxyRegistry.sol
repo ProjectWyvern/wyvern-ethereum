@@ -19,6 +19,7 @@ contract WyvernProxyRegistry is ProxyRegistry {
     function WyvernProxyRegistry ()
         public
     {
-    }     
+        lazyBank = new AuthenticatedLazyBank(this);
+    }
 
 }

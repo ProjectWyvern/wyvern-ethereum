@@ -72,35 +72,31 @@ contract LazyBank {
     }
 
     /**
-     * Deposit a specified amount of tokens for a specified user
+     * Deposit a specified amount of tokens for the sender
      *
-     * @param user User to deposit for (must execute the call)
      * @param token ERC20 token to deposit
      * @param amount Amount of tokens to deposit
      */
-    function deposit(address user, ERC20 token, uint amount)
+    function deposit(ERC20 token, uint amount)
         public
     {
-        require(msg.sender == user);
-        credit(user, token, amount);
-        require(token.transferFrom(user, this, amount));
+        credit(msg.sender, token, amount);
+        require(token.transferFrom(msg.sender, this, amount));
     }
 
     /**
-     * Withdraw a specified amount of tokens to a specified address
+     * Withdraw a specified amount of tokens belonging to the sender to a specified address
      *
-     * @param user User to withdraw from (must execute the call)
      * @param token ERC20 token to withdraw
      * @param amount Amount of tokens to withdraw
      * @param dest Address to which to send the tokens
     */
-    function withdraw(address user, ERC20 token, uint amount, address dest)
+    function withdraw(ERC20 token, uint amount, address dest)
         public
     {
-        require(msg.sender == user);
-        uint available = SafeMath.sub(balances[user][token], locked[user][token]);
+        uint available = SafeMath.sub(balances[msg.sender][token], locked[msg.sender][token]);
         require(amount <= available);
-        lazyDebit(user, token, amount);
+        lazyDebit(msg.sender, token, amount);
         token.transfer(dest, amount); 
     }
 
