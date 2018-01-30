@@ -23,10 +23,11 @@ contract AuthenticatedProxy is TokenRecipient {
 
     bool public revoked;
 
-    enum HowToCall { Call, DelegateCall, StaticCall, Create }
+    /* Delegate call could be used to atomically transfer multiple assets owned by the proxy contract with one order. */
+    enum HowToCall { Call, DelegateCall }
 
     event Revoked(bool revoked);
-    event ProxiedCall(address indexed dest, HowToCall howToCall, bytes calldata, address indexed created, bool success);
+    event ProxiedCall(address indexed dest, HowToCall howToCall, bytes calldata, bool success);
 
     /**
      * Create an AuthenticatedProxy
@@ -66,26 +67,14 @@ contract AuthenticatedProxy is TokenRecipient {
         returns (bool result)
     {
         require(msg.sender == user || (!revoked && registry.contracts(msg.sender)));
-        address created;
         if (howToCall == HowToCall.Call) {
             result = dest.call(calldata);
         } else if (howToCall == HowToCall.DelegateCall) {
             result = dest.delegatecall(calldata);
-        } else if (howToCall == HowToCall.StaticCall) {
-            // Check this.
-            uint len = calldata.length;
-            assembly {
-                result := staticcall(gas, dest, calldata, len, calldata, 0)
-            }
-        } else if (howToCall == HowToCall.Create) {
-            assembly {
-                created := create(0, add(calldata, 0x20), mload(calldata))
-            }
-            result = created == address(0);
         } else {
             revert();
         }
-        ProxiedCall(dest, howToCall, calldata, created, result);
+        ProxiedCall(dest, howToCall, calldata, result);
         return result;
     }
 

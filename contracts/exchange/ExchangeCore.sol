@@ -1,20 +1,19 @@
 /*
 
-  Decentralized digital item exchange. Supports any digital asset that can be represented on the Ethereum blockchain.
+  Decentralized digital asset exchange. Supports any digital asset that can be represented on the Ethereum blockchain (transferred in an Ethereum transaction).
 
   Let us suppose two agents interacting with a distributed ledger have utility functions preferencing certain states of that ledger over others.
   Aiming to maximize their utility, these agents may construct with their utility functions along with the present ledger state a mapping of state transitions (transactions) to marginal utilities.
   Any composite state transition with positive marginal utility for and enactable by the combined permissions of both agents thus is a mutually desirable trade, and the trustless 
   code execution provided by a distributed ledger renders the requisite atomicity trivial.
 
-  Relative to this model, the present Exchange instantiation makes two concessions to practicality:
+  Relative to this model, this instantiation makes two concessions to practicality:
   - State transition preferences are not matched directly but instead intermediated by a standard of tokenized value.
-  - A small fee is charged in WYV for order settlement, with an amount configurable by the frontend hosting the orderbook.
+  - A small fee can be charged in WYV for order settlement in an amount configurable by the frontend hosting the orderbook.
 
-  Solidity presently possesses neither a strong functional typesystem nor runtime reflection (ABI encoding in Solidity), so we must be a bit clever in implementation.
+  Solidity presently possesses neither a first-class functional typesystem nor runtime reflection (ABI encoding in Solidity), so we must be a bit clever in implementation and work at a lower level than would be ideal.
 
   TODO: Clarify maker/taker distinction, require fee agreement, see if we can implement negative fees. Consider implementing frontend order signatures.
-  TODO: Need outside view function to check if order can be settled (orderbook scan).
   
 */
 
@@ -70,11 +69,11 @@ contract ExchangeCore is ReentrancyGuarded {
         address maker;
         /* Order taker address, if specified. */
         address taker;
-        /* Maker fee of the order (in Exchange fee tokens). */
+        /* Maker fee of the order (in Exchange fee tokens), unused for taker order. */
         uint makerFee;
-        /* Taker fee of the order (in Exchange fee tokens). */
+        /* Taker fee of the order (in Exchange fee tokens), or maximum taker fee for a taker order. */
         uint takerFee;
-        /* Order fee recipient. */
+        /* Order fee recipient or zero address for taker order. */
         address feeRecipient;
         /* Side (buy/sell). */
         SaleKindInterface.Side side;
@@ -86,15 +85,17 @@ contract ExchangeCore is ReentrancyGuarded {
         AuthenticatedProxy.HowToCall howToCall;
         /* Calldata. */
         bytes calldata;
-        /* replacementPattern pattern. */
+        /* Calldata replacement pattern. */
         bytes replacementPattern;
-        /* Order metadata IPFS hash. */
-        bytes metadataHash;
+        /* Static call target, zero-address for no static call. */
+        address staticTarget;
+        /* Static call extra data. */
+        bytes staticExtradata;
         /* Token used to pay for the order. */
         ERC20 paymentToken;
         /* Base price of the order (in paymentTokens). */
         uint basePrice;
-        /* Auction extra parameter - minimum bid increment for English auctions, decay factor for Dutch auctions. */
+        /* Auction extra parameter - minimum bid increment for English auctions, starting/ending price difference. */
         uint extra;
         /* Listing timestamp. */
         uint listingTime;
@@ -106,7 +107,7 @@ contract ExchangeCore is ReentrancyGuarded {
     
     event OrderApproved   (bytes32 hash, address indexed approver, Order order, bool orderbookInclusionDesired);
     event OrderCancelled  (bytes32 hash);
-    event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount, uint timestamp);
+    event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount);
     event OrdersMatched   (Order buy, Order sell);
 
     function chargeFee(address from, address to, uint amount)
@@ -115,6 +116,26 @@ contract ExchangeCore is ReentrancyGuarded {
         if (amount > 0) {
             bank._transferTo(from, to, exchangeTokenAddress, amount);
         }
+    }
+
+    function staticCall(address target, bytes calldata, bytes extradata)
+        internal
+        view
+        returns (bool result)
+    {
+        /* TODO Test me. */
+        bytes memory combined = new bytes(calldata.length + extradata.length);
+        uint len = combined.length;
+        for (uint i = 0; i < calldata.length; i++) {
+            combined[i] = calldata[i];
+        }
+        for (uint j = 0; j < extradata.length; j++) {
+            combined[j + calldata.length] = extradata[j];
+        }
+        assembly {
+            result := staticcall(gas, target, combined, len, combined, 0)
+        }
+        return result;
     }
 
     function hashOrderPartOne(Order order)
@@ -130,7 +151,7 @@ contract ExchangeCore is ReentrancyGuarded {
         pure
         returns (bytes32)
     {
-        return keccak256(order.metadataHash, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
+        return keccak256(order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
     }
 
     function hashOrder(Order order)
@@ -182,10 +203,23 @@ contract ExchangeCore is ReentrancyGuarded {
     function approveOrder(Order memory order, bool orderbookInclusionDesired)
         internal
     {
+        /* CHECKS */
+
+        /* Assert sender is authorized to approve order. */
         require(msg.sender == order.maker);
+
+        /* Calculate order hash. */
         bytes32 hash = hashToSign(order);
+
+        /* Assert order has not already been approved. */
         require(!approvedOrders[hash]);
+
+        /* EFFECTS */
+    
+        /* Mark order as approved. */
         approvedOrders[hash] = true;
+  
+        /* Log approval event. */
         OrderApproved(hash, msg.sender, order, orderbookInclusionDesired);
     }
 
@@ -193,23 +227,31 @@ contract ExchangeCore is ReentrancyGuarded {
         internal
     {
         /* CHECKS */
+
+        /* Calculate order hash. */
         bytes32 hash = requireValidOrder(order, sig);
+
+        /* Assert sender is authorized to cancel order. */
         require(msg.sender == order.maker);
   
         /* EFFECTS */
+      
+        /* Mark order as cancelled, preventing it from being bid on or matched. */
         cancelledOrFinalized[hash] = true;
 
+        /* Log cancel event. */
         OrderCancelled(hash);
     }
 
     function bid (Order order, Sig sig, uint amount)
         internal
-        reentrancyGuard
     {
         /* CHECKS */
-  
+ 
+        /* Calculate order hash. */ 
         bytes32 hash = requireValidOrder(order, sig);
 
+        /* Fetch current top bid, if existent. */
         SaleKindInterface.Bid storage topBid = topBids[hash];
         
         /* Calculated required bid price. */
@@ -231,8 +273,8 @@ contract ExchangeCore is ReentrancyGuarded {
         /* Lock tokens for the new high bidder. */
         bank._lazyLock(msg.sender, order.paymentToken, amount);
 
-        /* Log the bid event. */
-        OrderBidOn(hash, msg.sender, amount, now);
+        /* Log bid event. */
+        OrderBidOn(hash, msg.sender, amount);
     }
 
     function calculateMatchPrice(Order buy, Order sell, SaleKindInterface.Bid storage topBid)
@@ -261,9 +303,30 @@ contract ExchangeCore is ReentrancyGuarded {
         /* Calculate match price. */
         uint price = calculateMatchPrice(buy, sell, topBid);
 
-        /* TODO: Charge fees. */
-        chargeFee(buy.maker, buy.feeRecipient, buy.makerFee);
-        chargeFee(sell.maker, sell.feeRecipient, sell.makerFee);
+        /* Determine maker/taker and charge fees accordingly. */
+        if (sell.feeRecipient != address(0)) {
+            /* Sell-side order is maker. */
+      
+            /* Assert taker fee is less than or equal to maximum fee specified by buyer. */
+            require(sell.takerFee <= buy.takerFee);
+            
+            /* Charge maker fee to seller. */
+            chargeFee(sell.maker, sell.feeRecipient, sell.makerFee);
+
+            /* Charge taker fee to buyer. */
+            chargeFee(buy.maker, sell.feeRecipient, sell.takerFee);
+        } else {
+            /* Buy-side order is maker. */
+
+            /* Assert taker fee is less than or equal to maximum fee specified by seller. */
+            require(buy.takerFee <= sell.takerFee);
+
+            /* Charge maker fee to buyer. */
+            chargeFee(buy.maker, buy.feeRecipient, buy.makerFee);
+      
+            /* Charge taker fee to seller. */
+            chargeFee(sell.maker, buy.feeRecipient, buy.takerFee);
+        }
 
         /* Unlock tokens for top bidder, if existent. */
         if (topBid.bidder != address(0)) {
@@ -287,9 +350,11 @@ contract ExchangeCore is ReentrancyGuarded {
             (buy.side == SaleKindInterface.Side.Buy && sell.side == SaleKindInterface.Side.Sell) &&     
             /* Must use same payment token. */
             (buy.paymentToken == sell.paymentToken) &&
-            /* Must match maker/taker. */
+            /* Must match maker/taker addresses. */
             (sell.taker == address(0) || sell.taker == buy.maker) &&
             (buy.taker == address(0) || buy.taker == sell.maker) &&
+            /* One must be maker and the other must be taker (no bool XOR in Solidity). */
+            ((sell.feeRecipient == address(0) && buy.feeRecipient != address(0)) || (sell.feeRecipient != address(0) && buy.feeRecipient == address(0))) &&
             /* Must match target. */
             (buy.target == sell.target) &&
             /* Must match howToCall. */
@@ -303,7 +368,6 @@ contract ExchangeCore is ReentrancyGuarded {
 
     function atomicMatch(Order buy, Sig buySig, Order sell, Sig sellSig)
         internal
-        reentrancyGuard
     {
         /* CHECKS */
       
@@ -338,8 +402,23 @@ contract ExchangeCore is ReentrancyGuarded {
 
         /* INTERACTIONS */
 
-        /* Execute call through proxy. */
+        /* Execute specified call through proxy.
+           Both orders have already been marked as finalized, so they can't be rematched by a reentrant call.
+           However, it *is* possible for this call to match other orders - apart from causing unusual log
+           order, that shouldn't be a problem. */
         require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
+
+        /* Static calls are intentionally done after the effectful call so they can check resulting state. */
+
+        /* Handle buy-side static call if specified. */
+        if (buy.staticTarget != address(0)) {
+            require(staticCall(buy.staticTarget, sell.calldata, buy.staticExtradata));
+        }
+
+        /* Handle sell-side static call if specified. */
+        if (sell.staticTarget != address(0)) {
+            require(staticCall(sell.staticTarget, sell.calldata, sell.staticExtradata));
+        }
 
         /* Log match event. */
         OrdersMatched(buy, sell);

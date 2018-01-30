@@ -26,33 +26,33 @@ contract Exchange is ExchangeCore {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function hashOrder_(
-        address[6] addrs,
+        address[7] addrs,
         uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
         bytes replacementPattern,
-        bytes metadataHash)
+        bytes staticExtradata)
         public
         pure
         returns (bytes32)
     { 
         return hashOrder(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6])
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6])
         );
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function validateOrder_ (
-        address[6] addrs,
+        address[7] addrs,
         uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
         bytes replacementPattern,
-        bytes metadataHash,
+        bytes staticExtradata,
         uint8 v,
         bytes32 r,
         bytes32 s)
@@ -60,7 +60,7 @@ contract Exchange is ExchangeCore {
         public
         returns (bool)
     {
-        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]);
+        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
         return validateOrder(
           hashToSign(order),
           order,
@@ -70,31 +70,31 @@ contract Exchange is ExchangeCore {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function approveOrder_ (
-        address[6] addrs,
+        address[7] addrs,
         uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
         bytes replacementPattern,
-        bytes metadataHash,
+        bytes staticExtradata,
         bool orderbookInclusionDesired) 
         public
     {
-        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]);
+        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
         return approveOrder(order, orderbookInclusionDesired);
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function cancelOrder_(
-        address[6] addrs,
+        address[7] addrs,
         uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
         bytes replacementPattern,
-        bytes metadataHash,
+        bytes staticExtradata,
         uint8 v,
         bytes32 r,
         bytes32 s)
@@ -102,21 +102,21 @@ contract Exchange is ExchangeCore {
     {
 
         return cancelOrder(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]),
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]),
           Sig(v, r, s)
         );
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function bid_(
-        address[6] addrs,
+        address[7] addrs,
         uint[7] uints,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
         bytes calldata,
         bytes replacementPattern,
-        bytes metadataHash,
+        bytes staticExtradata,
         uint8 v,
         bytes32 r,
         bytes32 s,
@@ -124,7 +124,7 @@ contract Exchange is ExchangeCore {
         public
     {
         return bid(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, metadataHash, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]),
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]),
           Sig(v, r, s),
           amount
         );
@@ -132,21 +132,21 @@ contract Exchange is ExchangeCore {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function ordersCanMatch_(
-        address[12] addrs,
+        address[14] addrs,
         uint[14] uints,
         uint8[6] sidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
         bytes replacementPatternBuy,
         bytes replacementPatternSell,
-        bytes metadataHashBuy,
-        bytes metadataHashSell)
+        bytes staticExtradataBuy,
+        bytes staticExtradataSell)
         public
         view
         returns (bool)
     {
-        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]);
-        Order memory sell = Order(addrs[6], addrs[7], addrs[8], uints[7], uints[8], addrs[9], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[10], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[11]), uints[9], uints[10], uints[11], uints[12], uints[13]);
+        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
+        Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]);
         SaleKindInterface.Bid storage topBid = topBids[hashOrder(sell)];
         return ordersCanMatch(
           buy,
@@ -167,21 +167,21 @@ contract Exchange is ExchangeCore {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function calculateMatchPrice_(
-        address[12] addrs,
+        address[14] addrs,
         uint[14] uints,
         uint8[6] sidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
         bytes replacementPatternBuy,
         bytes replacementPatternSell,
-        bytes metadataHashBuy,
-        bytes metadataHashSell)
+        bytes staticExtradataBuy,
+        bytes staticExtradataSell)
         public
         view
         returns (uint)
     {
-        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]);
-        Order memory sell = Order(addrs[6], addrs[7], addrs[8], uints[7], uints[8], addrs[9], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[10], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[11]), uints[9], uints[10], uints[11], uints[12], uints[13]);
+        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
+        Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]);
         SaleKindInterface.Bid storage topBid = topBids[hashOrder(sell)];
         return calculateMatchPrice(
           buy,
@@ -192,23 +192,25 @@ contract Exchange is ExchangeCore {
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function atomicMatch_(
-        address[12] addrs,
+        address[14] addrs,
         uint[14] uints,
         uint8[6] sidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
         bytes replacementPatternBuy,
         bytes replacementPatternSell,
-        bytes metadataHashBuy,
-        bytes metadataHashSell,
+        bytes staticExtradataBuy,
+        bytes staticExtradataSell,
         uint8[2] vs,
         bytes32[4] rss)
         public
     {
+        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
+        Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]);
         return atomicMatch(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, metadataHashBuy, ERC20(addrs[5]), uints[2], uints[3], uints[4], uints[5], uints[6]),
+          buy,
           Sig(vs[0], rss[0], rss[1]),
-          Order(addrs[6], addrs[7], addrs[8], uints[7], uints[8], addrs[9], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[10], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, metadataHashSell, ERC20(addrs[11]), uints[9], uints[10], uints[11], uints[12], uints[13]),
+          sell,
           Sig(vs[1], rss[2], rss[3])
         );
     }

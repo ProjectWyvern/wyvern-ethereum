@@ -27,7 +27,8 @@ const hashOrder = (order) => {
     ).toString('hex')},
     {type: 'bytes32',
       value: web3.utils.soliditySha3(
-      {type: 'bytes', value: order.metadataHash},
+      {type: 'address', value: order.staticTarget},
+      {type: 'bytes', value: order.staticExtradata},
       {type: 'address', value: order.paymentToken},
       {type: 'uint', value: new BigNumber(order.basePrice)},
       {type: 'uint', value: new BigNumber(order.extra)},
@@ -99,20 +100,21 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
-  const makeOrder = (exchange) => ({
+  const makeOrder = (exchange, isMaker) => ({
     exchange: exchange,
     maker: accounts[0],
     taker: accounts[0],
     makerFee: 0,
     takerFee: 0,
-    feeRecipient: accounts[0],
+    feeRecipient: isMaker ? accounts[0] : '0x0000000000000000000000000000000000000000',
     side: 0,
     saleKind: 0,
     target: accounts[0],
     howToCall: 0,
     calldata: '0x',
     replacementPattern: '0x',
-    metadataHash: '0x',
+    staticTarget: '0x0000000000000000000000000000000000000000',
+    staticExtradata: '0x',
     paymentToken: accounts[0],
     basePrice: 0,
     extra: 0,
@@ -128,14 +130,14 @@ contract('WyvernExchange', (accounts) => {
         const order = makeOrder(exchangeInstance.address)
         const hash = hashOrder(order)
         return exchangeInstance.hashOrder_.call(
-            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.paymentToken],
+            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
             [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
             order.side,
             order.saleKind,
             order.howToCall,
             order.calldata,
             order.replacementPattern,
-            order.metadataHash).then(solHash => {
+            order.staticExtradata).then(solHash => {
               assert.equal(solHash, hash, 'Hashes were not equal')
             })
       })
@@ -153,14 +155,14 @@ contract('WyvernExchange', (accounts) => {
           const s = '0x' + signature.slice(64, 128)
           const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
           return exchangeInstance.validateOrder_.call(
-            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.paymentToken],
+            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
             [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
             order.side,
             order.saleKind,
             order.howToCall,
             order.calldata,
             order.replacementPattern,
-            order.metadataHash,
+            order.staticExtradata,
             v, r, s
           ).then(ret => {
             assert.equal(ret, true, 'Order did not validate')
@@ -204,8 +206,8 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        var buy = makeOrder(exchangeInstance.address)
-        var sell = makeOrder(exchangeInstance.address)
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
         sell.side = 1
         const buyHash = hashOrder(buy)
         const sellHash = hashOrder(sell)
@@ -220,15 +222,15 @@ contract('WyvernExchange', (accounts) => {
             const ss = '0x' + signature.slice(64, 128)
             const sv = 27 + parseInt('0x' + signature.slice(128, 130), 16)
             return exchangeInstance.atomicMatch_(
-              [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+              [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
               [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
               [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
               buy.calldata,
               sell.calldata,
               buy.replacementPattern,
               sell.replacementPattern,
-              buy.metadataHash,
-              sell.metadataHash,
+              buy.staticExtradata,
+              sell.staticExtradata,
               [bv, sv],
               [br, bs, sr, ss]
             ).then(() => {

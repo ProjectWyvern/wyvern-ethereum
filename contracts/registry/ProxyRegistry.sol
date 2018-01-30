@@ -6,6 +6,8 @@
 
   TODO: Add delay in adding contract to auth to prevent class of economic attacks on Wyvern DAO.
 
+  Is this really better than just requiring a user TX to authorize new protocol version?
+
 */
 
 pragma solidity 0.4.18;
