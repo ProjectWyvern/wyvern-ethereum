@@ -103,10 +103,11 @@ contract ExchangeCore is ReentrancyGuarded {
         uint salt;
     }
     
-    event OrderApproved   (bytes32 hash, address indexed approver, Order order, bool orderbookInclusionDesired);
-    event OrderCancelled  (bytes32 hash);
-    event OrderBidOn      (bytes32 hash, address indexed bidder, uint amount);
-    event OrdersMatched   (Order buy, Order sell);
+    event OrderApprovedPartOne    (bytes32 indexed hash, address exchange, address indexed maker, address taker, uint makerFee, uint takerFee, address indexed feeRecipient, SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, address target, AuthenticatedProxy.HowToCall howToCall, bytes calldata);
+    event OrderApprovedPartTwo    (bytes32 indexed hash, bytes replacementPattern, address staticTarget, bytes staticExtradata, ERC20 paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
+    event OrderCancelled          (bytes32 indexed hash);
+    event OrderBidOn              (bytes32 indexed hash, address indexed bidder, uint amount);
+    event OrdersMatched           (bytes32 indexed buyHash, bytes32 indexed sellHash);
 
     function chargeFee(address from, address to, uint amount)
         internal
@@ -185,16 +186,40 @@ contract ExchangeCore is ReentrancyGuarded {
         internal
         returns (bool)
     {
-        return(
-            /* Order must be targeted at this protocol version (this Exchange contract). */
-            order.exchange == address(this) &&
-            /* Order must have not been canceled or already filled. */
-            !cancelledOrFinalized[hash] && 
-            /* Order authentication. Order must be either (a) sent by maker, (b) previously approved, or (c) ECDSA-signed by maker. */
-            (msg.sender == order.maker || approvedOrders[hash] || ecrecover(hash, sig.v, sig.r, sig.s) == order.maker) &&
-            /* Order must possess valid sale kind parameter combination. */
-            SaleKindInterface.validateParameters(order.side, order.saleKind, order.expirationTime)
-        );
+        /* Not done in an if-conditional to prevent unnecessary ecrecover evaluation. */
+
+        /* Order must be targeted at this protocol version (this Exchange contract). */
+        if (order.exchange != address(this)) {
+            return false;
+        }
+
+        /* Order must have not been canceled or already filled. */
+        if (cancelledOrFinalized[hash]) {
+            return false;
+        }
+        
+        /* Order must possess valid sale kind parameter combination. */
+        if (!SaleKindInterface.validateParameters(order.side, order.saleKind, order.expirationTime)) {
+            return false;
+        }
+
+        /* Order authentication. Order must be either:
+           (a) sent by maker */
+        if (msg.sender == order.maker) {
+            return true;
+        }
+  
+        /* (b) previously approved */
+        if (approvedOrders[hash]) {
+            return true;
+        }
+
+        /* or (c) ECDSA-signed by maker. */
+        if (ecrecover(hash, sig.v, sig.r, sig.s) == order.maker) {
+            return true;
+        }
+
+        return false;
     }
 
     function approveOrder(Order memory order, bool orderbookInclusionDesired)
@@ -216,8 +241,13 @@ contract ExchangeCore is ReentrancyGuarded {
         /* Mark order as approved. */
         approvedOrders[hash] = true;
   
-        /* Log approval event. */
-        OrderApproved(hash, msg.sender, order, orderbookInclusionDesired);
+        /* Log approval event. Must be split in two due to Solidity stack size limitations. */
+        {
+            OrderApprovedPartOne(hash, order.exchange, order.maker, order.taker, order.makerFee, order.takerFee, order.feeRecipient, order.side, order.saleKind, order.target, order.howToCall, order.calldata);
+        }
+        {   
+            OrderApprovedPartTwo(hash, order.replacementPattern, order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt, orderbookInclusionDesired);
+        }
     }
 
     function cancelOrder(Order memory order, Sig memory sig) 
@@ -418,7 +448,7 @@ contract ExchangeCore is ReentrancyGuarded {
         }
 
         /* Log match event. */
-        OrdersMatched(buy, sell);
+        OrdersMatched(buyHash, sellHash);
     }
 
 }
