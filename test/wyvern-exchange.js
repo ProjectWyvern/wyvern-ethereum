@@ -185,6 +185,19 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should have correct auth', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return WyvernExchange
+          .deployed().then(exchangeInstance => {
+            return registryInstance.contracts.call(exchangeInstance.address).then(ret => {
+              assert.equal(ret, true, 'Proxy registry did not have Exchange authenticated!')
+            })
+          })
+      })
+  })
+
   it('should allow order matching', () => {
     return WyvernExchange
       .deployed()

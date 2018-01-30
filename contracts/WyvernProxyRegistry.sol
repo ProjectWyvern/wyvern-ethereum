@@ -6,6 +6,7 @@
 
 pragma solidity 0.4.18;
 
+import "./registry/AuthenticatedLazyBank.sol";
 import "./registry/ProxyRegistry.sol";
 
 /**
@@ -16,12 +17,21 @@ contract WyvernProxyRegistry is ProxyRegistry {
 
     string public constant name = "Project Wyvern Proxy Registry";
 
+    bool public lazyBankSet = false;
     bool public initialAddressSet = false;
 
     function WyvernProxyRegistry ()
         public
     {
-        lazyBank = new AuthenticatedLazyBank(this);
+    }
+
+    function setLazyBank (AuthenticatedLazyBank bankAddress)
+        onlyOwner
+        public
+    {
+        require(!lazyBankSet);
+        lazyBankSet = true;
+        lazyBank = bankAddress;
     }
 
     function grantInitialAuthentication (address authAddress)

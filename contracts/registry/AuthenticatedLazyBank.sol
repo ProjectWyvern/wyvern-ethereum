@@ -22,12 +22,6 @@ contract AuthenticatedLazyBank is LazyBank {
         _;
     }
 
-    function AuthenticatedLazyBank(ProxyRegistry addrRegistry)
-        public
-    {
-        registry = addrRegistry;
-    }
-
     function _credit(address user, ERC20 token, uint amount)
         public
         withRegistryAuth

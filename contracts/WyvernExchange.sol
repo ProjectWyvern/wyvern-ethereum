@@ -16,10 +16,10 @@ contract WyvernExchange is Exchange {
 
     string public constant name = "Project Wyvern Exchange";
 
-    function WyvernExchange (ProxyRegistry registryAddress, ERC20 tokenAddress) public {
+    function WyvernExchange (ProxyRegistry registryAddress, ERC20 tokenAddress, AuthenticatedLazyBank lazyBankAddress) public {
         exchangeTokenAddress = tokenAddress;
         registry = registryAddress;
-        bank = registry.lazyBank();
+        bank = lazyBankAddress;
     }
 
 }
