@@ -2,8 +2,6 @@
 
   Proxy contract to hold access to assets on behalf of a user (e.g. ERC20 approve) and execute calls under particular conditions.
 
-  TODO: Separate STATICCALL option, ditch CREATE, figure out simulation.
-
 */
 
 pragma solidity 0.4.18;

@@ -25,7 +25,7 @@ module.exports = (deployer, network) => {
                 }).then(() => {
                   return WyvernProxyRegistry.deployed().then(proxyRegistry => {
                     return WyvernExchange.deployed().then(exchange => {
-                      return proxyRegistry.updateContract(exchange.address, true)
+                      return proxyRegistry.grantInitialAuthentication(exchange.address)
                     })
                   })
                 })

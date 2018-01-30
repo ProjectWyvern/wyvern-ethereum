@@ -16,10 +16,21 @@ contract WyvernProxyRegistry is ProxyRegistry {
 
     string public constant name = "Project Wyvern Proxy Registry";
 
+    bool public initialAddressSet = false;
+
     function WyvernProxyRegistry ()
         public
     {
         lazyBank = new AuthenticatedLazyBank(this);
+    }
+
+    function grantInitialAuthentication (address authAddress)
+        onlyOwner
+        public
+    {
+        require(!initialAddressSet);
+        initialAddressSet = true;
+        contracts[authAddress] = true;
     }
 
 }

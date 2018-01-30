@@ -185,23 +185,6 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
-  it('should allow auth alteration', () => {
-    return WyvernProxyRegistry
-      .deployed()
-      .then(registryInstance => {
-        return WyvernExchange
-          .deployed()
-          .then(exchangeInstance => {
-            return registryInstance.updateContract(exchangeInstance.address, true)
-              .then(() => {
-                return registryInstance.contracts.call(exchangeInstance.address).then(ret => {
-                  assert.equal(ret, true, 'Auth was not altered')
-                })
-              })
-          })
-      })
-  })
-
   it('should allow order matching', () => {
     return WyvernExchange
       .deployed()

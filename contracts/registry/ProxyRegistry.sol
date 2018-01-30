@@ -4,10 +4,6 @@
   
   Abstracted away from the Exchange so that other contracts (and future versions of the Exchange) can utilize the same Registry contract.
 
-  TODO: Add delay in adding contract to auth to prevent class of economic attacks on Wyvern DAO.
-
-  Is this really better than just requiring a user TX to authorize new protocol version?
-
 */
 
 pragma solidity 0.4.18;
@@ -25,21 +21,55 @@ contract ProxyRegistry is Ownable {
     /* Authenticated proxies by user. */
     mapping(address => AuthenticatedProxy) public proxies;
 
+    /* Contracts pending access. */
+    mapping(address => uint) public pending;
+
     /* Contracts allowed to call those proxies. */
     mapping(address => bool) public contracts;
 
+    /* Delay period. */
+    uint public DELAY_PERIOD = 2 weeks;
+
     /**
-     * Change whether or not a given contract is allowed to access proxies registered with this Registry
+     * Start the process to enable access for specified contract. Subject to delay period.
      *
-     * @dev Registry owner only
-     * @param addr Address to set permissions for
-     * @param allowed Whether or not that address will be allowed to access proxies
-     */    
-    function updateContract(address addr, bool allowed)
+     * @dev ProxyRegistry owner only
+     * @param addr Address to which to grant permissions
+     */
+    function startGrantAuthentication(address addr)
         public
         onlyOwner
     {
-        contracts[addr] = allowed;
+        require(!contracts[addr] && pending[addr] == 0);
+        pending[addr] = now;
+    }
+
+    /**
+     * End the process to nable access for specified contract after delay period has passed.
+     *
+     * @dev ProxyRegistry owner only
+     * @param addr Address to which to grant permissions
+     */
+    function endGrantAuthentication(address addr)
+        public
+        onlyOwner
+    {
+        require(!contracts[addr] && pending[addr] != 0 && pending[addr] < (now + DELAY_PERIOD));
+        pending[addr] = 0;
+        contracts[addr] = true;
+    }
+
+    /**
+     * Revoke access for specified contract. Can be done instantly.
+     *
+     * @dev ProxyRegistry owner only
+     * @param addr Address of which to revoke permissions
+     */    
+    function revokeAuthentication(address addr)
+        public
+        onlyOwner
+    {
+        contracts[addr] = false;
     }
 
     /**

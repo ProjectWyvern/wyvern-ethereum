@@ -12,9 +12,7 @@
   - A small fee can be charged in WYV for order settlement in an amount configurable by the frontend hosting the orderbook.
 
   Solidity presently possesses neither a first-class functional typesystem nor runtime reflection (ABI encoding in Solidity), so we must be a bit clever in implementation and work at a lower level than would be ideal.
-
-  TODO: Clarify maker/taker distinction, require fee agreement, see if we can implement negative fees. Consider implementing frontend order signatures.
-  
+ 
 */
 
 pragma solidity 0.4.18;
@@ -123,7 +121,6 @@ contract ExchangeCore is ReentrancyGuarded {
         view
         returns (bool result)
     {
-        /* TODO Test me. */
         bytes memory combined = new bytes(calldata.length + extradata.length);
         uint len = combined.length;
         for (uint i = 0; i < calldata.length; i++) {
@@ -159,7 +156,7 @@ contract ExchangeCore is ReentrancyGuarded {
         pure
         returns (bytes32)
     {
-        /* This is silly, but necessary due to Solidity compiler stack size constraints. FIXME, waste of gas. */
+        /* This is silly, but necessary due to Solidity compiler stack size constraints. Should be fixed, waste of gas. */
         return keccak256(hashOrderPartOne(order), hashOrderPartTwo(order));
     }
 
