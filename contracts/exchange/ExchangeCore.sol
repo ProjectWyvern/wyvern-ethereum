@@ -304,6 +304,16 @@ contract ExchangeCore is ReentrancyGuarded {
         OrderBidOn(hash, msg.sender, amount);
     }
 
+    function calculateCurrentPrice (Order order)
+        view
+        internal  
+        returns (uint)
+    {
+        bytes32 hash = hashOrder(order);
+        SaleKindInterface.Bid storage topBid = topBids[hash];
+        return SaleKindInterface.calculateFinalPrice(order.side, order.saleKind, order.basePrice, order.extra, order.listingTime, order.expirationTime, topBid);
+    }
+
     function calculateMatchPrice(Order buy, Order sell, SaleKindInterface.Bid storage topBid)
         view
         internal

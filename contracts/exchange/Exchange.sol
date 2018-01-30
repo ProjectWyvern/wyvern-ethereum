@@ -131,6 +131,25 @@ contract Exchange is ExchangeCore {
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    function calculateCurrentPrice_(
+        address[7] addrs,
+        uint[7] uints,
+        SaleKindInterface.Side side,
+        SaleKindInterface.SaleKind saleKind,
+        AuthenticatedProxy.HowToCall howToCall,
+        bytes calldata,
+        bytes replacementPattern,
+        bytes staticExtradata)
+        public
+        view
+        returns (uint)
+    {
+        return calculateCurrentPrice(
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6])
+        );
+    }
+
+    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function ordersCanMatch_(
         address[14] addrs,
         uint[14] uints,
