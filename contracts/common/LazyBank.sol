@@ -128,7 +128,6 @@ contract LazyBank {
         internal
     {
         uint available = SafeMath.sub(balances[user][token], locked[user][token]);
-        Debited(user, token, amount);
         if (available >= amount) {
             balances[user][token] = SafeMath.sub(balances[user][token], amount);
         } else {
@@ -136,6 +135,7 @@ contract LazyBank {
             balances[user][token] = 0;
             require(token.transferFrom(user, this, diff));
         }
+        Debited(user, token, amount);
     }
 
     /**
@@ -167,9 +167,11 @@ contract LazyBank {
         internal
     {
         locked[user][token] = SafeMath.add(locked[user][token], amount);
-        if (locked[user][token] > balances[user][token]) {
-            uint diff = SafeMath.sub(locked[user][token], balances[user][token]);
-            balances[user][token] = SafeMath.add(balances[user][token], diff);
+        uint userLocked = locked[user][token];
+        uint userBalance = balances[user][token];
+        if (userLocked > userBalance) {
+            uint diff = SafeMath.sub(userLocked, userBalance);
+            balances[user][token] = SafeMath.add(userBalance, diff);
             require(token.transferFrom(user, this, diff));
         }
         Locked(user, token, amount);

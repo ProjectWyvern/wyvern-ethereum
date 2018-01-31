@@ -20,7 +20,7 @@ pragma solidity 0.4.18;
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 
 import "../registry/ProxyRegistry.sol";
-import "../registry/AuthenticatedLazyBank.sol";
+import "../common/LazyBank.sol";
 import "../common/ArrayUtils.sol";
 import "../common/ReentrancyGuarded.sol";
 import "./SaleKindInterface.sol";
@@ -29,16 +29,13 @@ import "./SaleKindInterface.sol";
  * @title ExchangeCore
  * @author Project Wyvern Developers
  */
-contract ExchangeCore is ReentrancyGuarded {
+contract ExchangeCore is LazyBank, ReentrancyGuarded {
 
     /* The token used to pay exchange fees. */
-    ERC20 public exchangeTokenAddress;
+    ERC20 public exchangeToken;
 
     /* User registry. */
     ProxyRegistry public registry;
-
-    /* Lazy bank. */
-    AuthenticatedLazyBank public bank;
 
     /* Top bids for all bid-supporting auctions, by hash. */
     mapping(bytes32 => SaleKindInterface.Bid) public topBids;
@@ -113,22 +110,22 @@ contract ExchangeCore is ReentrancyGuarded {
         internal
     {
         if (amount > 0) {
-            bank._transferTo(from, to, exchangeTokenAddress, amount);
+            require(exchangeToken.transferFrom(from, to, amount));
         }
     }
 
-    function staticCall(address target, bytes calldata, bytes extradata)
+    function staticCall(address target, bytes memory calldata, bytes memory extradata)
         internal
         view
         returns (bool result)
     {
         bytes memory combined = new bytes(calldata.length + extradata.length);
         uint len = combined.length;
-        for (uint i = 0; i < calldata.length; i++) {
-            combined[i] = calldata[i];
+        for (uint i = 0; i < extradata.length; i++) {
+            combined[i] = extradata[i];
         }
-        for (uint j = 0; j < extradata.length; j++) {
-            combined[j + calldata.length] = extradata[j];
+        for (uint j = 0; j < calldata.length; j++) {
+            combined[j + extradata.length] = calldata[j];
         }
         assembly {
             result := staticcall(gas, target, combined, len, combined, 0)
@@ -136,7 +133,7 @@ contract ExchangeCore is ReentrancyGuarded {
         return result;
     }
 
-    function hashOrderPartOne(Order order)
+    function hashOrderPartOne(Order memory order)
         internal
         pure
         returns (bytes32)
@@ -144,7 +141,7 @@ contract ExchangeCore is ReentrancyGuarded {
         return keccak256(order.exchange, order.maker, order.taker, order.makerFee, order.takerFee, order.feeRecipient, order.side, order.saleKind, order.target, order.howToCall, order.calldata, order.replacementPattern);
     }
 
-    function hashOrderPartTwo(Order order)
+    function hashOrderPartTwo(Order memory order)
         internal
         pure
         returns (bytes32)
@@ -152,26 +149,17 @@ contract ExchangeCore is ReentrancyGuarded {
         return keccak256(order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
     }
 
-    function hashOrder(Order order)
-        internal
-        pure
-        returns (bytes32)
-    {
-        /* This is silly, but necessary due to Solidity compiler stack size constraints. Should be fixed, waste of gas. */
-        return keccak256(hashOrderPartOne(order), hashOrderPartTwo(order));
-    }
-
-    function hashToSign(Order order)
+    function hashToSign(Order memory order)
         internal
         pure
         returns (bytes32)
     {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 hash = keccak256(prefix, hashOrder(order));
+        bytes32 hash = keccak256(prefix, hashOrderPartOne(order), hashOrderPartTwo(order));
         return hash;
     }
 
-    function requireValidOrder(Order order, Sig sig)
+    function requireValidOrder(Order memory order, Sig memory sig)
         internal
         view
         returns (bytes32)
@@ -182,11 +170,11 @@ contract ExchangeCore is ReentrancyGuarded {
     }
 
     function validateOrder(bytes32 hash, Order memory order, Sig memory sig) 
-        view
         internal
+        view
         returns (bool)
     {
-        /* Not done in an if-conditional to prevent unnecessary ecrecover evaluation. */
+        /* Not done in an if-conditional to prevent unnecessary ecrecover evaluation, which seems to happen even though it should short-circuit. */
 
         /* Order must be targeted at this protocol version (this Exchange contract). */
         if (order.exchange != address(this)) {
@@ -270,7 +258,7 @@ contract ExchangeCore is ReentrancyGuarded {
         OrderCancelled(hash);
     }
 
-    function bid (Order order, Sig sig, uint amount)
+    function bid (Order memory order, Sig memory sig, uint amount)
         internal
     {
         /* CHECKS */
@@ -294,30 +282,30 @@ contract ExchangeCore is ReentrancyGuarded {
 
         /* Unlock tokens to the previous high bidder, if existent. */
         if (topBid.bidder != address(0)) {
-            bank._unlock(topBid.bidder, order.paymentToken, topBid.amount);
+            unlock(topBid.bidder, order.paymentToken, topBid.amount);
         }
 
         /* Lock tokens for the new high bidder. */
-        bank._lazyLock(msg.sender, order.paymentToken, amount);
+        lazyLock(msg.sender, order.paymentToken, amount);
 
         /* Log bid event. */
         OrderBidOn(hash, msg.sender, amount);
     }
 
-    function calculateCurrentPrice (Order order)
-        view
+    function calculateCurrentPrice (Order memory order)
         internal  
+        view
         returns (uint)
     {
-        bytes32 hash = hashOrder(order);
+        bytes32 hash = hashToSign(order);
         SaleKindInterface.Bid storage topBid = topBids[hash];
         return SaleKindInterface.calculateFinalPrice(order.side, order.saleKind, order.basePrice, order.extra, order.listingTime, order.expirationTime, topBid);
     }
 
-    function calculateMatchPrice(Order buy, Order sell, SaleKindInterface.Bid storage topBid)
+    function calculateMatchPrice(Order memory buy, Order memory sell, SaleKindInterface.Bid memory topBid)
         view
         internal
-        returns (uint price)
+        returns (uint)
     {
         /* Calculate sell price. */
         uint sellPrice = SaleKindInterface.calculateFinalPrice(sell.side, sell.saleKind, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, topBid);
@@ -328,13 +316,11 @@ contract ExchangeCore is ReentrancyGuarded {
         /* Require price cross. */
         require(buyPrice >= sellPrice);
         
-        /* Time priority. */
-        price = sell.listingTime < buy.listingTime ? sellPrice : buyPrice;
-
-        return price;
+        /* Maker/taker priority. */
+        return sell.feeRecipient != address(0) ? sellPrice : buyPrice;
     }
 
-    function executeFundsTransfer(Order buy, Order sell, SaleKindInterface.Bid storage topBid)
+    function executeFundsTransfer(Order memory buy, Order memory sell, SaleKindInterface.Bid memory topBid)
         internal
     {
         /* Calculate match price. */
@@ -367,17 +353,16 @@ contract ExchangeCore is ReentrancyGuarded {
 
         /* Unlock tokens for top bidder, if existent. */
         if (topBid.bidder != address(0)) {
-            bank._unlock(topBid.bidder, sell.paymentToken, topBid.amount);
+            unlock(topBid.bidder, sell.paymentToken, topBid.amount);
         }
 
-        /* Debit buyer. */
-        bank._lazyDebit(buy.maker, sell.paymentToken, price);
-
-        /* Credit seller. */
-        bank._credit(sell.maker, sell.paymentToken, price);
+        if (price > 0) {
+          /* Debit buyer and credit seller. */
+            require(sell.paymentToken.transferFrom(buy.maker, sell.maker, price));
+        }
     }
 
-    function ordersCanMatch(Order buy, Order sell, SaleKindInterface.Bid storage topBid)
+    function ordersCanMatch(Order memory buy, Order memory sell, SaleKindInterface.Bid memory topBid)
         internal
         view
         returns (bool)
@@ -396,15 +381,16 @@ contract ExchangeCore is ReentrancyGuarded {
             (buy.target == sell.target) &&
             /* Must match howToCall. */
             (buy.howToCall == sell.howToCall) &&
-            /* Buy-side order must be settleable. */
-            SaleKindInterface.canSettleOrder(buy.saleKind, sell.maker, buy.expirationTime, SaleKindInterface.Bid({ bidder: address(0), amount: 0 })) &&
+            /* Buy-side order must be settleable (topBid will not be read). */
+            SaleKindInterface.canSettleOrder(buy.saleKind, sell.maker, buy.expirationTime, topBid) &&
             /* Sell-side order must be settleable. */
             SaleKindInterface.canSettleOrder(sell.saleKind, buy.maker, sell.expirationTime, topBid)
         );
     }
 
-    function atomicMatch(Order buy, Sig buySig, Order sell, Sig sellSig)
+    function atomicMatch(Order memory buy, Sig memory buySig, Order memory sell, Sig memory sellSig)
         internal
+        reentrancyGuard
     {
         /* CHECKS */
       
@@ -412,14 +398,21 @@ contract ExchangeCore is ReentrancyGuarded {
         bytes32 sellHash = requireValidOrder(sell, sellSig); 
         
         /* Fetch top bid, if existent. */
-        SaleKindInterface.Bid storage topBid = topBids[sellHash];
+        SaleKindInterface.Bid memory topBid;
+        if (sell.saleKind == SaleKindInterface.SaleKind.EnglishAuction) {
+          topBid = topBids[sellHash];
+        }
 
         /* Must be matchable. */
         require(ordersCanMatch(buy, sell, topBid));
       
-        /* Must match calldata after replacementPattern. */ 
-        ArrayUtils.guardedArrayReplace(buy.calldata, sell.calldata, buy.replacementPattern);
-        ArrayUtils.guardedArrayReplace(sell.calldata, buy.calldata, sell.replacementPattern);
+        /* Must match calldata after replacement, if specified. */ 
+        if (buy.replacementPattern.length > 0) {
+          ArrayUtils.guardedArrayReplace(buy.calldata, sell.calldata, buy.replacementPattern);
+        }
+        if (sell.replacementPattern.length > 0) {
+          ArrayUtils.guardedArrayReplace(sell.calldata, buy.calldata, sell.replacementPattern);
+        }
         require(ArrayUtils.arrayEq(buy.calldata, sell.calldata));
 
         /* Retrieve proxy (the registry contract is trusted). */

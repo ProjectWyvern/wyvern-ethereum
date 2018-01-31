@@ -22,7 +22,7 @@ library ArrayUtils {
      * @param mask The mask specifying which bytes can be changed
      * @return The updated byte array (the parameter will be modified inplace)
      */
-    function guardedArrayReplace(bytes array, bytes desired, bytes mask)
+    function guardedArrayReplace(bytes memory array, bytes memory desired, bytes memory mask)
         pure
         internal
     {
@@ -32,7 +32,9 @@ library ArrayUtils {
         for (uint i = 0; i < array.length; i++ ) {
             /* 1-bit means value can be changed. */
             bool masked = (mask[i / 8] & bitmasks[i % 8]) == 0;
-            array[i] = masked ? array[i] : desired[i];
+            if (!masked) {
+                array[i] = desired[i];
+            }
         }
     }
 
@@ -44,7 +46,7 @@ library ArrayUtils {
      * @param b Second array
      * @return Whether or not all bytes in the arrays are equal
      */
-    function arrayEq(bytes a, bytes b)
+    function arrayEq(bytes memory a, bytes memory b)
         pure
         internal
         returns (bool)

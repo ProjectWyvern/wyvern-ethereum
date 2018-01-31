@@ -25,7 +25,6 @@ contract AuthenticatedProxy is TokenRecipient {
     enum HowToCall { Call, DelegateCall }
 
     event Revoked(bool revoked);
-    event ProxiedCall(address indexed dest, HowToCall howToCall, bytes calldata, bool success);
 
     /**
      * Create an AuthenticatedProxy
@@ -72,7 +71,6 @@ contract AuthenticatedProxy is TokenRecipient {
         } else {
             revert();
         }
-        ProxiedCall(dest, howToCall, calldata, result);
         return result;
     }
 

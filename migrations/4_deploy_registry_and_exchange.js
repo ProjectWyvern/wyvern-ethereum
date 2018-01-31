@@ -2,8 +2,6 @@
 
 const WyvernExchange = artifacts.require('./WyvernExchange.sol')
 const WyvernProxyRegistry = artifacts.require('./WyvernProxyRegistry.sol')
-const WyvernAssetRegistry = artifacts.require('./WyvernAssetRegistry.sol')
-const WyvernLazyBank = artifacts.require('./WyvernLazyBank.sol')
 const SaleKindInterface = artifacts.require('./SaleKindInterface.sol')
 
 const { setConfig } = require('./config.js')
@@ -13,32 +11,20 @@ module.exports = (deployer, network) => {
     return deployer.deploy(WyvernProxyRegistry)
       .then(() => {
         setConfig('deployed.' + network + '.WyvernProxyRegistry', WyvernProxyRegistry.address)
-        return deployer.deploy(WyvernLazyBank, WyvernProxyRegistry.address)
-        .then(() => {
-          setConfig('deployed.' + network + '.WyvernLazyBank', WyvernLazyBank.address)
-          return deployer.deploy(WyvernAssetRegistry)
+        return deployer.deploy(SaleKindInterface)
           .then(() => {
-            setConfig('deployed.' + network + '.WyvernAssetRegistry', WyvernAssetRegistry.address)
-            return deployer.deploy(SaleKindInterface)
+            setConfig('deployed.' + network + '.SaleKindInterface', SaleKindInterface.address)
+            deployer.link(SaleKindInterface, WyvernExchange)
+            return deployer.deploy(WyvernExchange, WyvernProxyRegistry.address, '0x056017c55ae7ae32d12aef7c679df83a85ca75ff')
               .then(() => {
-                setConfig('deployed.' + network + '.SaleKindInterface', SaleKindInterface.address)
-                deployer.link(SaleKindInterface, WyvernExchange)
-                return deployer.deploy(WyvernExchange, WyvernProxyRegistry.address, '0x056017c55ae7ae32d12aef7c679df83a85ca75ff', WyvernLazyBank.address)
-                  .then(() => {
-                    setConfig('deployed.' + network + '.WyvernExchange', WyvernExchange.address)
-                    return WyvernProxyRegistry.deployed().then(proxyRegistry => {
-                      return WyvernExchange.deployed().then(exchange => {
-                        return proxyRegistry.grantInitialAuthentication(exchange.address)
-                      }).then(() => {
-                        return WyvernLazyBank.deployed().then(lazyBank => {
-                          return proxyRegistry.setLazyBank(lazyBank.address)
-                        })
-                      })
-                    })
+                setConfig('deployed.' + network + '.WyvernExchange', WyvernExchange.address)
+                return WyvernProxyRegistry.deployed().then(proxyRegistry => {
+                  return WyvernExchange.deployed().then(exchange => {
+                    return proxyRegistry.grantInitialAuthentication(exchange.address)
                   })
+                })
               })
           })
-        })
       })
   }
 }

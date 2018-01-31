@@ -9,33 +9,62 @@ const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider)
 
 const hashOrder = (order) => {
+  const partOne = web3.utils.soliditySha3(
+    {type: 'address', value: order.exchange},
+    {type: 'address', value: order.maker},
+    {type: 'address', value: order.taker},
+    {type: 'uint', value: new BigNumber(order.makerFee)},
+    {type: 'uint', value: new BigNumber(order.takerFee)},
+    {type: 'address', value: order.feeRecipient},
+    {type: 'uint8', value: order.side},
+    {type: 'uint8', value: order.saleKind},
+    {type: 'address', value: order.target},
+    {type: 'uint8', value: order.howToCall},
+    {type: 'bytes', value: order.calldata},
+    {type: 'bytes', value: order.replacementPattern}
+  ).toString('hex')
+  const partTwo = web3.utils.soliditySha3(
+    {type: 'address', value: order.staticTarget},
+    {type: 'bytes', value: order.staticExtradata},
+    {type: 'address', value: order.paymentToken},
+    {type: 'uint', value: new BigNumber(order.basePrice)},
+    {type: 'uint', value: new BigNumber(order.extra)},
+    {type: 'uint', value: new BigNumber(order.listingTime)},
+    {type: 'uint', value: new BigNumber(order.expirationTime)},
+    {type: 'uint', value: new BigNumber(order.salt)}
+  ).toString('hex')
+  return partOne + partTwo
+}
+
+const hashToSign = (order) => {
+  const partOne = web3.utils.soliditySha3(
+    {type: 'address', value: order.exchange},
+    {type: 'address', value: order.maker},
+    {type: 'address', value: order.taker},
+    {type: 'uint', value: new BigNumber(order.makerFee)},
+    {type: 'uint', value: new BigNumber(order.takerFee)},
+    {type: 'address', value: order.feeRecipient},
+    {type: 'uint8', value: order.side},
+    {type: 'uint8', value: order.saleKind},
+    {type: 'address', value: order.target},
+    {type: 'uint8', value: order.howToCall},
+    {type: 'bytes', value: order.calldata},
+    {type: 'bytes', value: order.replacementPattern}
+  ).toString('hex')
+  const partTwo = web3.utils.soliditySha3(
+    {type: 'address', value: order.staticTarget},
+    {type: 'bytes', value: order.staticExtradata},
+    {type: 'address', value: order.paymentToken},
+    {type: 'uint', value: new BigNumber(order.basePrice)},
+    {type: 'uint', value: new BigNumber(order.extra)},
+    {type: 'uint', value: new BigNumber(order.listingTime)},
+    {type: 'uint', value: new BigNumber(order.expirationTime)},
+    {type: 'uint', value: new BigNumber(order.salt)}
+  ).toString('hex')
   return web3.utils.soliditySha3(
-    {type: 'bytes32',
-      value: web3.utils.soliditySha3(
-      {type: 'address', value: order.exchange},
-      {type: 'address', value: order.maker},
-      {type: 'address', value: order.taker},
-      {type: 'uint', value: new BigNumber(order.makerFee)},
-      {type: 'uint', value: new BigNumber(order.takerFee)},
-      {type: 'address', value: order.feeRecipient},
-      {type: 'uint8', value: order.side},
-      {type: 'uint8', value: order.saleKind},
-      {type: 'address', value: order.target},
-      {type: 'uint8', value: order.howToCall},
-      {type: 'bytes', value: order.calldata},
-      {type: 'bytes', value: order.replacementPattern}
-    ).toString('hex')},
-    {type: 'bytes32',
-      value: web3.utils.soliditySha3(
-      {type: 'address', value: order.staticTarget},
-      {type: 'bytes', value: order.staticExtradata},
-      {type: 'address', value: order.paymentToken},
-      {type: 'uint', value: new BigNumber(order.basePrice)},
-      {type: 'uint', value: new BigNumber(order.extra)},
-      {type: 'uint', value: new BigNumber(order.listingTime)},
-      {type: 'uint', value: new BigNumber(order.expirationTime)},
-      {type: 'uint', value: new BigNumber(order.salt)}
-    ).toString('hex')}
+    {type: 'string', value: '\x19Ethereum Signed Message:\n32'},
+    {type: 'bytes32', value: partOne},
+    {type: 'bytes32', value: partTwo}
   ).toString('hex')
 }
 
@@ -128,7 +157,7 @@ contract('WyvernExchange', (accounts) => {
       .deployed()
       .then(exchangeInstance => {
         const order = makeOrder(exchangeInstance.address)
-        const hash = hashOrder(order)
+        const hash = hashToSign(order)
         return exchangeInstance.hashOrder_.call(
             [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
             [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
@@ -205,8 +234,8 @@ contract('WyvernExchange', (accounts) => {
         var buy = makeOrder(exchangeInstance.address, true)
         var sell = makeOrder(exchangeInstance.address, false)
         sell.side = 1
-        const buyHash = hashOrder(buy)
-        const sellHash = hashOrder(sell)
+        const buyHash = hashOrder(buy) + 'ff'
+        const sellHash = hashOrder(sell) + 'ff'
         return web3.eth.sign(buyHash, accounts[0]).then(signature => {
           signature = signature.substr(2)
           const br = '0x' + signature.slice(0, 64)

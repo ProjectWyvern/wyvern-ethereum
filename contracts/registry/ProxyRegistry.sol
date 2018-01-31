@@ -11,12 +11,8 @@ pragma solidity 0.4.18;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "./AuthenticatedProxy.sol";
-import "./AuthenticatedLazyBank.sol";
 
 contract ProxyRegistry is Ownable {
-
-    /* Authenticated lazy bank. */
-    AuthenticatedLazyBank public lazyBank;
 
     /* Authenticated proxies by user. */
     mapping(address => AuthenticatedProxy) public proxies;
@@ -36,7 +32,7 @@ contract ProxyRegistry is Ownable {
      * @dev ProxyRegistry owner only
      * @param addr Address to which to grant permissions
      */
-    function startGrantAuthentication(address addr)
+    function startGrantAuthentication (address addr)
         public
         onlyOwner
     {
@@ -50,7 +46,7 @@ contract ProxyRegistry is Ownable {
      * @dev ProxyRegistry owner only
      * @param addr Address to which to grant permissions
      */
-    function endGrantAuthentication(address addr)
+    function endGrantAuthentication (address addr)
         public
         onlyOwner
     {
@@ -65,7 +61,7 @@ contract ProxyRegistry is Ownable {
      * @dev ProxyRegistry owner only
      * @param addr Address of which to revoke permissions
      */    
-    function revokeAuthentication(address addr)
+    function revokeAuthentication (address addr)
         public
         onlyOwner
     {
