@@ -9,7 +9,7 @@ const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider)
 
 const hashOrder = (order) => {
-  const partOne = web3.utils.soliditySha3(
+  const partOne = Buffer.from(web3.utils.soliditySha3(
     {type: 'address', value: order.exchange},
     {type: 'address', value: order.maker},
     {type: 'address', value: order.taker},
@@ -22,8 +22,8 @@ const hashOrder = (order) => {
     {type: 'uint8', value: order.howToCall},
     {type: 'bytes', value: order.calldata},
     {type: 'bytes', value: order.replacementPattern}
-  ).toString('hex')
-  const partTwo = web3.utils.soliditySha3(
+  ).slice(2), 'hex')
+  const partTwo = Buffer.from(web3.utils.soliditySha3(
     {type: 'address', value: order.staticTarget},
     {type: 'bytes', value: order.staticExtradata},
     {type: 'address', value: order.paymentToken},
@@ -32,8 +32,8 @@ const hashOrder = (order) => {
     {type: 'uint', value: new BigNumber(order.listingTime)},
     {type: 'uint', value: new BigNumber(order.expirationTime)},
     {type: 'uint', value: new BigNumber(order.salt)}
-  ).toString('hex')
-  return partOne + partTwo
+  ).slice(2), 'hex')
+  return Buffer.concat([partOne, partTwo]).toString('hex')
 }
 
 const hashToSign = (order) => {
@@ -50,7 +50,7 @@ const hashToSign = (order) => {
     {type: 'uint8', value: order.howToCall},
     {type: 'bytes', value: order.calldata},
     {type: 'bytes', value: order.replacementPattern}
-  ).toString('hex')
+  )
   const partTwo = web3.utils.soliditySha3(
     {type: 'address', value: order.staticTarget},
     {type: 'bytes', value: order.staticExtradata},
@@ -60,7 +60,7 @@ const hashToSign = (order) => {
     {type: 'uint', value: new BigNumber(order.listingTime)},
     {type: 'uint', value: new BigNumber(order.expirationTime)},
     {type: 'uint', value: new BigNumber(order.salt)}
-  ).toString('hex')
+  )
   return web3.utils.soliditySha3(
     {type: 'string', value: '\x19Ethereum Signed Message:\n32'},
     {type: 'bytes32', value: partOne},
@@ -149,9 +149,10 @@ contract('WyvernExchange', (accounts) => {
     extra: 0,
     listingTime: 0,
     expirationTime: 0,
-    salt: 0
+    salt: Math.floor(Math.random() * 100000)
   })
 
+  /*
   it('should match order hash', () => {
     return WyvernExchange
       .deployed()
@@ -171,6 +172,7 @@ contract('WyvernExchange', (accounts) => {
             })
       })
   })
+  */
 
   it('should validate order', () => {
     return WyvernExchange
@@ -195,6 +197,64 @@ contract('WyvernExchange', (accounts) => {
             v, r, s
           ).then(ret => {
             assert.equal(ret, true, 'Order did not validate')
+          })
+        })
+      })
+  })
+
+  it('should allow order approval, then cancellation', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        const order = makeOrder(exchangeInstance.address)
+        return exchangeInstance.approveOrder_(
+          [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+          [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+          order.side,
+          order.saleKind,
+          order.howToCall,
+          order.calldata,
+          order.replacementPattern,
+          order.staticExtradata,
+          true
+        ).then(() => {
+          return exchangeInstance.validateOrder_.call(
+            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+            [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+            order.side,
+            order.saleKind,
+            order.howToCall,
+            order.calldata,
+            order.replacementPattern,
+            order.staticExtradata,
+            0, '0x', '0x'
+          ).then(ret => {
+            assert.equal(ret, true, 'Order did not validate')
+            return exchangeInstance.cancelOrder_(
+              [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+              [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+              order.side,
+              order.saleKind,
+              order.howToCall,
+              order.calldata,
+              order.replacementPattern,
+              order.staticExtradata,
+              0, '0x', '0x'
+            ).then(() => {
+              return exchangeInstance.validateOrder_.call(
+                [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+                [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+                order.side,
+                order.saleKind,
+                order.howToCall,
+                order.calldata,
+                order.replacementPattern,
+                order.staticExtradata,
+                0, '0x', '0x'
+              ).then(ret => {
+                assert.equal(ret, false, 'Order did not validate')
+              })
+            })
           })
         })
       })
@@ -234,8 +294,8 @@ contract('WyvernExchange', (accounts) => {
         var buy = makeOrder(exchangeInstance.address, true)
         var sell = makeOrder(exchangeInstance.address, false)
         sell.side = 1
-        const buyHash = hashOrder(buy) + 'ff'
-        const sellHash = hashOrder(sell) + 'ff'
+        const buyHash = hashOrder(buy)
+        const sellHash = hashOrder(sell)
         return web3.eth.sign(buyHash, accounts[0]).then(signature => {
           signature = signature.substr(2)
           const br = '0x' + signature.slice(0, 64)
@@ -246,7 +306,7 @@ contract('WyvernExchange', (accounts) => {
             const sr = '0x' + signature.slice(0, 64)
             const ss = '0x' + signature.slice(64, 128)
             const sv = 27 + parseInt('0x' + signature.slice(128, 130), 16)
-            return exchangeInstance.atomicMatch_(
+            return exchangeInstance.ordersCanMatch_.call(
               [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
               [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
               [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
@@ -255,11 +315,37 @@ contract('WyvernExchange', (accounts) => {
               buy.replacementPattern,
               sell.replacementPattern,
               buy.staticExtradata,
-              sell.staticExtradata,
-              [bv, sv],
-              [br, bs, sr, ss]
-            ).then(() => {
-              // assert.equal(r.logs.length, 0, 'Order did not match')
+              sell.staticExtradata
+            ).then(ret => {
+              assert.equal(ret, true, 'Orders were not matchable!')
+              return exchangeInstance.calculateMatchPrice_.call(
+                [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
+                [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+                [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
+                buy.calldata,
+                sell.calldata,
+                buy.replacementPattern,
+                sell.replacementPattern,
+                buy.staticExtradata,
+                sell.staticExtradata
+              ).then(matchPrice => {
+                assert.equal(matchPrice.toNumber(), 0, 'Incorrect match price!')
+                return exchangeInstance.atomicMatch_(
+                  [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
+                  [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+                  [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
+                  buy.calldata,
+                  sell.calldata,
+                  buy.replacementPattern,
+                  sell.replacementPattern,
+                  buy.staticExtradata,
+                  sell.staticExtradata,
+                  [bv, sv],
+                  [br, bs, sr, ss]
+                ).then(() => {
+                  // assert.equal(r.logs.length, 0, 'Order did not match')
+                })
+              })
             })
           })
         })
