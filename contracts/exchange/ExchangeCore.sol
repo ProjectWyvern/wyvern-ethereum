@@ -20,7 +20,6 @@ pragma solidity 0.4.18;
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 
 import "../registry/ProxyRegistry.sol";
-import "../common/LazyBank.sol";
 import "../common/ArrayUtils.sol";
 import "../common/ReentrancyGuarded.sol";
 import "./SaleKindInterface.sol";
@@ -29,7 +28,7 @@ import "./SaleKindInterface.sol";
  * @title ExchangeCore
  * @author Project Wyvern Developers
  */
-contract ExchangeCore is LazyBank, ReentrancyGuarded {
+contract ExchangeCore is ReentrancyGuarded {
 
     /* The token used to pay exchange fees. */
     ERC20 public exchangeToken;
@@ -260,6 +259,7 @@ contract ExchangeCore is LazyBank, ReentrancyGuarded {
 
     function bid (Order memory order, Sig memory sig, uint amount)
         internal
+        reentrancyGuard
     {
         /* CHECKS */
  
@@ -280,13 +280,13 @@ contract ExchangeCore is LazyBank, ReentrancyGuarded {
         /* Store the new high bid. */
         topBids[hash] = SaleKindInterface.Bid(msg.sender, amount);
 
-        /* Unlock tokens to the previous high bidder, if existent. */
+        /* Return tokens to the previous high bidder, if existent. */
         if (topBid.bidder != address(0)) {
-            unlock(topBid.bidder, order.paymentToken, topBid.amount);
+            require(order.paymentToken.transfer(topBid.bidder, topBid.amount));
         }
 
         /* Lock tokens for the new high bidder. */
-        lazyLock(msg.sender, order.paymentToken, amount);
+        require(order.paymentToken.transferFrom(msg.sender, order.paymentToken, amount));
 
         /* Log bid event. */
         OrderBidOn(hash, msg.sender, amount);
@@ -351,14 +351,14 @@ contract ExchangeCore is LazyBank, ReentrancyGuarded {
             chargeFee(sell.maker, buy.feeRecipient, buy.takerFee);
         }
 
-        /* Unlock tokens for top bidder, if existent. */
-        if (topBid.bidder != address(0)) {
-            unlock(topBid.bidder, sell.paymentToken, topBid.amount);
-        }
-
         if (price > 0) {
-          /* Debit buyer and credit seller. */
-            require(sell.paymentToken.transferFrom(buy.maker, sell.maker, price));
+            if (topBid.bidder != address(0)) {
+                /* Already paid when bid was placed. */
+                sell.paymentToken.transfer(sell.maker, price);
+            } else {
+                /* Debit buyer and credit seller. */
+                require(sell.paymentToken.transferFrom(buy.maker, sell.maker, price));
+            }
         }
     }
 
