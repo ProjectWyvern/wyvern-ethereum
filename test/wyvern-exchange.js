@@ -195,6 +195,17 @@ contract('WyvernExchange', (accounts) => {
             v, r, s
           ).then(ret => {
             assert.equal(ret, true, 'Order did not validate')
+            return exchangeInstance.calculateCurrentPrice_.call(
+              [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+              [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+              order.side,
+              order.saleKind,
+              order.howToCall,
+              order.calldata,
+              order.replacementPattern,
+              order.staticExtradata).then(price => {
+                assert.equal(price.toNumber(), 0, 'Incorrect price')
+              })
           })
         })
       })

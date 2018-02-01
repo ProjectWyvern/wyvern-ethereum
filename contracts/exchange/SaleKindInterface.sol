@@ -4,6 +4,8 @@
 
   Separated into a library for convenience, all the functions are inlined.
 
+  TODO: Nonlinear Dutch auction?
+
 */
 
 pragma solidity 0.4.18;
@@ -32,8 +34,8 @@ library SaleKindInterface {
     }
 
     /* Precondition: parameters have passed validateParameters. */
-    function canSettleOrder(uint expirationTime) view internal returns (bool) {
-        return (expirationTime == 0 || now < expirationTime);
+    function canSettleOrder(uint listingTime, uint expirationTime) view internal returns (bool) {
+        return (listingTime < now) && (expirationTime == 0 || now < expirationTime);
     }
 
     /* Precondition: parameters have passed validateParameters. */

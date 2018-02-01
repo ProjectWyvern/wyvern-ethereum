@@ -50,7 +50,7 @@ contract ProxyRegistry is Ownable {
         public
         onlyOwner
     {
-        require(!contracts[addr] && pending[addr] != 0 && pending[addr] < (now + DELAY_PERIOD));
+        require(!contracts[addr] && pending[addr] != 0 && ((pending[addr] + DELAY_PERIOD) < now));
         pending[addr] = 0;
         contracts[addr] = true;
     }

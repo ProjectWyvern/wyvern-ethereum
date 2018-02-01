@@ -9,6 +9,15 @@ const web3 = new Web3(provider)
 
 const BigNumber = require('bignumber.js')
 
+const increaseTime = (addSeconds, callback) => {
+  web3.currentProvider.send({
+    jsonrpc: '2.0',
+    method: 'evm_increaseTime',
+    params: [addSeconds],
+    id: 0
+  }, callback)
+}
+
 contract('WyvernProxyRegistry', (accounts) => {
   it('should allow proxy creation', () => {
     return WyvernProxyRegistry
@@ -24,6 +33,49 @@ contract('WyvernProxyRegistry', (accounts) => {
       })
   })
 
+  it('should allow start but not end of authentication process', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.startGrantAuthentication(accounts[0]).then(() => {
+          return registryInstance.pending.call(accounts[0]).then(r => {
+            assert.equal(r.toNumber() > 0, true, 'Invalid timestamp')
+            return registryInstance.endGrantAuthentication(accounts[0]).then(() => {
+              assert.equal(true, false, 'End of authentication process allowed without time period passing')
+            }).catch(err => {
+              assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+            })
+          })
+        })
+      })
+  })
+
+  it('should not allow end without start', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.endGrantAuthentication(accounts[1]).then(() => {
+          assert.equal(true, false, 'End of authentication process allowed without start')
+        }).catch(err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should allow end after time has passed', () => {
+    return WyvernProxyRegistry
+     .deployed()
+     .then(registryInstance => {
+       increaseTime(86400 * 7 * 3, () => {
+         return registryInstance.endGrantAuthentication(accounts[0]).then(() => {
+           return registryInstance.contracts.call(accounts[0]).then(ret => {
+             assert.equal(ret, true, 'Auth was not granted')
+           })
+         })
+       })
+     })
+  })
+
   it('should not allow duplicate proxy creation', () => {
     return WyvernProxyRegistry
       .deployed()
@@ -31,9 +83,9 @@ contract('WyvernProxyRegistry', (accounts) => {
         return registryInstance.registerProxy()
           .then(() => {
             assert.equal(true, false, 'Duplicate registration was allowed')
-          }).catch(err => {
-            assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
           })
+      }).catch(err => {
+        assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
       })
   })
 

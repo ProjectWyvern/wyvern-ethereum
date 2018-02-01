@@ -336,9 +336,9 @@ contract ExchangeCore is ReentrancyGuarded {
             /* Must match howToCall. */
             (buy.howToCall == sell.howToCall) &&
             /* Buy-side order must be settleable. */
-            SaleKindInterface.canSettleOrder(buy.expirationTime) &&
+            SaleKindInterface.canSettleOrder(buy.listingTime, buy.expirationTime) &&
             /* Sell-side order must be settleable. */
-            SaleKindInterface.canSettleOrder(sell.expirationTime)
+            SaleKindInterface.canSettleOrder(sell.listingTime, sell.expirationTime)
         );
     }
 
