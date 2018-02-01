@@ -68,8 +68,6 @@ contract AuthenticatedProxy is TokenRecipient {
             result = dest.call(calldata);
         } else if (howToCall == HowToCall.DelegateCall) {
             result = dest.delegatecall(calldata);
-        } else {
-            revert();
         }
         return result;
     }

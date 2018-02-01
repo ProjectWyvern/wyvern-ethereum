@@ -31,7 +31,7 @@ const hashOrder = (order) => {
     {type: 'uint', value: new BigNumber(order.extra)},
     {type: 'uint', value: new BigNumber(order.listingTime)},
     {type: 'uint', value: new BigNumber(order.expirationTime)},
-    {type: 'uint', value: new BigNumber(order.salt)}
+    {type: 'uint', value: order.salt}
   ).slice(2), 'hex')
   return Buffer.concat([partOne, partTwo]).toString('hex')
 }
@@ -50,7 +50,7 @@ const hashToSign = (order) => {
     {type: 'uint8', value: order.howToCall},
     {type: 'bytes', value: order.calldata},
     {type: 'bytes', value: order.replacementPattern}
-  )
+  ).toString('hex')
   const partTwo = web3.utils.soliditySha3(
     {type: 'address', value: order.staticTarget},
     {type: 'bytes', value: order.staticExtradata},
@@ -59,8 +59,8 @@ const hashToSign = (order) => {
     {type: 'uint', value: new BigNumber(order.extra)},
     {type: 'uint', value: new BigNumber(order.listingTime)},
     {type: 'uint', value: new BigNumber(order.expirationTime)},
-    {type: 'uint', value: new BigNumber(order.salt)}
-  )
+    {type: 'uint', value: order.salt}
+  ).toString('hex')
   return web3.utils.soliditySha3(
     {type: 'string', value: '\x19Ethereum Signed Message:\n32'},
     {type: 'bytes32', value: partOne},
@@ -149,10 +149,9 @@ contract('WyvernExchange', (accounts) => {
     extra: 0,
     listingTime: 0,
     expirationTime: 0,
-    salt: Math.floor(Math.random() * 100000)
+    salt: new BigNumber(0)
   })
 
-  /*
   it('should match order hash', () => {
     return WyvernExchange
       .deployed()
@@ -172,7 +171,6 @@ contract('WyvernExchange', (accounts) => {
             })
       })
   })
-  */
 
   it('should validate order', () => {
     return WyvernExchange

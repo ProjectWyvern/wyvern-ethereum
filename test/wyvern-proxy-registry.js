@@ -24,6 +24,19 @@ contract('WyvernProxyRegistry', (accounts) => {
       })
   })
 
+  it('should not allow duplicate proxy creation', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.registerProxy()
+          .then(() => {
+            assert.equal(true, false, 'Duplicate registration was allowed')
+          }).catch(err => {
+            assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+          })
+      })
+  })
+
   it('should allow sending tokens through proxy', () => {
     const amount = new BigNumber(10).pow(25).mul(2)
     return WyvernProxyRegistry
@@ -48,6 +61,19 @@ contract('WyvernProxyRegistry', (accounts) => {
       })
   })
 
+  it('should allow delegatecall', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(proxy => {
+            const proxyInst = new web3.eth.Contract(AuthenticatedProxy.abi, proxy)
+            const encoded = proxyInst.methods.proxyAssert(accounts[0], 0, '0x').encodeABI()
+            return proxyInst.methods.proxyAssert(proxy, 1, encoded).send({from: accounts[0]})
+          })
+      })
+  })
+
   it('should allow revoke', () => {
     return WyvernProxyRegistry
       .deployed()
@@ -64,6 +90,21 @@ contract('WyvernProxyRegistry', (accounts) => {
                 })
               })
             })
+          })
+        })
+      })
+  })
+
+  it('should not allow revoke from another account', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0]).then(proxy => {
+          const proxyInst = new web3.eth.Contract(AuthenticatedProxy.abi, proxy)
+          return proxyInst.methods.setRevoke(true).send({from: accounts[1]}).then(() => {
+            assert.equal(true, false, 'Revocation was allowed from another account')
+          }).catch(err => {
+            assert.equal(err.message, 'Returned error: VM Exception while processing transaction: revert', 'Incorrect error')
           })
         })
       })
