@@ -36,9 +36,6 @@ contract ExchangeCore is ReentrancyGuarded {
     /* User registry. */
     ProxyRegistry public registry;
 
-    /* Top bids for all bid-supporting auctions, by hash. */
-    mapping(bytes32 => SaleKindInterface.Bid) public topBids;
- 
     /* Cancelled / finalized orders, by hash. */
     mapping(bytes32 => bool) public cancelledOrFinalized;
 
@@ -102,7 +99,6 @@ contract ExchangeCore is ReentrancyGuarded {
     event OrderApprovedPartOne    (bytes32 indexed hash, address exchange, address indexed maker, address taker, uint makerFee, uint takerFee, address indexed feeRecipient, SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, address target, AuthenticatedProxy.HowToCall howToCall, bytes calldata);
     event OrderApprovedPartTwo    (bytes32 indexed hash, bytes replacementPattern, address staticTarget, bytes staticExtradata, ERC20 paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
     event OrderCancelled          (bytes32 indexed hash);
-    event OrderBidOn              (bytes32 indexed hash, address indexed bidder, uint amount);
     event OrdersMatched           (bytes32 indexed buyHash, bytes32 indexed sellHash);
 
     function chargeFee(address from, address to, uint amount)
@@ -186,7 +182,7 @@ contract ExchangeCore is ReentrancyGuarded {
         }
         
         /* Order must possess valid sale kind parameter combination. */
-        if (!SaleKindInterface.validateParameters(order.side, order.saleKind, order.expirationTime)) {
+        if (!SaleKindInterface.validateParameters(order.saleKind, order.expirationTime)) {
             return false;
         }
 
@@ -257,61 +253,24 @@ contract ExchangeCore is ReentrancyGuarded {
         OrderCancelled(hash);
     }
 
-    function bid (Order memory order, Sig memory sig, uint amount)
-        internal
-        reentrancyGuard
-    {
-        /* CHECKS */
- 
-        /* Calculate order hash. */ 
-        bytes32 hash = requireValidOrder(order, sig);
-
-        /* Fetch current top bid, if existent. */
-        SaleKindInterface.Bid storage topBid = topBids[hash];
-        
-        /* Calculated required bid price. */
-        uint requiredBidPrice = SaleKindInterface.requiredBidPrice(order.side, order.saleKind, order.basePrice, order.extra, order.expirationTime, topBid);
-
-        /* Assert bid amount is sufficient. */
-        require(amount >= requiredBidPrice);
-
-        /* EFFECTS */
-
-        /* Store the new high bid. */
-        topBids[hash] = SaleKindInterface.Bid(msg.sender, amount);
-
-        /* Return tokens to the previous high bidder, if existent. */
-        if (topBid.bidder != address(0)) {
-            require(order.paymentToken.transfer(topBid.bidder, topBid.amount));
-        }
-
-        /* Lock tokens for the new high bidder. */
-        require(order.paymentToken.transferFrom(msg.sender, order.paymentToken, amount));
-
-        /* Log bid event. */
-        OrderBidOn(hash, msg.sender, amount);
-    }
-
     function calculateCurrentPrice (Order memory order)
         internal  
         view
         returns (uint)
     {
-        bytes32 hash = hashToSign(order);
-        SaleKindInterface.Bid storage topBid = topBids[hash];
-        return SaleKindInterface.calculateFinalPrice(order.side, order.saleKind, order.basePrice, order.extra, order.listingTime, order.expirationTime, topBid);
+        return SaleKindInterface.calculateFinalPrice(order.side, order.saleKind, order.basePrice, order.extra, order.listingTime, order.expirationTime);
     }
 
-    function calculateMatchPrice(Order memory buy, Order memory sell, SaleKindInterface.Bid memory topBid)
+    function calculateMatchPrice(Order memory buy, Order memory sell)
         view
         internal
         returns (uint)
     {
         /* Calculate sell price. */
-        uint sellPrice = SaleKindInterface.calculateFinalPrice(sell.side, sell.saleKind, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, topBid);
+        uint sellPrice = SaleKindInterface.calculateFinalPrice(sell.side, sell.saleKind, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime);
 
         /* Calculate buy price. */
-        uint buyPrice = SaleKindInterface.calculateFinalPrice(buy.side, buy.saleKind, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, topBid);
+        uint buyPrice = SaleKindInterface.calculateFinalPrice(buy.side, buy.saleKind, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime);
 
         /* Require price cross. */
         require(buyPrice >= sellPrice);
@@ -320,11 +279,11 @@ contract ExchangeCore is ReentrancyGuarded {
         return sell.feeRecipient != address(0) ? sellPrice : buyPrice;
     }
 
-    function executeFundsTransfer(Order memory buy, Order memory sell, SaleKindInterface.Bid memory topBid)
+    function executeFundsTransfer(Order memory buy, Order memory sell)
         internal
     {
         /* Calculate match price. */
-        uint price = calculateMatchPrice(buy, sell, topBid);
+        uint price = calculateMatchPrice(buy, sell);
 
         /* Determine maker/taker and charge fees accordingly. */
         if (sell.feeRecipient != address(0)) {
@@ -352,17 +311,12 @@ contract ExchangeCore is ReentrancyGuarded {
         }
 
         if (price > 0) {
-            if (topBid.bidder != address(0)) {
-                /* Already paid when bid was placed. */
-                sell.paymentToken.transfer(sell.maker, price);
-            } else {
-                /* Debit buyer and credit seller. */
-                require(sell.paymentToken.transferFrom(buy.maker, sell.maker, price));
-            }
+            /* Debit buyer and credit seller. */
+            require(sell.paymentToken.transferFrom(buy.maker, sell.maker, price));
         }
     }
 
-    function ordersCanMatch(Order memory buy, Order memory sell, SaleKindInterface.Bid memory topBid)
+    function ordersCanMatch(Order memory buy, Order memory sell)
         internal
         view
         returns (bool)
@@ -381,10 +335,10 @@ contract ExchangeCore is ReentrancyGuarded {
             (buy.target == sell.target) &&
             /* Must match howToCall. */
             (buy.howToCall == sell.howToCall) &&
-            /* Buy-side order must be settleable (topBid will not be read). */
-            SaleKindInterface.canSettleOrder(buy.saleKind, sell.maker, buy.expirationTime, topBid) &&
+            /* Buy-side order must be settleable. */
+            SaleKindInterface.canSettleOrder(buy.expirationTime) &&
             /* Sell-side order must be settleable. */
-            SaleKindInterface.canSettleOrder(sell.saleKind, buy.maker, sell.expirationTime, topBid)
+            SaleKindInterface.canSettleOrder(sell.expirationTime)
         );
     }
 
@@ -397,14 +351,8 @@ contract ExchangeCore is ReentrancyGuarded {
         bytes32 buyHash = requireValidOrder(buy, buySig);
         bytes32 sellHash = requireValidOrder(sell, sellSig); 
         
-        /* Fetch top bid, if existent. */
-        SaleKindInterface.Bid memory topBid;
-        if (sell.saleKind == SaleKindInterface.SaleKind.EnglishAuction) {
-          topBid = topBids[sellHash];
-        }
-
         /* Must be matchable. */
-        require(ordersCanMatch(buy, sell, topBid));
+        require(ordersCanMatch(buy, sell));
       
         /* Must match calldata after replacement, if specified. */ 
         if (buy.replacementPattern.length > 0) {
@@ -428,7 +376,7 @@ contract ExchangeCore is ReentrancyGuarded {
         cancelledOrFinalized[sellHash] = true;
 
         /* Validate balances and transfer funds. */ 
-        executeFundsTransfer(buy, sell, topBid);
+        executeFundsTransfer(buy, sell);
 
         /* INTERACTIONS */
 

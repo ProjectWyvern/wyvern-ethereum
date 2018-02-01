@@ -108,29 +108,6 @@ contract Exchange is ExchangeCore {
     }
 
     /* Solidity ABI encoding limitation workaround, hopefully temporary. */
-    function bid_(
-        address[7] addrs,
-        uint[7] uints,
-        SaleKindInterface.Side side,
-        SaleKindInterface.SaleKind saleKind,
-        AuthenticatedProxy.HowToCall howToCall,
-        bytes calldata,
-        bytes replacementPattern,
-        bytes staticExtradata,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint amount)
-        public
-    {
-        return bid(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]),
-          Sig(v, r, s),
-          amount
-        );
-    }
-
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
     function calculateCurrentPrice_(
         address[7] addrs,
         uint[7] uints,
@@ -166,11 +143,9 @@ contract Exchange is ExchangeCore {
     {
         Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
         Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]);
-        SaleKindInterface.Bid storage topBid = topBids[hashToSign(sell)];
         return ordersCanMatch(
           buy,
-          sell,
-          topBid
+          sell
         );
     }
 
@@ -201,11 +176,9 @@ contract Exchange is ExchangeCore {
     {
         Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
         Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]);
-        SaleKindInterface.Bid storage topBid = topBids[hashToSign(sell)];
         return calculateMatchPrice(
           buy,
-          sell,
-          topBid
+          sell
         );
     }
 
