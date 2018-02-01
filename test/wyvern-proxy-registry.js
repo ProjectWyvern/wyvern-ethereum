@@ -19,6 +19,18 @@ const increaseTime = (addSeconds, callback) => {
 }
 
 contract('WyvernProxyRegistry', (accounts) => {
+  it('should not allow initial authentication twice', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.grantInitialAuthentication(accounts[0]).then(() => {
+          assert.equal(true, false, 'Initial instant authentication allowed twice')
+        }).catch(err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
   it('should allow proxy creation', () => {
     return WyvernProxyRegistry
       .deployed()

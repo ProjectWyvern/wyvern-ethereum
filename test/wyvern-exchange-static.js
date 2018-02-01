@@ -37,4 +37,20 @@ contract('WyvernExchange', (accounts) => {
         })
       })
   })
+
+  it('should succeed with successful minimum length static call', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestStatic.deployed().then(staticInstance => {
+          const staticTarget = staticInstance.address
+          const staticInst = new web3.eth.Contract(TestStatic.abi, staticInstance.address)
+          const staticExtradata = staticInst.methods.requireMinimumLength('0x').encodeABI().slice(0, 10 + 64) // method ID + arg location
+          const calldata = '0x' + '0000000000000000000000000000000000000000000000000000000000000004' + '6461766500000000000000000000000000000000000000000000000000000000'
+          return exchangeInstance.staticCall.call(staticTarget, calldata, staticExtradata).then(ret => {
+            assert.equal(ret, true, 'Static call did not succeed')
+          })
+        })
+      })
+  })
 })

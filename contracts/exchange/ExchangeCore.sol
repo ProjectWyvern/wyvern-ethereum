@@ -18,6 +18,7 @@
 pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../registry/ProxyRegistry.sol";
 import "../common/ArrayUtils.sol";
@@ -114,7 +115,7 @@ contract ExchangeCore is ReentrancyGuarded {
         view
         returns (bool result)
     {
-        bytes memory combined = new bytes(calldata.length + extradata.length);
+        bytes memory combined = new bytes(SafeMath.add(calldata.length, extradata.length));
         for (uint i = 0; i < extradata.length; i++) {
             combined[i] = extradata[i];
         }

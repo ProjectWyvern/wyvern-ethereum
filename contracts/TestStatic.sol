@@ -32,4 +32,11 @@ contract TestStatic {
         require(false);
     }
 
+    function requireMinimumLength(bytes calldata)
+        public
+        pure
+    {
+        require(calldata.length > 2);
+    }
+
 }

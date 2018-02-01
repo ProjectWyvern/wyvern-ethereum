@@ -4,11 +4,11 @@
 
   Separated into a library for convenience, all the functions are inlined.
 
-  TODO: Nonlinear Dutch auction?
-
 */
 
 pragma solidity 0.4.18;
+
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title SaleKindInterface
@@ -43,13 +43,13 @@ library SaleKindInterface {
         if (saleKind == SaleKind.FixedPrice) {
             return basePrice;
         } else if (saleKind == SaleKind.DutchAuction) {
-            uint diff = (extra * (now - listingTime) / (expirationTime - listingTime));
+            uint diff = SafeMath.mul(extra, SafeMath.div(SafeMath.sub(now, listingTime), SafeMath.sub(expirationTime, listingTime)));
             if (side == Side.Sell) {
                 /* Sell-side - start price: basePrice. End price: basePrice - extra. */
-                return basePrice - diff;
+                return SafeMath.sub(basePrice, diff);
             } else {
                 /* Buy-side - start price: basePrice. End price: basePrice + extra. */
-                return basePrice + diff;
+                return SafeMath.add(basePrice, diff);
             }
         }
     }
