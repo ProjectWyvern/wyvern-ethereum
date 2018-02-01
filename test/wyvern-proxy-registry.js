@@ -50,6 +50,18 @@ contract('WyvernProxyRegistry', (accounts) => {
       })
   })
 
+  it('should not allow start twice', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.startGrantAuthentication(accounts[0]).then(() => {
+          assert.equal(true, false, 'Start of authentication process allowed twice')
+        }).catch(err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
   it('should not allow end without start', () => {
     return WyvernProxyRegistry
       .deployed()
@@ -71,6 +83,18 @@ contract('WyvernProxyRegistry', (accounts) => {
            return registryInstance.contracts.call(accounts[0]).then(ret => {
              assert.equal(ret, true, 'Auth was not granted')
            })
+         })
+       })
+     })
+  })
+
+  it('should allow instant revocation', () => {
+    return WyvernProxyRegistry
+     .deployed()
+     .then(registryInstance => {
+       return registryInstance.revokeAuthentication(accounts[0]).then(() => {
+         return registryInstance.contracts.call(accounts[0]).then(ret => {
+           assert.equal(ret, false, 'Auth was not revoked')
          })
        })
      })

@@ -2,6 +2,8 @@
 
 const WyvernExchange = artifacts.require('WyvernExchange')
 const WyvernProxyRegistry = artifacts.require('WyvernProxyRegistry')
+const TestToken = artifacts.require('TestToken')
+const AuthenticatedProxy = artifacts.require('AuthenticatedProxy')
 const BigNumber = require('bignumber.js')
 
 const Web3 = require('web3')
@@ -145,7 +147,7 @@ contract('WyvernExchange', (accounts) => {
     staticTarget: '0x0000000000000000000000000000000000000000',
     staticExtradata: '0x',
     paymentToken: accounts[0],
-    basePrice: 0,
+    basePrice: new BigNumber(0),
     extra: 0,
     listingTime: 0,
     expirationTime: 0,
@@ -296,13 +298,10 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
-  it('should allow order matching', () => {
+  const matchOrder = (buy, sell, thenFunc, catchFunc) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        var buy = makeOrder(exchangeInstance.address, true)
-        var sell = makeOrder(exchangeInstance.address, false)
-        sell.side = 1
         const buyHash = hashOrder(buy)
         const sellHash = hashOrder(sell)
         return web3.eth.sign(buyHash, accounts[0]).then(signature => {
@@ -338,7 +337,7 @@ contract('WyvernExchange', (accounts) => {
                 buy.staticExtradata,
                 sell.staticExtradata
               ).then(matchPrice => {
-                assert.equal(matchPrice.toNumber(), 0, 'Incorrect match price!')
+                assert.equal(matchPrice.toNumber(), buy.basePrice.toNumber(), 'Incorrect match price!')
                 return exchangeInstance.atomicMatch_(
                   [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
                   [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
@@ -350,14 +349,231 @@ contract('WyvernExchange', (accounts) => {
                   buy.staticExtradata,
                   sell.staticExtradata,
                   [bv, sv],
-                  [br, bs, sr, ss]
-                ).then(() => {
-                  // assert.equal(r.logs.length, 0, 'Order did not match')
-                })
+                  [br, bs, sr, ss]).then(thenFunc)
               })
             })
           })
         })
+      }).catch(catchFunc)
+  }
+
+  it('should allow simple order matching', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        return matchOrder(buy, sell, () => {}, err => {
+          assert.equal(false, err, 'Orders should have matched')
+        })
+      })
+  })
+
+  it('should fail with same side', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching was allowed with same side')
+        }, err => {
+          assert.equal(err.message, 'Orders were not matchable!: expected false to equal true', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should fail with different payment token', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.paymentToken = accounts[1]
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching was allowed with different payment token')
+        }, err => {
+          assert.equal(err.message, 'Orders were not matchable!: expected false to equal true', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should fail with wrong maker/taker', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.taker = accounts[1]
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching was allowed with non-matching maker/taker')
+        }, err => {
+          assert.equal(err.message, 'Orders were not matchable!: expected false to equal true', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should succeed with zero-address taker', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.salt = 32
+        sell.salt = 23
+        buy.taker = '0x0000000000000000000000000000000000000000'
+        return matchOrder(buy, sell, () => {}, err => {
+          assert.equal(false, err, 'Orders should have matched')
+        })
+      })
+  })
+
+  it('should fail with different target', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.target = accounts[1]
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching was allowed with non-identical target')
+        }, err => {
+          assert.equal(err.message, 'Orders were not matchable!: expected false to equal true', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should fail with different howToCall', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.howToCall = 1
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching was allowed with non-identical target')
+        }, err => {
+          assert.equal(err.message, 'Orders were not matchable!: expected false to equal true', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should fail with listing time past now', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.listingTime = new BigNumber(Math.pow(10, 10))
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching was allowed with listing time past now')
+        }, err => {
+          assert.equal(err.message, 'Orders were not matchable!: expected false to equal true', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should fail with expiration time prior to now', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.expirationTime = new BigNumber(Math.pow(10, 1))
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching was allowed with expiration time prior to now')
+        }, err => {
+          assert.equal(err.message, 'Orders were not matchable!: expected false to equal true', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should allow approval', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken
+          .deployed()
+          .then(tokenInstance => {
+            return tokenInstance.approve(exchangeInstance.address, 1000000)
+          })
+      })
+  })
+
+  it('should succeed with real token transfer', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          sell.salt = 2
+          buy.salt = 3
+          buy.paymentToken = tokenInstance.address
+          sell.paymentToken = tokenInstance.address
+          buy.basePrice = new BigNumber(10)
+          sell.basePrice = new BigNumber(10)
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
+  it('should succeed with real fee', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          sell.salt = 4
+          buy.salt = 5
+          buy.makerFee = 10
+          buy.takerFee = 10
+          sell.makerFee = 10
+          sell.takerFee = 10
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
+  it('should fail after proxy revocation', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(proxy => {
+            const proxyInst = new web3.eth.Contract(AuthenticatedProxy.abi, proxy)
+            return proxyInst.methods.setRevoke(true).send({from: accounts[0]}).then(() => {
+              return WyvernExchange
+                .deployed()
+                .then(exchangeInstance => {
+                  var buy = makeOrder(exchangeInstance.address, true)
+                  var sell = makeOrder(exchangeInstance.address, false)
+                  sell.side = 1
+                  sell.salt = 40
+                  buy.salt = 41
+                  return matchOrder(buy, sell, () => {
+                    assert.equal(true, false, 'Matching was allowed with proxy revocation')
+                  }, err => {
+                    assert.equal(err.message, 'VM Exception while processing transaction: revert')
+                  })
+                })
+            })
+          })
       })
   })
 })
