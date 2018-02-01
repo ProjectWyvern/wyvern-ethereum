@@ -3,6 +3,7 @@
 const WyvernExchange = artifacts.require('WyvernExchange')
 const WyvernProxyRegistry = artifacts.require('WyvernProxyRegistry')
 const TestToken = artifacts.require('TestToken')
+const TestStatic = artifacts.require('TestStatic')
 const AuthenticatedProxy = artifacts.require('AuthenticatedProxy')
 const BigNumber = require('bignumber.js')
 
@@ -550,6 +551,52 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should succeed with successful static call', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          buy.salt = 40
+          sell.salt = 50
+          return TestStatic.deployed().then(staticInstance => {
+            buy.staticTarget = staticInstance.address
+            const staticInst = new web3.eth.Contract(TestStatic.abi, staticInstance.address)
+            buy.staticExtradata = staticInst.methods.alwaysSucceed().encodeABI()
+            return matchOrder(buy, sell, () => {}, err => {
+              assert.equal(false, err, 'Orders should have matched')
+            })
+          })
+        })
+      })
+  })
+
+  it('should fail with unsuccessful static call', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          buy.salt = 41
+          sell.salt = 55
+          return TestStatic.deployed().then(staticInstance => {
+            buy.staticTarget = staticInstance.address
+            const staticInst = new web3.eth.Contract(TestStatic.abi, staticInstance.address)
+            buy.staticExtradata = staticInst.methods.alwaysFail().encodeABI()
+            return matchOrder(buy, sell, () => {
+              assert.equal(true, false, 'Matching was allowed with failed static call')
+            }, err => {
+              assert.equal(err.message, 'VM Exception while processing transaction: revert')
+            })
+          })
+        })
+      })
+  })
+
   it('should fail after proxy revocation', () => {
     return WyvernProxyRegistry
       .deployed()
@@ -568,6 +615,12 @@ contract('WyvernExchange', (accounts) => {
                   buy.salt = 41
                   return matchOrder(buy, sell, () => {
                     assert.equal(true, false, 'Matching was allowed with proxy revocation')
+                    return proxyInst.methods.setRevoke(false).send({from: accounts[0]}).then(() => {
+                      return proxyInst.methods.revoked().call({from: accounts[0]}).then(ret => {
+                        console.log('checked revocation')
+                        assert.equal(ret, false, 'Revocation was not reversed')
+                      })
+                    })
                   }, err => {
                     assert.equal(err.message, 'VM Exception while processing transaction: revert')
                   })

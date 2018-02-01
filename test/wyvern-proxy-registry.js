@@ -10,7 +10,7 @@ const web3 = new Web3(provider)
 const BigNumber = require('bignumber.js')
 
 const increaseTime = (addSeconds, callback) => {
-  web3.currentProvider.send({
+  return web3.currentProvider.send({
     jsonrpc: '2.0',
     method: 'evm_increaseTime',
     params: [addSeconds],
@@ -78,23 +78,16 @@ contract('WyvernProxyRegistry', (accounts) => {
     return WyvernProxyRegistry
      .deployed()
      .then(registryInstance => {
-       increaseTime(86400 * 7 * 3, () => {
+       return increaseTime(86400 * 7 * 3, () => {
          return registryInstance.endGrantAuthentication(accounts[0]).then(() => {
            return registryInstance.contracts.call(accounts[0]).then(ret => {
              assert.equal(ret, true, 'Auth was not granted')
+             return registryInstance.revokeAuthentication(accounts[0]).then(() => {
+               return registryInstance.contracts.call(accounts[0]).then(ret => {
+                 assert.equal(ret, false, 'Auth was not revoked')
+               })
+             })
            })
-         })
-       })
-     })
-  })
-
-  it('should allow instant revocation', () => {
-    return WyvernProxyRegistry
-     .deployed()
-     .then(registryInstance => {
-       return registryInstance.revokeAuthentication(accounts[0]).then(() => {
-         return registryInstance.contracts.call(accounts[0]).then(ret => {
-           assert.equal(ret, false, 'Auth was not revoked')
          })
        })
      })

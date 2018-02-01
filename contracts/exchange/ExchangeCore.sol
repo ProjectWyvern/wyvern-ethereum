@@ -110,12 +110,11 @@ contract ExchangeCore is ReentrancyGuarded {
     }
 
     function staticCall(address target, bytes memory calldata, bytes memory extradata)
-        internal
+        public
         view
         returns (bool result)
     {
         bytes memory combined = new bytes(calldata.length + extradata.length);
-        uint len = combined.length;
         for (uint i = 0; i < extradata.length; i++) {
             combined[i] = extradata[i];
         }
@@ -123,7 +122,7 @@ contract ExchangeCore is ReentrancyGuarded {
             combined[j + extradata.length] = calldata[j];
         }
         assembly {
-            result := staticcall(gas, target, combined, len, combined, 0)
+            result := staticcall(gas, target, add(combined, 0x20), mload(combined), mload(0x40), 0)
         }
         return result;
     }
