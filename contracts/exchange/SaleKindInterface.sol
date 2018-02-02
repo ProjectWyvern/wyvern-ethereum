@@ -75,7 +75,7 @@ library SaleKindInterface {
         if (saleKind == SaleKind.FixedPrice) {
             return basePrice;
         } else if (saleKind == SaleKind.DutchAuction) {
-            uint diff = SafeMath.mul(extra, SafeMath.div(SafeMath.sub(now, listingTime), SafeMath.sub(expirationTime, listingTime)));
+            uint diff = SafeMath.div(SafeMath.mul(extra, SafeMath.sub(now, listingTime)), SafeMath.sub(expirationTime, listingTime));
             if (side == Side.Sell) {
                 /* Sell-side - start price: basePrice. End price: basePrice - extra. */
                 return SafeMath.sub(basePrice, diff);

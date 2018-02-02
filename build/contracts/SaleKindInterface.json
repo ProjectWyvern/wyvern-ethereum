@@ -1,11 +1,11 @@
 {
   "contractName": "SaleKindInterface",
   "abi": [],
-  "bytecode": "0x60606040523415600e57600080fd5b603580601b6000396000f3006060604052600080fd00a165627a7a72305820c81105290c4024bf369c77eaae3303dab5b089278638b629732a526e645882bb0029",
-  "deployedBytecode": "0x6060604052600080fd00a165627a7a72305820c81105290c4024bf369c77eaae3303dab5b089278638b629732a526e645882bb0029",
+  "bytecode": "0x60606040523415600e57600080fd5b603580601b6000396000f3006060604052600080fd00a165627a7a72305820f1ba8b12d194dc0678dc5feb26e8905110c8b3e05109726859e695d527b58ed80029",
+  "deployedBytecode": "0x6060604052600080fd00a165627a7a72305820f1ba8b12d194dc0678dc5feb26e8905110c8b3e05109726859e695d527b58ed80029",
   "sourceMap": "365:2556:15:-;;;;;;;;;;;;;;;;;",
   "deployedSourceMap": "365:2556:15:-;;;;;",
-  "source": "/*\n\n  Abstract over fixed-price sales and Dutch auctions, with the intent of easily supporting additional methods of sale later.\n\n  Separated into a library for convenience, all the functions are inlined.\n\n*/\n\npragma solidity 0.4.18;\n\nimport \"zeppelin-solidity/contracts/math/SafeMath.sol\";\n\n/**\n * @title SaleKindInterface\n * @author Project Wyvern Developers\n */\nlibrary SaleKindInterface {\n\n    /**\n     * Side: buy or sell.\n     */\n    enum Side { Buy, Sell }\n\n    /**\n     * Currently supported kinds of sale: fixed price, Dutch auction. \n     * English auctions cannot be supported without stronger escrow guarantees.\n     * Future interesting options: Vickrey auction, nonlinear Dutch auctions.\n     */\n    enum SaleKind { FixedPrice, DutchAuction }\n\n    /**\n     * @dev Check whether the parameters of a sale are valid\n     * @param saleKind Kind of sale\n     * @param expirationTime Order expiration time\n     * @return Whether the parameters were valid\n     */\n    function validateParameters(SaleKind saleKind, uint expirationTime)\n        pure\n        internal\n        returns (bool)\n    {\n        /* Auctions must have a set expiration date. */\n        return (saleKind == SaleKind.FixedPrice || expirationTime > 0);\n    }\n\n    /**\n     * @dev Return whether or not an order can be settled\n     * @dev Precondition: parameters have passed validateParameters\n     * @param listingTime Order listing time\n     * @param expirationTime Order expiration time\n     */\n    function canSettleOrder(uint listingTime, uint expirationTime)\n        view\n        internal\n        returns (bool)\n    {\n        return (listingTime < now) && (expirationTime == 0 || now < expirationTime);\n    }\n\n    /**\n     * @dev Calculate the settlement price of an order\n     * @dev Precondition: parameters have passed validateParameters.\n     * @param side Order side\n     * @param saleKind Method of sale\n     * @param basePrice Order base price\n     * @param extra Order extra price data\n     * @param listingTime Order listing time\n     * @param expirationTime Order expiration time\n     */\n    function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)\n        view\n        internal\n        returns (uint finalPrice)\n    {\n        if (saleKind == SaleKind.FixedPrice) {\n            return basePrice;\n        } else if (saleKind == SaleKind.DutchAuction) {\n            uint diff = SafeMath.mul(extra, SafeMath.div(SafeMath.sub(now, listingTime), SafeMath.sub(expirationTime, listingTime)));\n            if (side == Side.Sell) {\n                /* Sell-side - start price: basePrice. End price: basePrice - extra. */\n                return SafeMath.sub(basePrice, diff);\n            } else {\n                /* Buy-side - start price: basePrice. End price: basePrice + extra. */\n                return SafeMath.add(basePrice, diff);\n            }\n        }\n    }\n\n}\n",
+  "source": "/*\n\n  Abstract over fixed-price sales and Dutch auctions, with the intent of easily supporting additional methods of sale later.\n\n  Separated into a library for convenience, all the functions are inlined.\n\n*/\n\npragma solidity 0.4.18;\n\nimport \"zeppelin-solidity/contracts/math/SafeMath.sol\";\n\n/**\n * @title SaleKindInterface\n * @author Project Wyvern Developers\n */\nlibrary SaleKindInterface {\n\n    /**\n     * Side: buy or sell.\n     */\n    enum Side { Buy, Sell }\n\n    /**\n     * Currently supported kinds of sale: fixed price, Dutch auction. \n     * English auctions cannot be supported without stronger escrow guarantees.\n     * Future interesting options: Vickrey auction, nonlinear Dutch auctions.\n     */\n    enum SaleKind { FixedPrice, DutchAuction }\n\n    /**\n     * @dev Check whether the parameters of a sale are valid\n     * @param saleKind Kind of sale\n     * @param expirationTime Order expiration time\n     * @return Whether the parameters were valid\n     */\n    function validateParameters(SaleKind saleKind, uint expirationTime)\n        pure\n        internal\n        returns (bool)\n    {\n        /* Auctions must have a set expiration date. */\n        return (saleKind == SaleKind.FixedPrice || expirationTime > 0);\n    }\n\n    /**\n     * @dev Return whether or not an order can be settled\n     * @dev Precondition: parameters have passed validateParameters\n     * @param listingTime Order listing time\n     * @param expirationTime Order expiration time\n     */\n    function canSettleOrder(uint listingTime, uint expirationTime)\n        view\n        internal\n        returns (bool)\n    {\n        return (listingTime < now) && (expirationTime == 0 || now < expirationTime);\n    }\n\n    /**\n     * @dev Calculate the settlement price of an order\n     * @dev Precondition: parameters have passed validateParameters.\n     * @param side Order side\n     * @param saleKind Method of sale\n     * @param basePrice Order base price\n     * @param extra Order extra price data\n     * @param listingTime Order listing time\n     * @param expirationTime Order expiration time\n     */\n    function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)\n        view\n        internal\n        returns (uint finalPrice)\n    {\n        if (saleKind == SaleKind.FixedPrice) {\n            return basePrice;\n        } else if (saleKind == SaleKind.DutchAuction) {\n            uint diff = SafeMath.div(SafeMath.mul(extra, SafeMath.sub(now, listingTime)), SafeMath.sub(expirationTime, listingTime));\n            if (side == Side.Sell) {\n                /* Sell-side - start price: basePrice. End price: basePrice - extra. */\n                return SafeMath.sub(basePrice, diff);\n            } else {\n                /* Buy-side - start price: basePrice. End price: basePrice + extra. */\n                return SafeMath.add(basePrice, diff);\n            }\n        }\n    }\n\n}\n",
   "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/exchange/SaleKindInterface.sol",
   "ast": {
     "attributes": {
@@ -1201,8 +1201,8 @@
                                           "isLValue": false,
                                           "isPure": false,
                                           "lValueRequested": false,
-                                          "member_name": "mul",
-                                          "referencedDeclaration": 4572,
+                                          "member_name": "div",
+                                          "referencedDeclaration": 4590,
                                           "type": "function (uint256,uint256) pure returns (uint256)"
                                         },
                                         "children": [
@@ -1224,20 +1224,6 @@
                                         "id": 3677,
                                         "name": "MemberAccess",
                                         "src": "2438:12:15"
-                                      },
-                                      {
-                                        "attributes": {
-                                          "argumentTypes": null,
-                                          "overloadedDeclarations": [
-                                            null
-                                          ],
-                                          "referencedDeclaration": 3654,
-                                          "type": "uint256",
-                                          "value": "extra"
-                                        },
-                                        "id": 3678,
-                                        "name": "Identifier",
-                                        "src": "2451:5:15"
                                       },
                                       {
                                         "attributes": {
@@ -1270,8 +1256,8 @@
                                               "isLValue": false,
                                               "isPure": false,
                                               "lValueRequested": false,
-                                              "member_name": "div",
-                                              "referencedDeclaration": 4590,
+                                              "member_name": "mul",
+                                              "referencedDeclaration": 4572,
                                               "type": "function (uint256,uint256) pure returns (uint256)"
                                             },
                                             "children": [
@@ -1285,14 +1271,28 @@
                                                   "type": "type(library SafeMath)",
                                                   "value": "SafeMath"
                                                 },
-                                                "id": 3679,
+                                                "id": 3678,
                                                 "name": "Identifier",
-                                                "src": "2458:8:15"
+                                                "src": "2451:8:15"
                                               }
                                             ],
-                                            "id": 3680,
+                                            "id": 3679,
                                             "name": "MemberAccess",
-                                            "src": "2458:12:15"
+                                            "src": "2451:12:15"
+                                          },
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 3654,
+                                              "type": "uint256",
+                                              "value": "extra"
+                                            },
+                                            "id": 3680,
+                                            "name": "Identifier",
+                                            "src": "2464:5:15"
                                           },
                                           {
                                             "attributes": {
@@ -1381,99 +1381,99 @@
                                             "id": 3685,
                                             "name": "FunctionCall",
                                             "src": "2471:30:15"
-                                          },
+                                          }
+                                        ],
+                                        "id": 3686,
+                                        "name": "FunctionCall",
+                                        "src": "2451:51:15"
+                                      },
+                                      {
+                                        "attributes": {
+                                          "argumentTypes": null,
+                                          "isConstant": false,
+                                          "isLValue": false,
+                                          "isPure": false,
+                                          "isStructConstructorCall": false,
+                                          "lValueRequested": false,
+                                          "names": [
+                                            null
+                                          ],
+                                          "type": "uint256",
+                                          "type_conversion": false
+                                        },
+                                        "children": [
                                           {
                                             "attributes": {
-                                              "argumentTypes": null,
+                                              "argumentTypes": [
+                                                {
+                                                  "typeIdentifier": "t_uint256",
+                                                  "typeString": "uint256"
+                                                },
+                                                {
+                                                  "typeIdentifier": "t_uint256",
+                                                  "typeString": "uint256"
+                                                }
+                                              ],
                                               "isConstant": false,
                                               "isLValue": false,
                                               "isPure": false,
-                                              "isStructConstructorCall": false,
                                               "lValueRequested": false,
-                                              "names": [
-                                                null
-                                              ],
-                                              "type": "uint256",
-                                              "type_conversion": false
+                                              "member_name": "sub",
+                                              "referencedDeclaration": 4610,
+                                              "type": "function (uint256,uint256) pure returns (uint256)"
                                             },
                                             "children": [
                                               {
                                                 "attributes": {
-                                                  "argumentTypes": [
-                                                    {
-                                                      "typeIdentifier": "t_uint256",
-                                                      "typeString": "uint256"
-                                                    },
-                                                    {
-                                                      "typeIdentifier": "t_uint256",
-                                                      "typeString": "uint256"
-                                                    }
+                                                  "argumentTypes": null,
+                                                  "overloadedDeclarations": [
+                                                    null
                                                   ],
-                                                  "isConstant": false,
-                                                  "isLValue": false,
-                                                  "isPure": false,
-                                                  "lValueRequested": false,
-                                                  "member_name": "sub",
-                                                  "referencedDeclaration": 4610,
-                                                  "type": "function (uint256,uint256) pure returns (uint256)"
+                                                  "referencedDeclaration": 4635,
+                                                  "type": "type(library SafeMath)",
+                                                  "value": "SafeMath"
                                                 },
-                                                "children": [
-                                                  {
-                                                    "attributes": {
-                                                      "argumentTypes": null,
-                                                      "overloadedDeclarations": [
-                                                        null
-                                                      ],
-                                                      "referencedDeclaration": 4635,
-                                                      "type": "type(library SafeMath)",
-                                                      "value": "SafeMath"
-                                                    },
-                                                    "id": 3686,
-                                                    "name": "Identifier",
-                                                    "src": "2503:8:15"
-                                                  }
-                                                ],
                                                 "id": 3687,
-                                                "name": "MemberAccess",
-                                                "src": "2503:12:15"
-                                              },
-                                              {
-                                                "attributes": {
-                                                  "argumentTypes": null,
-                                                  "overloadedDeclarations": [
-                                                    null
-                                                  ],
-                                                  "referencedDeclaration": 3658,
-                                                  "type": "uint256",
-                                                  "value": "expirationTime"
-                                                },
-                                                "id": 3688,
                                                 "name": "Identifier",
-                                                "src": "2516:14:15"
-                                              },
-                                              {
-                                                "attributes": {
-                                                  "argumentTypes": null,
-                                                  "overloadedDeclarations": [
-                                                    null
-                                                  ],
-                                                  "referencedDeclaration": 3656,
-                                                  "type": "uint256",
-                                                  "value": "listingTime"
-                                                },
-                                                "id": 3689,
-                                                "name": "Identifier",
-                                                "src": "2532:11:15"
+                                                "src": "2504:8:15"
                                               }
                                             ],
+                                            "id": 3688,
+                                            "name": "MemberAccess",
+                                            "src": "2504:12:15"
+                                          },
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 3658,
+                                              "type": "uint256",
+                                              "value": "expirationTime"
+                                            },
+                                            "id": 3689,
+                                            "name": "Identifier",
+                                            "src": "2517:14:15"
+                                          },
+                                          {
+                                            "attributes": {
+                                              "argumentTypes": null,
+                                              "overloadedDeclarations": [
+                                                null
+                                              ],
+                                              "referencedDeclaration": 3656,
+                                              "type": "uint256",
+                                              "value": "listingTime"
+                                            },
                                             "id": 3690,
-                                            "name": "FunctionCall",
-                                            "src": "2503:41:15"
+                                            "name": "Identifier",
+                                            "src": "2533:11:15"
                                           }
                                         ],
                                         "id": 3691,
                                         "name": "FunctionCall",
-                                        "src": "2458:87:15"
+                                        "src": "2504:41:15"
                                       }
                                     ],
                                     "id": 3692,
@@ -1810,9 +1810,9 @@
     "4": {
       "events": {},
       "links": {},
-      "address": "0x13df3ed07a27cbc195880275b168435fb8769f5b"
+      "address": "0x2ea3317510c9085992511030612b10aac475f11b"
     }
   },
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-02-02T04:57:08.241Z"
+  "updatedAt": "2018-02-02T08:10:38.421Z"
 }
