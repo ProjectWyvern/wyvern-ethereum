@@ -52,9 +52,9 @@ Core protocol contract. Facilitates order approval, order validation, order canc
 
 Deployed contracts on Rinkeby:
 
-[Wyvern Exchange](https://rinkeby.etherscan.io/address/0x6caf78de72e5764bca0a16ba26395221a7271b8a)
+[Wyvern Exchange](https://rinkeby.etherscan.io/address/0x387b84170255d91e6f3da43c6f5f77173df602e1)
 
-[Wyvern Proxy Registry](https://rinkeby.etherscan.io/address/0xf3167b7576f36d7048ee614dd0963d902f746e95)
+[Wyvern Proxy Registry](https://rinkeby.etherscan.io/address/0xc1bf2891f5dfacaffa9354d2ba08c6d6bbb8fbce)
 
 Note that the [wyvern-ethereum](https://github.com/projectwyvern/wyvern-ethereum) repository also contains contracts for the WYV token and the Wyvern DAO. Those contracts have already been deployed and are not within the scope of this audit (nor are they relevant to the functionality or correctness of the Wyvern Protocol).
 
