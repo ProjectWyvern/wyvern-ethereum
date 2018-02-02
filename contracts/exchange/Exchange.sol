@@ -1,6 +1,6 @@
 /*
   
-  Exchange (outer contract with public functions).
+  Exchange contract. This is an outer contract with public or convenience functions and includes no state-modifying functions.
  
 */
 
@@ -24,7 +24,9 @@ contract Exchange is ExchangeCore {
         return array;
     }
 
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    /**
+     * @dev Call hashOrder - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
     function hashOrder_(
         address[7] addrs,
         uint[7] uints,
@@ -43,7 +45,9 @@ contract Exchange is ExchangeCore {
         );
     }
 
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    /**
+     * @dev Call validateOrder - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
     function validateOrder_ (
         address[7] addrs,
         uint[7] uints,
@@ -68,7 +72,9 @@ contract Exchange is ExchangeCore {
         );
     }
 
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    /**
+     * @dev Call approveOrder - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
     function approveOrder_ (
         address[7] addrs,
         uint[7] uints,
@@ -85,7 +91,9 @@ contract Exchange is ExchangeCore {
         return approveOrder(order, orderbookInclusionDesired);
     }
 
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    /**
+     * @dev Call cancelOrder - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
     function cancelOrder_(
         address[7] addrs,
         uint[7] uints,
@@ -107,7 +115,9 @@ contract Exchange is ExchangeCore {
         );
     }
 
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    /**
+     * @dev Call calculateCurrentPrice - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
     function calculateCurrentPrice_(
         address[7] addrs,
         uint[7] uints,
@@ -126,7 +136,9 @@ contract Exchange is ExchangeCore {
         );
     }
 
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    /**
+     * @dev Call ordersCanMatch - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
     function ordersCanMatch_(
         address[14] addrs,
         uint[14] uints,
@@ -149,6 +161,14 @@ contract Exchange is ExchangeCore {
         );
     }
 
+    /**
+     * @dev Return whether or not two orders' calldata specifications can match
+     * @param buyCalldata Buy-side order calldata
+     * @param buyReplacementPattern Buy-side order calldata replacement mask
+     * @param sellCalldata Sell-side order calldata
+     * @param sellReplacementPattern Sell-side order calldata replacement mask
+     * @return Whether the orders' calldata can be matched
+     */
     function orderCalldataCanMatch(bytes buyCalldata, bytes buyReplacementPattern, bytes sellCalldata, bytes sellReplacementPattern)
         public
         pure
@@ -159,7 +179,9 @@ contract Exchange is ExchangeCore {
         return ArrayUtils.arrayEq(buyCalldata, sellCalldata);
     }
 
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    /**
+     * @dev Call calculateMatchPrice - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
     function calculateMatchPrice_(
         address[14] addrs,
         uint[14] uints,
@@ -182,7 +204,9 @@ contract Exchange is ExchangeCore {
         );
     }
 
-    /* Solidity ABI encoding limitation workaround, hopefully temporary. */
+    /**
+     * @dev Call atomicMatch - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
     function atomicMatch_(
         address[14] addrs,
         uint[14] uints,

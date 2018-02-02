@@ -1,6 +1,6 @@
 /*
 
-  Decentralized digital asset exchange. Supports any digital asset that can be represented on the Ethereum blockchain (transferred in an Ethereum transaction).
+  Decentralized digital asset exchange. Supports any digital asset that can be represented on the Ethereum blockchain (i.e. - transferred in an Ethereum transaction or sequence of transactions).
 
   Let us suppose two agents interacting with a distributed ledger have utility functions preferencing certain states of that ledger over others.
   Aiming to maximize their utility, these agents may construct with their utility functions along with the present ledger state a mapping of state transitions (transactions) to marginal utilities.
@@ -11,7 +11,7 @@
   - State transition preferences are not matched directly but instead intermediated by a standard of tokenized value.
   - A small fee can be charged in WYV for order settlement in an amount configurable by the frontend hosting the orderbook.
 
-  Solidity presently possesses neither a first-class functional typesystem nor runtime reflection (ABI encoding in Solidity), so we must be a bit clever in implementation and work at a lower level than would be ideal.
+  Solidity presently possesses neither a first-class functional typesystem nor runtime reflection (ABI encoding in Solidity), so we must be a bit clever in implementation and work at a lower level of abstraction than would be ideal.
  
 */
 
@@ -102,6 +102,12 @@ contract ExchangeCore is ReentrancyGuarded {
     event OrderCancelled          (bytes32 indexed hash);
     event OrdersMatched           (bytes32 indexed buyHash, bytes32 indexed sellHash);
 
+    /**
+     * @dev Charge an address fees in protocol tokens
+     * @param from Address to charge fees
+     * @param to Address to receive fees
+     * @param amount Amount of protocol tokens to charge
+     */
     function chargeFee(address from, address to, uint amount)
         internal
     {
@@ -110,6 +116,13 @@ contract ExchangeCore is ReentrancyGuarded {
         }
     }
 
+    /**
+     * @dev Execute a STATICCALL (introduced with Ethereum Metropolis, non-state-modifying external call)
+     * @param target Contract to call
+     * @param calldata Calldata (appended to extradata)
+     * @param extradata Base data for STATICCALL (probably function selector and argument encoding)
+     * @return The result of the call (success or failure)
+     */
     function staticCall(address target, bytes memory calldata, bytes memory extradata)
         public
         view
@@ -128,6 +141,11 @@ contract ExchangeCore is ReentrancyGuarded {
         return result;
     }
 
+    /**
+     * @dev Keccak256 order hash, part one
+     * @param order Order to hash
+     * @return Part one of the order hash 
+     */
     function hashOrderPartOne(Order memory order)
         internal
         pure
@@ -136,6 +154,11 @@ contract ExchangeCore is ReentrancyGuarded {
         return keccak256(order.exchange, order.maker, order.taker, order.makerFee, order.takerFee, order.feeRecipient, order.side, order.saleKind, order.target, order.howToCall, order.calldata, order.replacementPattern);
     }
 
+    /**
+     * @dev Keccak256 order hash, part two
+     * @param order Order to hash
+     * @return Part two of the order hash
+     */
     function hashOrderPartTwo(Order memory order)
         internal
         pure
@@ -144,6 +167,11 @@ contract ExchangeCore is ReentrancyGuarded {
         return keccak256(order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
     }
 
+    /**
+     * @dev Hash an order, returning the hash that a client must sign, including the standard message prefix
+     * @param order Order to hash
+     * @return Hash of message prefix, order hash part one, and order hash part two concatenated
+     */
     function hashToSign(Order memory order)
         internal
         pure
@@ -154,6 +182,11 @@ contract ExchangeCore is ReentrancyGuarded {
         return hash;
     }
 
+    /**
+     * @dev Assert an order is valid and return its hash
+     * @param order Order to validate
+     * @param sig ECDSA signature
+     */
     function requireValidOrder(Order memory order, Sig memory sig)
         internal
         view
@@ -164,6 +197,12 @@ contract ExchangeCore is ReentrancyGuarded {
         return hash;
     }
 
+    /**
+     * @dev Validate a provided order, hash, and signature
+     * @param hash Order hash (already calculated, passed to avoid recalculation)
+     * @param order Order to validate
+     * @param sig ECDSA signature
+     */
     function validateOrder(bytes32 hash, Order memory order, Sig memory sig) 
         internal
         view
@@ -205,6 +244,11 @@ contract ExchangeCore is ReentrancyGuarded {
         return false;
     }
 
+    /**
+     * @dev Approve an order and optionally mark it for orderbook inclusion. Must be called by the maker of the order
+     * @param order Order to approve
+     * @param orderbookInclusionDesired Whether orderbook providers should include the order in their orderbooks
+     */
     function approveOrder(Order memory order, bool orderbookInclusionDesired)
         internal
     {
@@ -233,6 +277,11 @@ contract ExchangeCore is ReentrancyGuarded {
         }
     }
 
+    /**
+     * @dev Cancel an order, preventing it from being matched. Must be called by the maker of the order
+     * @param order Order to cancel
+     * @param sig ECDSA signature
+     */
     function cancelOrder(Order memory order, Sig memory sig) 
         internal
     {
@@ -246,13 +295,18 @@ contract ExchangeCore is ReentrancyGuarded {
   
         /* EFFECTS */
       
-        /* Mark order as cancelled, preventing it from being bid on or matched. */
+        /* Mark order as cancelled, preventing it from being matched. */
         cancelledOrFinalized[hash] = true;
 
         /* Log cancel event. */
         OrderCancelled(hash);
     }
 
+    /**
+     * @dev Calculate the current price of an order (convenience function)
+     * @param order Order to calculate the price of
+     * @return The current price of the order
+     */
     function calculateCurrentPrice (Order memory order)
         internal  
         view
@@ -261,6 +315,12 @@ contract ExchangeCore is ReentrancyGuarded {
         return SaleKindInterface.calculateFinalPrice(order.side, order.saleKind, order.basePrice, order.extra, order.listingTime, order.expirationTime);
     }
 
+    /**
+     * @dev Calculate the price two orders would match at, if in fact they would match (otherwise fail)
+     * @param buy Buy-side order
+     * @param sell Sell-side order
+     * @return Match price
+     */
     function calculateMatchPrice(Order memory buy, Order memory sell)
         view
         internal
@@ -279,6 +339,11 @@ contract ExchangeCore is ReentrancyGuarded {
         return sell.feeRecipient != address(0) ? sellPrice : buyPrice;
     }
 
+    /**
+     * @dev Execute all ERC20 token transfers associated with an order match (fees and buyer => seller transfer)
+     * @param buy Buy-side order
+     * @param sell Sell-side order
+     */
     function executeFundsTransfer(Order memory buy, Order memory sell)
         internal
     {
@@ -316,6 +381,12 @@ contract ExchangeCore is ReentrancyGuarded {
         }
     }
 
+    /**
+     * @dev Return whether or not two orders can be matched with each other by basic parameters (does not check order signatures / calldata or perform static calls)
+     * @param buy Buy-side order
+     * @param sell Sell-side order
+     * @return Whether or not the two orders can be matched
+     */
     function ordersCanMatch(Order memory buy, Order memory sell)
         internal
         view
@@ -342,13 +413,23 @@ contract ExchangeCore is ReentrancyGuarded {
         );
     }
 
+    /**
+     * @dev Match two orders, ensuring validity of the match, and execute all associated state transitions. Protected against reentrancy by a contract-global lock.
+     * @param buy Buy-side order
+     * @param buySig Buy-side order signature
+     * @param sell Sell-side order
+     * @param sellSig Sell-side order signature
+     */
     function atomicMatch(Order memory buy, Sig memory buySig, Order memory sell, Sig memory sellSig)
         internal
         reentrancyGuard
     {
         /* CHECKS */
       
+        /* Ensure buy order validity and calculate hash. */
         bytes32 buyHash = requireValidOrder(buy, buySig);
+
+        /* Ensure sell order validity and calculate hash. */
         bytes32 sellHash = requireValidOrder(sell, sellSig); 
         
         /* Must be matchable. */
@@ -375,15 +456,12 @@ contract ExchangeCore is ReentrancyGuarded {
         cancelledOrFinalized[buyHash] = true;
         cancelledOrFinalized[sellHash] = true;
 
-        /* Validate balances and transfer funds. */ 
-        executeFundsTransfer(buy, sell);
-
         /* INTERACTIONS */
 
-        /* Execute specified call through proxy.
-           Both orders have already been marked as finalized, so they can't be rematched by a reentrant call.
-           However, it *is* possible for this call to match other orders - apart from causing unusual log
-           order, that shouldn't be a problem. */
+        /* Execute funds transfer and pay fees. */
+        executeFundsTransfer(buy, sell);
+
+        /* Execute specified call through proxy. */
         require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
 
         /* Static calls are intentionally done after the effectful call so they can check resulting state. */

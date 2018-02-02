@@ -15,15 +15,19 @@ import "./ProxyRegistry.sol";
  */
 contract AuthenticatedProxy is TokenRecipient {
 
+    /* Address which owns this proxy. */
     address public user;
 
+    /* Associated registry with contract authentication information. */
     ProxyRegistry public registry;
 
+    /* Whether access has been revoked. */
     bool public revoked;
 
     /* Delegate call could be used to atomically transfer multiple assets owned by the proxy contract with one order. */
     enum HowToCall { Call, DelegateCall }
 
+    /* Event fired when the proxy access is revoked or unrevoked. */
     event Revoked(bool revoked);
 
     /**
@@ -58,6 +62,7 @@ contract AuthenticatedProxy is TokenRecipient {
      * @param dest Address to which the call will be sent
      * @param howToCall Which kind of call to make
      * @param calldata Calldata to send
+     * @return Result of the call (success or failure)
      */
     function proxy(address dest, HowToCall howToCall, bytes calldata)
         public
@@ -74,6 +79,11 @@ contract AuthenticatedProxy is TokenRecipient {
 
     /**
      * Execute a message call and assert success
+     * 
+     * @dev Same functionality as `proxy`, just asserts the return value
+     * @param dest Address to which the call will be sent
+     * @param howToCall What kind of call to make
+     * @param calldata Calldata to send
      */
     function proxyAssert(address dest, HowToCall howToCall, bytes calldata)
         public

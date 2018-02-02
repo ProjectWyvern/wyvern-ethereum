@@ -28,6 +28,12 @@ library SaleKindInterface {
      */
     enum SaleKind { FixedPrice, DutchAuction }
 
+    /**
+     * @dev Check whether the parameters of a sale are valid
+     * @param saleKind Kind of sale
+     * @param expirationTime Order expiration time
+     * @return Whether the parameters were valid
+     */
     function validateParameters(SaleKind saleKind, uint expirationTime)
         pure
         internal
@@ -37,7 +43,12 @@ library SaleKindInterface {
         return (saleKind == SaleKind.FixedPrice || expirationTime > 0);
     }
 
-    /* Precondition: parameters have passed validateParameters. */
+    /**
+     * @dev Return whether or not an order can be settled
+     * @dev Precondition: parameters have passed validateParameters
+     * @param listingTime Order listing time
+     * @param expirationTime Order expiration time
+     */
     function canSettleOrder(uint listingTime, uint expirationTime)
         view
         internal
@@ -46,7 +57,16 @@ library SaleKindInterface {
         return (listingTime < now) && (expirationTime == 0 || now < expirationTime);
     }
 
-    /* Precondition: parameters have passed validateParameters. */
+    /**
+     * @dev Calculate the settlement price of an order
+     * @dev Precondition: parameters have passed validateParameters.
+     * @param side Order side
+     * @param saleKind Method of sale
+     * @param basePrice Order base price
+     * @param extra Order extra price data
+     * @param listingTime Order listing time
+     * @param expirationTime Order expiration time
+     */
     function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)
         view
         internal
