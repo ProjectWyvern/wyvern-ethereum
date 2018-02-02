@@ -6,11 +6,18 @@
 
 ### Synopsis
 
-*Autonomously governed trustless digital item exchange.*
+*Autonomously governed decentralized digital asset exchange.*
 
-These are the official Ethereum smart contracts for the Wyvern ERC20 token (WYV), the Wyvern Exchange, and the Wyvern DAO. For general information on the Wyvern project, please see [the official website](https://projectwyvern.com).
+These are the Ethereum smart contracts for the Wyvern Protocol, the Wyvern ERC20 token (WYV), and the Wyvern DAO. For general information on the Wyvern project, please see [the website](https://projectwyvern.com).
 
 ### Deployed Contracts
+
+*Please note: correct deployed contract addresses will always be in config.json. If you wish to import this repository directly, please use that file. The addresses in Truffle build output are not necessarily accurate.*
+
+#### Mainnet
+
+[Wyvern Token](https://etherscan.io/address/wyverntoken.eth)
+[Wyvern DAO](https://etherscan.io/address/wyverndao.eth)
 
 #### Rinkeby Testnet
 
@@ -75,7 +82,7 @@ Final output will be written to [docs](docs), which will be automatically publis
 
 #### Misc
 
-Run automated smart contract analysis (requires [Oyente](https://github.com/melonproject/oyente)):
+Run automated smart contract analysis (requires [Oyente](https://github.com/melonproject/oyente) and [Mythril](https://github.com/ConsenSys/mythril)):
 
 ```bash
 yarn analyze
