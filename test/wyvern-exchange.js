@@ -259,6 +259,64 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should not validate order with invalid saleKind / expiration', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        const order = makeOrder(exchangeInstance.address)
+        order.saleKind = 1
+        const hash = hashOrder(order)
+        return web3.eth.sign(hash, accounts[0]).then(signature => {
+          signature = signature.substr(2)
+          const r = '0x' + signature.slice(0, 64)
+          const s = '0x' + signature.slice(64, 128)
+          const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
+          return exchangeInstance.validateOrder_.call(
+            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+            [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+            order.side,
+            order.saleKind,
+            order.howToCall,
+            order.calldata,
+            order.replacementPattern,
+            order.staticExtradata,
+            v, r, s
+          ).then(ret => {
+            assert.equal(ret, false, 'Order with invalid parameters validated')
+          })
+        })
+      })
+  })
+
+  it('should not validate order with invalid exchange', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        const order = makeOrder(exchangeInstance.address)
+        order.exchange = accounts[0]
+        const hash = hashOrder(order)
+        return web3.eth.sign(hash, accounts[0]).then(signature => {
+          signature = signature.substr(2)
+          const r = '0x' + signature.slice(0, 64)
+          const s = '0x' + signature.slice(64, 128)
+          const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
+          return exchangeInstance.validateOrder_.call(
+            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+            [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+            order.side,
+            order.saleKind,
+            order.howToCall,
+            order.calldata,
+            order.replacementPattern,
+            order.staticExtradata,
+            v, r, s
+          ).then(ret => {
+            assert.equal(ret, false, 'Order with invalid parameters validated')
+          })
+        })
+      })
+  })
+
   const getTime = (cb) => {
     web3.eth.getBlockNumber((err, num) => {
       if (err) throw err
@@ -720,6 +778,27 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should succeed with real fee, opposite maker-taker', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, false)
+          var sell = makeOrder(exchangeInstance.address, true)
+          sell.side = 1
+          sell.salt = 4
+          buy.salt = 5
+          buy.makerFee = 10
+          buy.takerFee = 10
+          sell.makerFee = 10
+          sell.takerFee = 10
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
   it('should fail with real fee but insufficient amount', () => {
     return WyvernExchange
       .deployed()
@@ -736,6 +815,52 @@ contract('WyvernExchange', (accounts) => {
           sell.takerFee = new BigNumber(10).pow(18)
           return matchOrder(buy, sell, () => {
             assert.equal(true, false, 'Matching was allowed with too high fee')
+          }, err => {
+            assert.equal(err.message, 'VM Exception while processing transaction: revert')
+          })
+        })
+      })
+  })
+
+  it('should fail with real fee but unmatching fees', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          sell.salt = 42312
+          buy.salt = 5123
+          buy.makerFee = 10
+          buy.takerFee = 10
+          sell.makerFee = 0
+          sell.takerFee = 0
+          return matchOrder(buy, sell, () => {
+            assert.equal(true, false, 'Matching was allowed with unmatching fees')
+          }, err => {
+            assert.equal(err.message, 'VM Exception while processing transaction: revert')
+          })
+        })
+      })
+  })
+
+  it('should fail with real fee but unmatching fees, opposite maker/taker', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, false)
+          var sell = makeOrder(exchangeInstance.address, true)
+          sell.side = 1
+          sell.salt = 423122
+          buy.salt = 51323
+          buy.makerFee = 0
+          buy.takerFee = 0
+          sell.makerFee = 10
+          sell.takerFee = 10
+          return matchOrder(buy, sell, () => {
+            assert.equal(true, false, 'Matching was allowed with unmatching fees')
           }, err => {
             assert.equal(err.message, 'VM Exception while processing transaction: revert')
           })
@@ -801,6 +926,30 @@ contract('WyvernExchange', (accounts) => {
             buy.staticTarget = staticInstance.address
             const staticInst = new web3.eth.Contract(TestStatic.abi, staticInstance.address)
             buy.staticExtradata = staticInst.methods.alwaysFail().encodeABI()
+            return matchOrder(buy, sell, () => {
+              assert.equal(true, false, 'Matching was allowed with failed static call')
+            }, err => {
+              assert.equal(err.message, 'VM Exception while processing transaction: revert')
+            })
+          })
+        })
+      })
+  })
+
+  it('should fail with unsuccessful static call sell-side', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          buy.salt = 419
+          sell.salt = 559
+          return TestStatic.deployed().then(staticInstance => {
+            sell.staticTarget = staticInstance.address
+            const staticInst = new web3.eth.Contract(TestStatic.abi, staticInstance.address)
+            sell.staticExtradata = staticInst.methods.alwaysFail().encodeABI()
             return matchOrder(buy, sell, () => {
               assert.equal(true, false, 'Matching was allowed with failed static call')
             }, err => {
