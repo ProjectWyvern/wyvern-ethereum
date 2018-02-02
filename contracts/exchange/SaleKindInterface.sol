@@ -24,22 +24,34 @@ library SaleKindInterface {
     /**
      * Currently supported kinds of sale: fixed price, Dutch auction. 
      * English auctions cannot be supported without stronger escrow guarantees.
-     * Future interesting options: Vickrey auction.
+     * Future interesting options: Vickrey auction, nonlinear Dutch auctions.
      */
     enum SaleKind { FixedPrice, DutchAuction }
 
-    function validateParameters(SaleKind saleKind, uint expirationTime) pure internal returns (bool) {
+    function validateParameters(SaleKind saleKind, uint expirationTime)
+        pure
+        internal
+        returns (bool)
+    {
         /* Auctions must have a set expiration date. */
         return (saleKind == SaleKind.FixedPrice || expirationTime > 0);
     }
 
     /* Precondition: parameters have passed validateParameters. */
-    function canSettleOrder(uint listingTime, uint expirationTime) view internal returns (bool) {
+    function canSettleOrder(uint listingTime, uint expirationTime)
+        view
+        internal
+        returns (bool)
+    {
         return (listingTime < now) && (expirationTime == 0 || now < expirationTime);
     }
 
     /* Precondition: parameters have passed validateParameters. */
-    function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime) view internal returns (uint finalPrice) {
+    function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)
+        view
+        internal
+        returns (uint finalPrice)
+    {
         if (saleKind == SaleKind.FixedPrice) {
             return basePrice;
         } else if (saleKind == SaleKind.DutchAuction) {

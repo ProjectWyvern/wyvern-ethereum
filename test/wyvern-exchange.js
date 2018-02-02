@@ -180,6 +180,9 @@ contract('WyvernExchange', (accounts) => {
       .deployed()
       .then(exchangeInstance => {
         const order = makeOrder(exchangeInstance.address)
+        order.saleKind = 0
+        order.listingTime = 1
+        order.expirationTime = 1000
         const hash = hashOrder(order)
         return web3.eth.sign(hash, accounts[0]).then(signature => {
           signature = signature.substr(2)
@@ -214,6 +217,52 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should not validate order from different address', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        const order = makeOrder(exchangeInstance.address)
+        return exchangeInstance.validateOrder_.call(
+          [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+          [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+          order.side,
+          order.saleKind,
+          order.howToCall,
+          order.calldata,
+          order.replacementPattern,
+          order.staticExtradata,
+          0, '0x', '0x',
+          {from: accounts[1]}
+        ).then(ret => {
+          assert.equal(ret, false, 'Order was validated from different address')
+        })
+      })
+  })
+
+  it('should not allow order approval from different address', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        const order = makeOrder(exchangeInstance.address)
+        return exchangeInstance.approveOrder_(
+          [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+          [order.makerFee, order.takerFee, order.extra, order.listingTime, order.expirationTime, order.salt],
+          order.side,
+          order.saleKind,
+          order.howToCall,
+          order.calldata,
+          order.replacementPattern,
+          order.staticExtradata,
+          true,
+          {from: accounts[1]}
+          ).then(() => {
+            assert.equal(true, false, 'Order approval was allowed from different address')
+          }).catch(err => {
+            assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+          })
+      })
+  })
+
   it('should allow order approval, then cancellation', () => {
     return WyvernExchange
       .deployed()
@@ -239,7 +288,8 @@ contract('WyvernExchange', (accounts) => {
             order.calldata,
             order.replacementPattern,
             order.staticExtradata,
-            0, '0x', '0x'
+            0, '0x', '0x',
+            {from: accounts[1]}
           ).then(ret => {
             assert.equal(ret, true, 'Order did not validate')
             return exchangeInstance.cancelOrder_(
@@ -367,6 +417,54 @@ contract('WyvernExchange', (accounts) => {
         sell.side = 1
         return matchOrder(buy, sell, () => {}, err => {
           assert.equal(false, err, 'Orders should have matched')
+        })
+      })
+  })
+
+  it('should not allow order matching twice', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching was allowed twice')
+        }, err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should not allow proxy reentrancy', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        sell.target = exchangeInstance.address
+        buy.target = exchangeInstance.address
+        const contract = new web3.eth.Contract(WyvernExchange.abi, exchangeInstance.address)
+        const calldata = contract.methods.atomicMatch_(
+          [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
+          [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+          [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
+          buy.calldata,
+          sell.calldata,
+          buy.replacementPattern,
+          sell.replacementPattern,
+          buy.staticExtradata,
+          sell.staticExtradata,
+          [0, 0],
+          ['0x', '0x', '0x', '0x']
+        ).encodeABI()
+        sell.calldata = calldata
+        buy.calldata = calldata
+        return matchOrder(buy, sell, () => {
+          assert.equal(true, false, 'Matching proxy reentrancy was allowed')
+        }, err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
         })
       })
   })
@@ -551,6 +649,29 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should fail with real fee but insufficient amount', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          sell.salt = 4
+          buy.salt = 5
+          buy.makerFee = new BigNumber(10).pow(18)
+          buy.takerFee = new BigNumber(10).pow(18)
+          sell.makerFee = new BigNumber(10).pow(18)
+          sell.takerFee = new BigNumber(10).pow(18)
+          return matchOrder(buy, sell, () => {
+            assert.equal(true, false, 'Matching was allowed with too high fee')
+          }, err => {
+            assert.equal(err.message, 'VM Exception while processing transaction: revert')
+          })
+        })
+      })
+  })
+
   it('should succeed with successful static call', () => {
     return WyvernExchange
       .deployed()
@@ -565,6 +686,28 @@ contract('WyvernExchange', (accounts) => {
             buy.staticTarget = staticInstance.address
             const staticInst = new web3.eth.Contract(TestStatic.abi, staticInstance.address)
             buy.staticExtradata = staticInst.methods.alwaysSucceed().encodeABI()
+            return matchOrder(buy, sell, () => {}, err => {
+              assert.equal(false, err, 'Orders should have matched')
+            })
+          })
+        })
+      })
+  })
+
+  it('should succeed with successful static call sell-side', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          buy.salt = 404
+          sell.salt = 505
+          return TestStatic.deployed().then(staticInstance => {
+            sell.staticTarget = staticInstance.address
+            const staticInst = new web3.eth.Contract(TestStatic.abi, staticInstance.address)
+            sell.staticExtradata = staticInst.methods.alwaysSucceed().encodeABI()
             return matchOrder(buy, sell, () => {}, err => {
               assert.equal(false, err, 'Orders should have matched')
             })
