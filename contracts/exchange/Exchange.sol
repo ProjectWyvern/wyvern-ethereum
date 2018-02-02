@@ -14,7 +14,9 @@ import "./ExchangeCore.sol";
  */
 contract Exchange is ExchangeCore {
 
-    /* Inline library function exposed for testing. */
+    /**
+     * @dev Call guardedArrayReplace - library function exposed for testing.
+     */
     function guardedArrayReplace(bytes array, bytes desired, bytes mask)
         public
         pure
@@ -22,6 +24,17 @@ contract Exchange is ExchangeCore {
     {
         ArrayUtils.guardedArrayReplace(array, desired, mask);
         return array;
+    }
+
+    /**
+     * @dev Call calculateFinalPrice - library function exposed for testing.
+     */
+    function calculateFinalPrice(SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)
+        public
+        view
+        returns (uint)
+    {
+        return SaleKindInterface.calculateFinalPrice(side, saleKind, basePrice, extra, listingTime, expirationTime);
     }
 
     /**

@@ -11,6 +11,14 @@ const Web3 = require('web3')
 const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider)
 
+const promisify = (inner) =>
+  new Promise((resolve, reject) =>
+    inner((err, res) => {
+      if (err) { reject(err) }
+      resolve(res)
+    })
+  )
+
 const hashOrder = (order) => {
   const partOne = Buffer.from(web3.utils.soliditySha3(
     {type: 'address', value: order.exchange},
@@ -132,6 +140,40 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should disallow false complex calldata match', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x00', '0x00ff00ff00ff00ff', '0x00').then(res => {
+          assert.equal(res, false, 'Complex calldata match was not allowed')
+        })
+      })
+  })
+
+  it('should revert on different bytecode size', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x00', '0x00ff00ff00ff00', '0x00').then(() => {
+          assert.equal(true, false, 'Did not revert on different bytecode size')
+        }).catch(err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should revert on insufficient replacementPattern size', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x00000000000000000000000000000000', '0x00', '0x00ff00ff00ff00ff0000000000000000', '0x00').then(() => {
+          assert.equal(true, false, 'Did not revert on insufficient replacementPattern size')
+        }).catch(err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
   const makeOrder = (exchange, isMaker) => ({
     exchange: exchange,
     maker: accounts[0],
@@ -212,6 +254,35 @@ contract('WyvernExchange', (accounts) => {
               order.staticExtradata).then(price => {
                 assert.equal(price.toNumber(), 0, 'Incorrect price')
               })
+          })
+        })
+      })
+  })
+
+  const getTime = (cb) => {
+    web3.eth.getBlockNumber((err, num) => {
+      if (err) throw err
+      web3.eth.getBlock(num, (err, block) => {
+        if (err) throw err
+        cb(null, block.timestamp)
+      })
+    })
+  }
+
+  it('should have correct prices for dutch auctions', () => {
+    return WyvernExchange
+      .deployed()
+      .then(async exchangeInstance => {
+        const time = await promisify(getTime)
+        return exchangeInstance.calculateFinalPrice.call(1, 1, 100, 100, time, time + 100).then(async price => {
+          assert.equal(price.toNumber(), 100, 'Incorrect price')
+          const time = await promisify(getTime)
+          return exchangeInstance.calculateFinalPrice.call(1, 1, 100, 100, time - 100, time).then(async price => {
+            assert.equal(price.toNumber(), 0, 'Incorrect price')
+            const time = await promisify(getTime)
+            return exchangeInstance.calculateFinalPrice.call(0, 1, 100, 100, time - 50, time + 50).then(price => {
+              assert.equal(price.toNumber(), 150, 'Incorrect price')
+            })
           })
         })
       })
