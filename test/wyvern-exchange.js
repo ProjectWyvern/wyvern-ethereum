@@ -174,6 +174,23 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  var proxy
+
+  it('should allow proxy creation', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.registerProxy()
+          .then(() => {
+            return registryInstance.proxies(accounts[0])
+              .then(prx => {
+                proxy = prx
+                assert.equal(true, true, 'fixme')
+              })
+          })
+      })
+  })
+
   const makeOrder = (exchange, isMaker) => ({
     exchange: exchange,
     maker: accounts[0],
@@ -183,7 +200,7 @@ contract('WyvernExchange', (accounts) => {
     feeRecipient: isMaker ? accounts[0] : '0x0000000000000000000000000000000000000000',
     side: 0,
     saleKind: 0,
-    target: accounts[0],
+    target: proxy,
     howToCall: 0,
     calldata: '0x',
     replacementPattern: '0x',
@@ -448,20 +465,6 @@ contract('WyvernExchange', (accounts) => {
             })
           })
         })
-      })
-  })
-
-  it('should allow proxy creation', () => {
-    return WyvernProxyRegistry
-      .deployed()
-      .then(registryInstance => {
-        return registryInstance.registerProxy()
-          .then(() => {
-            return registryInstance.proxies(accounts[0])
-              .then(() => {
-                assert.equal(true, true, 'fixme')
-              })
-          })
       })
   })
 

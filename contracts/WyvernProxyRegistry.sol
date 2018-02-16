@@ -19,14 +19,6 @@ contract WyvernProxyRegistry is ProxyRegistry {
     /* Whether the initial auth address has been set. */
     bool public initialAddressSet = false;
 
-    /**
-     * @dev Create a WyvernProxyRegistry instance
-     */
-    function WyvernProxyRegistry ()
-        public
-    {
-    }
-
     /** 
      * Grant authentication to the initial Exchange protocol contract
      *

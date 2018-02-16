@@ -114,7 +114,7 @@ contract ExchangeCore is ReentrancyGuarded {
     event OrderApprovedPartOne    (bytes32 indexed hash, address exchange, address indexed maker, address taker, uint makerFee, uint takerFee, address indexed feeRecipient, SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, address target, AuthenticatedProxy.HowToCall howToCall, bytes calldata);
     event OrderApprovedPartTwo    (bytes32 indexed hash, bytes replacementPattern, address staticTarget, bytes staticExtradata, ERC20 paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
     event OrderCancelled          (bytes32 indexed hash);
-    event OrdersMatched           (bytes32 indexed buyHash, bytes32 indexed sellHash);
+    event OrdersMatched           (bytes32 buyHash, bytes32 sellHash, address indexed maker, address indexed taker, uint price);
 
     /**
      * @dev Charge an address fees in protocol tokens
@@ -360,6 +360,7 @@ contract ExchangeCore is ReentrancyGuarded {
      */
     function executeFundsTransfer(Order memory buy, Order memory sell)
         internal
+        returns (uint)
     {
         /* Calculate match price. */
         uint price = calculateMatchPrice(buy, sell);
@@ -393,6 +394,8 @@ contract ExchangeCore is ReentrancyGuarded {
             /* Debit buyer and credit seller. */
             require(sell.paymentToken.transferFrom(buy.maker, sell.maker, price));
         }
+
+        return price;
     }
 
     /**
@@ -448,6 +451,14 @@ contract ExchangeCore is ReentrancyGuarded {
         
         /* Must be matchable. */
         require(ordersCanMatch(buy, sell));
+
+        /* Target must exist (prevent malicious selfdestructs just prior to order settlement). */
+        uint size;
+        address target = sell.target;
+        assembly {
+            size := extcodesize(target)
+        }
+        require(size > 0);
       
         /* Must match calldata after replacement, if specified. */ 
         if (buy.replacementPattern.length > 0) {
@@ -473,7 +484,7 @@ contract ExchangeCore is ReentrancyGuarded {
         /* INTERACTIONS */
 
         /* Execute funds transfer and pay fees. */
-        executeFundsTransfer(buy, sell);
+        uint price = executeFundsTransfer(buy, sell);
 
         /* Execute specified call through proxy. */
         require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
@@ -491,7 +502,7 @@ contract ExchangeCore is ReentrancyGuarded {
         }
 
         /* Log match event. */
-        OrdersMatched(buyHash, sellHash);
+        OrdersMatched(buyHash, sellHash, sell.feeRecipient != address(0) ? sell.maker : buy.maker, sell.feeRecipient != address(0) ? buy.maker : sell.maker, price);
     }
 
 }
