@@ -114,7 +114,7 @@ contract ExchangeCore is ReentrancyGuarded {
     event OrderApprovedPartOne    (bytes32 indexed hash, address exchange, address indexed maker, address taker, uint makerFee, uint takerFee, address indexed feeRecipient, SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, address target, AuthenticatedProxy.HowToCall howToCall, bytes calldata);
     event OrderApprovedPartTwo    (bytes32 indexed hash, bytes replacementPattern, address staticTarget, bytes staticExtradata, ERC20 paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
     event OrderCancelled          (bytes32 indexed hash);
-    event OrdersMatched           (bytes32 buyHash, bytes32 sellHash, address indexed maker, address indexed taker, uint price);
+    event OrdersMatched           (bytes32 buyHash, bytes32 sellHash, address indexed maker, address indexed taker, uint price, bytes32 indexed metadata);
 
     /**
      * @dev Charge an address fees in protocol tokens
@@ -437,7 +437,7 @@ contract ExchangeCore is ReentrancyGuarded {
      * @param sell Sell-side order
      * @param sellSig Sell-side order signature
      */
-    function atomicMatch(Order memory buy, Sig memory buySig, Order memory sell, Sig memory sellSig)
+    function atomicMatch(Order memory buy, Sig memory buySig, Order memory sell, Sig memory sellSig, bytes32 metadata)
         internal
         reentrancyGuard
     {
@@ -502,7 +502,7 @@ contract ExchangeCore is ReentrancyGuarded {
         }
 
         /* Log match event. */
-        OrdersMatched(buyHash, sellHash, sell.feeRecipient != address(0) ? sell.maker : buy.maker, sell.feeRecipient != address(0) ? buy.maker : sell.maker, price);
+        OrdersMatched(buyHash, sellHash, sell.feeRecipient != address(0) ? sell.maker : buy.maker, sell.feeRecipient != address(0) ? buy.maker : sell.maker, price, metadata);
     }
 
 }

@@ -231,14 +231,15 @@ contract Exchange is ExchangeCore {
         bytes staticExtradataBuy,
         bytes staticExtradataSell,
         uint8[2] vs,
-        bytes32[4] rss)
+        bytes32[5] rssMetadata)
         public
     {
         return atomicMatch(
           Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]),
-          Sig(vs[0], rss[0], rss[1]),
+          Sig(vs[0], rssMetadata[0], rssMetadata[1]),
           Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]),
-          Sig(vs[1], rss[2], rss[3])
+          Sig(vs[1], rssMetadata[2], rssMetadata[3]),
+          rssMetadata[4]
         );
     }
 

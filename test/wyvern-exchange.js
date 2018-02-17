@@ -532,7 +532,7 @@ contract('WyvernExchange', (accounts) => {
                   buy.staticExtradata,
                   sell.staticExtradata,
                   [bv, sv],
-                  [br, bs, sr, ss]).then(thenFunc)
+                  [br, bs, sr, ss, '0x0000000000000000000000000000000000000000000000000000000000000000']).then(thenFunc)
               })
             })
           })
@@ -589,7 +589,7 @@ contract('WyvernExchange', (accounts) => {
           buy.staticExtradata,
           sell.staticExtradata,
           [0, 0],
-          ['0x', '0x', '0x', '0x']
+          ['0x', '0x', '0x', '0x', '0x0000000000000000000000000000000000000000000000000000000000000000']
         ).encodeABI()
         sell.calldata = calldata
         buy.calldata = calldata
