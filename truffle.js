@@ -25,8 +25,8 @@ module.exports = {
       port: 8545,
       from: '0x0084a81668B9A978416aBEB88bC1572816cc7cAC',
       network_id: 1,
-      gas: 6700000,
-      gasPrice: 2000000000
+      gas: 2000000,
+      gasPrice: 4100000000
     }
   },
   solc: {
