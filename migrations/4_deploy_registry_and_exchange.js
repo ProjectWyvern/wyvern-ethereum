@@ -17,7 +17,7 @@ module.exports = (deployer, network) => {
             setConfig('deployed.' + network + '.SaleKindInterface', SaleKindInterface.address)
             deployer.link(SaleKindInterface, WyvernExchange)
             return TestToken.deployed().then(tokenInstance => {
-              return deployer.deploy(WyvernExchange, WyvernProxyRegistry.address, network === 'development' ? tokenInstance.address : '0x056017c55ae7ae32d12aef7c679df83a85ca75ff')
+              return deployer.deploy(WyvernExchange, WyvernProxyRegistry.address, (network === 'development' || network === 'rinkeby') ? tokenInstance.address : '0x056017c55ae7ae32d12aef7c679df83a85ca75ff')
                 .then(() => {
                   setConfig('deployed.' + network + '.WyvernExchange', WyvernExchange.address)
                   return WyvernProxyRegistry.deployed().then(proxyRegistry => {
