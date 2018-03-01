@@ -169,6 +169,27 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         transferTokens(exchangeToken, from, to, amount);
     }
 
+    function changeMinimumMakerProtocolFee(uint newMinimumMakerProtocolFee)
+        public
+        onlyOwner
+    {
+        minimumMakerProtocolFee = newMinimumMakerProtocolFee;
+    }
+
+    function changeMinimumTakerProtocolFee(uint newMinimumTakerProtocolFee)
+        public
+        onlyOwner
+    {
+        minimumTakerProtocolFee = newMinimumTakerProtocolFee;
+    }
+
+    function changeProtocolFeeRecipient(address newProtocolFeeRecipient)
+        public
+        onlyOwner
+    {
+        protocolFeeRecipient = newProtocolFeeRecipient;
+    }
+
     /**
      * @dev Execute a STATICCALL (introduced with Ethereum Metropolis, non-state-modifying external call)
      * @param target Contract to call
