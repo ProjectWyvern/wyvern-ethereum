@@ -13,8 +13,8 @@ import "./ProxyRegistry.sol";
 
 contract TokenTransferProxy {
 
-  /* Authentication registry. */
-  ProxyRegistry public registry;
+    /* Authentication registry. */
+    ProxyRegistry public registry;
 
     /**
      * Call ERC20 `transferFrom`
