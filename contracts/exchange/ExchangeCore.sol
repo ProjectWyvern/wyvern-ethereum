@@ -33,8 +33,10 @@ pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "../registry/ProxyRegistry.sol";
+import "../registry/TokenTransferProxy.sol";
 import "../common/ArrayUtils.sol";
 import "../common/ReentrancyGuarded.sol";
 import "./SaleKindInterface.sol";
@@ -43,7 +45,7 @@ import "./SaleKindInterface.sol";
  * @title ExchangeCore
  * @author Project Wyvern Developers
  */
-contract ExchangeCore is ReentrancyGuarded {
+contract ExchangeCore is ReentrancyGuarded, Ownable {
 
     /* The token used to pay exchange fees. */
     ERC20 public exchangeToken;
@@ -51,11 +53,29 @@ contract ExchangeCore is ReentrancyGuarded {
     /* User registry. */
     ProxyRegistry public registry;
 
+    /* Token transfer proxy. */
+    TokenTransferProxy public tokenTransferProxy;
+
     /* Cancelled / finalized orders, by hash. */
     mapping(bytes32 => bool) public cancelledOrFinalized;
 
     /* Orders verified by on-chain approval (alternative to ECDSA signatures so that smart contracts can place orders directly). */
     mapping(bytes32 => bool) public approvedOrders;
+
+    /* For split fee orders, minimum required protocol maker fee, in basis points. Paid to owner (who can change it). */
+    uint public minimumMakerProtocolFee = 0;
+    
+    /* For split fee orders, minimum required protocol taker fee, in basis points. Paid to owner (who can change it). */
+    uint public minimumTakerProtocolFee = 0;
+
+    /* Recipient of protocol fees. */
+    address public protocolFeeRecipient;
+
+    /* Fee method: protocol fee or split fee. */
+    enum FeeMethod { ProtocolFee, SplitFee }
+
+    /* Inverse basis point. */
+    uint public constant INVERSE_BASIS_POINT = 10000;
 
     /* An ECDSA signature. */ 
     struct Sig {
@@ -75,12 +95,18 @@ contract ExchangeCore is ReentrancyGuarded {
         address maker;
         /* Order taker address, if specified. */
         address taker;
-        /* Maker fee of the order (in Exchange fee tokens), unused for taker order. */
-        uint makerFee;
-        /* Taker fee of the order (in Exchange fee tokens), or maximum taker fee for a taker order. */
-        uint takerFee;
+        /* Maker relayer fee of the order, unused for taker order. */
+        uint makerRelayerFee;
+        /* Taker relayer fee of the order, or maximum taker fee for a taker order. */
+        uint takerRelayerFee;
+        /* Maker protocol fee of the order, unused for taker order. */
+        uint makerProtocolFee;
+        /* Taker protocol fee of the order, or maximum taker fee for a taker order. */
+        uint takerProtocolFee;
         /* Order fee recipient or zero address for taker order. */
         address feeRecipient;
+        /* Fee method (protocol token or split fee). */
+        FeeMethod feeMethod;
         /* Side (buy/sell). */
         SaleKindInterface.Side side;
         /* Kind of sale. */
@@ -97,7 +123,7 @@ contract ExchangeCore is ReentrancyGuarded {
         address staticTarget;
         /* Static call extra data. */
         bytes staticExtradata;
-        /* Token used to pay for the order. */
+        /* Token used to pay for the order, or the zero-address as a sentinel value for Ether. */
         ERC20 paymentToken;
         /* Base price of the order (in paymentTokens). */
         uint basePrice;
@@ -111,23 +137,36 @@ contract ExchangeCore is ReentrancyGuarded {
         uint salt;
     }
     
-    event OrderApprovedPartOne    (bytes32 indexed hash, address exchange, address indexed maker, address taker, uint makerFee, uint takerFee, address indexed feeRecipient, SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, address target, AuthenticatedProxy.HowToCall howToCall, bytes calldata);
-    event OrderApprovedPartTwo    (bytes32 indexed hash, bytes replacementPattern, address staticTarget, bytes staticExtradata, ERC20 paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
+    event OrderApprovedPartOne    (bytes32 indexed hash, address exchange, address indexed maker, address taker, uint makerRelayerFee, uint takerRelayerFee, uint makerProtocolFee, uint takerProtocolFee, address indexed feeRecipient, FeeMethod feeMethod, SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, address target);
+    event OrderApprovedPartTwo    (bytes32 indexed hash, AuthenticatedProxy.HowToCall howToCall, bytes calldata, bytes replacementPattern, address staticTarget, bytes staticExtradata, ERC20 paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
     event OrderCancelled          (bytes32 indexed hash);
     event OrdersMatched           (bytes32 buyHash, bytes32 sellHash, address indexed maker, address indexed taker, uint price, bytes32 indexed metadata);
 
     /**
-     * @dev Charge an address fees in protocol tokens
+     * @dev Transfer tokens
+     * @param token Token to transfer
      * @param from Address to charge fees
      * @param to Address to receive fees
      * @param amount Amount of protocol tokens to charge
      */
-    function chargeFee(address from, address to, uint amount)
+    function transferTokens(address token, address from, address to, uint amount)
         internal
     {
         if (amount > 0) {
-            require(exchangeToken.transferFrom(from, to, amount));
+            require(tokenTransferProxy.transferFrom(token, from, to, amount));
         }
+    }
+
+    /**
+     * @dev Charge a fee in protocol tokens
+     * @param from Address to charge fees
+     * @param to Address to receive fees
+     * @param amount Amount of protocol tokens to charge
+     */
+    function chargeProtocolFee(address from, address to, uint amount)
+        internal
+    {
+        transferTokens(exchangeToken, from, to, amount);
     }
 
     /**
@@ -165,7 +204,7 @@ contract ExchangeCore is ReentrancyGuarded {
         pure
         returns (bytes32)
     {
-        return keccak256(order.exchange, order.maker, order.taker, order.makerFee, order.takerFee, order.feeRecipient, order.side, order.saleKind, order.target, order.howToCall, order.calldata, order.replacementPattern);
+        return keccak256(order.exchange, order.maker, order.taker, order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.feeRecipient, order.feeMethod, order.side, order.saleKind, order.target, order.howToCall);
     }
 
     /**
@@ -178,7 +217,7 @@ contract ExchangeCore is ReentrancyGuarded {
         pure
         returns (bytes32)
     {
-        return keccak256(order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
+        return keccak256(order.calldata, order.replacementPattern, order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
     }
 
     /**
@@ -239,6 +278,11 @@ contract ExchangeCore is ReentrancyGuarded {
             return false;
         }
 
+        /* If using the split fee method, order must have sufficient protocol fees. */
+        if (order.feeMethod == FeeMethod.SplitFee && (order.makerProtocolFee < minimumMakerProtocolFee || order.takerProtocolFee < minimumTakerProtocolFee)) {
+            return false;
+        }
+
         /* Order authentication. Order must be either:
            (a) sent by maker */
         if (msg.sender == order.maker) {
@@ -284,10 +328,10 @@ contract ExchangeCore is ReentrancyGuarded {
   
         /* Log approval event. Must be split in two due to Solidity stack size limitations. */
         {
-            OrderApprovedPartOne(hash, order.exchange, order.maker, order.taker, order.makerFee, order.takerFee, order.feeRecipient, order.side, order.saleKind, order.target, order.howToCall, order.calldata);
+            OrderApprovedPartOne(hash, order.exchange, order.maker, order.taker, order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.feeRecipient, order.feeMethod, order.side, order.saleKind, order.target);
         }
         {   
-            OrderApprovedPartTwo(hash, order.replacementPattern, order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt, orderbookInclusionDesired);
+            OrderApprovedPartTwo(hash, order.howToCall, order.calldata, order.replacementPattern, order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt, orderbookInclusionDesired);
         }
     }
 
@@ -354,7 +398,7 @@ contract ExchangeCore is ReentrancyGuarded {
     }
 
     /**
-     * @dev Execute all ERC20 token transfers associated with an order match (fees and buyer => seller transfer)
+     * @dev Execute all ERC20 token / Ether transfers associated with an order match (fees and buyer => seller transfer)
      * @param buy Buy-side order
      * @param sell Sell-side order
      */
@@ -365,34 +409,128 @@ contract ExchangeCore is ReentrancyGuarded {
         /* Calculate match price. */
         uint price = calculateMatchPrice(buy, sell);
 
+        /* If paying using a token (not Ether), transfer tokens. This is done prior to fee payments to that a seller will have tokens before being charged fees. */ 
+        if (price > 0 && sell.paymentToken != address(0)) {
+            transferTokens(sell.paymentToken, buy.maker, sell.maker, price);
+        }
+
+        /* Amount that will be received by seller (for Ether). */
+        uint receiveAmount = price;  
+
+        /* Amount that must be sent by buyer (for Ether). */
+        uint requiredAmount = price;
+
         /* Determine maker/taker and charge fees accordingly. */
         if (sell.feeRecipient != address(0)) {
             /* Sell-side order is maker. */
       
             /* Assert taker fee is less than or equal to maximum fee specified by buyer. */
-            require(sell.takerFee <= buy.takerFee);
-            
-            /* Charge maker fee to seller. */
-            chargeFee(sell.maker, sell.feeRecipient, sell.makerFee);
+            require(sell.takerRelayerFee <= buy.takerRelayerFee);
+        
+            if (sell.feeMethod == FeeMethod.SplitFee) {
+                /* Assert taker fee is less than or equal to maximum fee specified by buyer. */
+                require(sell.takerProtocolFee <= buy.takerProtocolFee);
 
-            /* Charge taker fee to buyer. */
-            chargeFee(buy.maker, sell.feeRecipient, sell.takerFee);
+                /* Maker fees are deducted from the token amount that the maker receives. Taker fees are extra tokens that must be paid by the taker. */
+
+                if (sell.makerRelayerFee > 0) {
+                    uint makerRelayerFee = SafeMath.div(SafeMath.mul(sell.makerRelayerFee, price), INVERSE_BASIS_POINT);
+                    if (sell.paymentToken == address(0)) {
+                        receiveAmount = SafeMath.sub(receiveAmount, makerRelayerFee);
+                        sell.feeRecipient.transfer(makerRelayerFee);
+                    } else {
+                        transferTokens(sell.paymentToken, sell.maker, sell.feeRecipient, makerRelayerFee);
+                    }
+                }
+
+                if (sell.takerRelayerFee > 0) {
+                    uint takerRelayerFee = SafeMath.div(SafeMath.mul(sell.takerRelayerFee, price), INVERSE_BASIS_POINT);
+                    if (sell.paymentToken == address(0)) {
+                        requiredAmount = SafeMath.add(requiredAmount, takerRelayerFee);
+                        sell.feeRecipient.transfer(takerRelayerFee);
+                    } else {
+                        transferTokens(sell.paymentToken, buy.maker, sell.feeRecipient, takerRelayerFee);
+                    }
+                }
+
+                if (sell.makerProtocolFee > 0) {
+                    uint makerProtocolFee = SafeMath.div(SafeMath.mul(sell.makerProtocolFee, price), INVERSE_BASIS_POINT);
+                    if (sell.paymentToken == address(0)) {
+                        receiveAmount = SafeMath.sub(receiveAmount, makerProtocolFee);
+                        protocolFeeRecipient.transfer(makerProtocolFee);
+                    } else {
+                        transferTokens(sell.paymentToken, sell.maker, protocolFeeRecipient, makerProtocolFee);
+                    }
+                }
+      
+                if (sell.takerProtocolFee > 0) {
+                    uint takerProtocolFee = SafeMath.div(SafeMath.mul(sell.takerProtocolFee, price), INVERSE_BASIS_POINT);
+                    if (sell.paymentToken == address(0)) {
+                        requiredAmount = SafeMath.add(requiredAmount, takerProtocolFee);
+                        protocolFeeRecipient.transfer(takerProtocolFee);
+                    } else {
+                        transferTokens(sell.paymentToken, buy.maker, protocolFeeRecipient, takerProtocolFee);
+                    }
+                }
+  
+            } else {
+                /* Charge maker fee to seller. */
+                chargeProtocolFee(sell.maker, sell.feeRecipient, sell.makerRelayerFee);
+
+                /* Charge taker fee to buyer. */
+                chargeProtocolFee(buy.maker, sell.feeRecipient, sell.takerRelayerFee);
+            }
         } else {
             /* Buy-side order is maker. */
 
             /* Assert taker fee is less than or equal to maximum fee specified by seller. */
-            require(buy.takerFee <= sell.takerFee);
+            require(buy.takerRelayerFee <= sell.takerRelayerFee);
 
-            /* Charge maker fee to buyer. */
-            chargeFee(buy.maker, buy.feeRecipient, buy.makerFee);
+            if (sell.feeMethod == FeeMethod.SplitFee) {
+                /* The Exchange does not escrow Ether, so direct Ether can only be used to with sell-side maker / buy-side taker orders. */
+                require(sell.paymentToken != address(0));
+
+                /* Assert taker fee is less than or equal to maximum fee specified by seller. */
+                require(buy.takerProtocolFee <= sell.takerProtocolFee);
+
+                if (buy.makerRelayerFee > 0) {
+                    makerRelayerFee = SafeMath.div(SafeMath.mul(buy.makerRelayerFee, price), INVERSE_BASIS_POINT);
+                    transferTokens(sell.paymentToken, buy.maker, buy.feeRecipient, makerRelayerFee);
+                }
+
+                if (buy.takerRelayerFee > 0) {
+                    takerRelayerFee = SafeMath.div(SafeMath.mul(buy.takerRelayerFee, price), INVERSE_BASIS_POINT);
+                    transferTokens(sell.paymentToken, sell.maker, buy.feeRecipient, takerRelayerFee);
+                }
+
+                if (buy.makerProtocolFee > 0) {
+                    makerProtocolFee = SafeMath.div(SafeMath.mul(buy.makerProtocolFee, price), INVERSE_BASIS_POINT);
+                    transferTokens(sell.paymentToken, buy.maker, protocolFeeRecipient, makerProtocolFee);
+                }
+
+                if (buy.takerProtocolFee > 0) {
+                    takerProtocolFee = SafeMath.div(SafeMath.mul(buy.takerProtocolFee, price), INVERSE_BASIS_POINT);
+                    transferTokens(sell.paymentToken, sell.maker, protocolFeeRecipient, takerProtocolFee);
+                }
+
+            } else {
+                /* Charge maker fee to buyer. */
+                chargeProtocolFee(buy.maker, buy.feeRecipient, buy.makerRelayerFee);
       
-            /* Charge taker fee to seller. */
-            chargeFee(sell.maker, buy.feeRecipient, buy.takerFee);
+                /* Charge taker fee to seller. */
+                chargeProtocolFee(sell.maker, buy.feeRecipient, buy.takerRelayerFee);
+            }
         }
 
-        if (price > 0) {
-            /* Debit buyer and credit seller. */
-            require(sell.paymentToken.transferFrom(buy.maker, sell.maker, price));
+        if (sell.paymentToken == address(0)) {
+            /* Special-case Ether, order must be matched by buyer. */
+            require(msg.value >= requiredAmount);
+            sell.maker.transfer(receiveAmount);
+            /* Allow overshoot for variable-price auctions, refund difference. */
+            uint diff = SafeMath.sub(msg.value, requiredAmount);
+            if (diff > 0) {
+                buy.maker.transfer(diff);
+            }
         }
 
         return price;
@@ -412,6 +550,8 @@ contract ExchangeCore is ReentrancyGuarded {
         return (
             /* Must be opposite-side. */
             (buy.side == SaleKindInterface.Side.Buy && sell.side == SaleKindInterface.Side.Sell) &&     
+            /* Must use same fee method. */
+            (buy.feeMethod == sell.feeMethod) &&
             /* Must use same payment token. */
             (buy.paymentToken == sell.paymentToken) &&
             /* Must match maker/taker addresses. */
@@ -431,7 +571,7 @@ contract ExchangeCore is ReentrancyGuarded {
     }
 
     /**
-     * @dev Match two orders, ensuring validity of the match, and execute all associated state transitions. Protected against reentrancy by a contract-global lock.
+     * @dev Atomically match two orders, ensuring validity of the match, and execute all associated state transitions. Protected against reentrancy by a contract-global lock.
      * @param buy Buy-side order
      * @param buySig Buy-side order signature
      * @param sell Sell-side order
@@ -477,9 +617,13 @@ contract ExchangeCore is ReentrancyGuarded {
 
         /* EFFECTS */
 
-        /* Mark orders as finalized. */
-        cancelledOrFinalized[buyHash] = true;
-        cancelledOrFinalized[sellHash] = true;
+        /* Mark previously signed orders as finalized. */
+        if (buySig.v != 0) {
+            cancelledOrFinalized[buyHash] = true;
+        }
+        if (sellSig.v != 0) {
+            cancelledOrFinalized[sellHash] = true;
+        }
 
         /* INTERACTIONS */
 

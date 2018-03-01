@@ -42,7 +42,8 @@ contract Exchange is ExchangeCore {
      */
     function hashOrder_(
         address[7] addrs,
-        uint[7] uints,
+        uint[9] uints,
+        FeeMethod feeMethod,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -54,7 +55,7 @@ contract Exchange is ExchangeCore {
         returns (bytes32)
     { 
         return hashToSign(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6])
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], feeMethod, side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8])
         );
     }
 
@@ -63,7 +64,8 @@ contract Exchange is ExchangeCore {
      */
     function validateOrder_ (
         address[7] addrs,
-        uint[7] uints,
+        uint[9] uints,
+        FeeMethod feeMethod,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -77,7 +79,7 @@ contract Exchange is ExchangeCore {
         public
         returns (bool)
     {
-        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
+        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], feeMethod, side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8]);
         return validateOrder(
           hashToSign(order),
           order,
@@ -90,7 +92,8 @@ contract Exchange is ExchangeCore {
      */
     function approveOrder_ (
         address[7] addrs,
-        uint[7] uints,
+        uint[9] uints,
+        FeeMethod feeMethod,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -100,7 +103,7 @@ contract Exchange is ExchangeCore {
         bool orderbookInclusionDesired) 
         public
     {
-        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
+        Order memory order = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], feeMethod, side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8]);
         return approveOrder(order, orderbookInclusionDesired);
     }
 
@@ -109,7 +112,8 @@ contract Exchange is ExchangeCore {
      */
     function cancelOrder_(
         address[7] addrs,
-        uint[7] uints,
+        uint[9] uints,
+        FeeMethod feeMethod,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -123,7 +127,7 @@ contract Exchange is ExchangeCore {
     {
 
         return cancelOrder(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]),
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], feeMethod, side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8]),
           Sig(v, r, s)
         );
     }
@@ -133,7 +137,8 @@ contract Exchange is ExchangeCore {
      */
     function calculateCurrentPrice_(
         address[7] addrs,
-        uint[7] uints,
+        uint[9] uints,
+        FeeMethod feeMethod,
         SaleKindInterface.Side side,
         SaleKindInterface.SaleKind saleKind,
         AuthenticatedProxy.HowToCall howToCall,
@@ -145,7 +150,7 @@ contract Exchange is ExchangeCore {
         returns (uint)
     {
         return calculateCurrentPrice(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6])
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], feeMethod, side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8])
         );
     }
 
@@ -154,8 +159,8 @@ contract Exchange is ExchangeCore {
      */
     function ordersCanMatch_(
         address[14] addrs,
-        uint[14] uints,
-        uint8[6] sidesKindsHowToCalls,
+        uint[18] uints,
+        uint8[8] feeMethodsSidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
         bytes replacementPatternBuy,
@@ -166,8 +171,8 @@ contract Exchange is ExchangeCore {
         view
         returns (bool)
     {
-        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
-        Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]);
+        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], FeeMethod(feeMethodsSidesKindsHowToCalls[0]), SaleKindInterface.Side(feeMethodsSidesKindsHowToCalls[1]), SaleKindInterface.SaleKind(feeMethodsSidesKindsHowToCalls[2]), addrs[4], AuthenticatedProxy.HowToCall(feeMethodsSidesKindsHowToCalls[3]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8]);
+        Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[9], uints[10], uints[11], uints[12], addrs[10], FeeMethod(feeMethodsSidesKindsHowToCalls[4]), SaleKindInterface.Side(feeMethodsSidesKindsHowToCalls[5]), SaleKindInterface.SaleKind(feeMethodsSidesKindsHowToCalls[6]), addrs[11], AuthenticatedProxy.HowToCall(feeMethodsSidesKindsHowToCalls[7]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[13], uints[14], uints[15], uints[16], uints[17]);
         return ordersCanMatch(
           buy,
           sell
@@ -187,8 +192,12 @@ contract Exchange is ExchangeCore {
         pure
         returns (bool)
     {
-        ArrayUtils.guardedArrayReplace(buyCalldata, sellCalldata, buyReplacementPattern);
-        ArrayUtils.guardedArrayReplace(sellCalldata, buyCalldata, sellReplacementPattern);
+        if (buyReplacementPattern.length > 0) {
+          ArrayUtils.guardedArrayReplace(buyCalldata, sellCalldata, buyReplacementPattern);
+        }
+        if (sellReplacementPattern.length > 0) {
+          ArrayUtils.guardedArrayReplace(sellCalldata, buyCalldata, sellReplacementPattern);
+        }
         return ArrayUtils.arrayEq(buyCalldata, sellCalldata);
     }
 
@@ -197,8 +206,8 @@ contract Exchange is ExchangeCore {
      */
     function calculateMatchPrice_(
         address[14] addrs,
-        uint[14] uints,
-        uint8[6] sidesKindsHowToCalls,
+        uint[18] uints,
+        uint8[8] feeMethodsSidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
         bytes replacementPatternBuy,
@@ -209,8 +218,8 @@ contract Exchange is ExchangeCore {
         view
         returns (uint)
     {
-        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]);
-        Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]);
+        Order memory buy = Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], FeeMethod(feeMethodsSidesKindsHowToCalls[0]), SaleKindInterface.Side(feeMethodsSidesKindsHowToCalls[1]), SaleKindInterface.SaleKind(feeMethodsSidesKindsHowToCalls[2]), addrs[4], AuthenticatedProxy.HowToCall(feeMethodsSidesKindsHowToCalls[3]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8]);
+        Order memory sell = Order(addrs[7], addrs[8], addrs[9], uints[9], uints[10], uints[11], uints[12], addrs[10], FeeMethod(feeMethodsSidesKindsHowToCalls[4]), SaleKindInterface.Side(feeMethodsSidesKindsHowToCalls[5]), SaleKindInterface.SaleKind(feeMethodsSidesKindsHowToCalls[6]), addrs[11], AuthenticatedProxy.HowToCall(feeMethodsSidesKindsHowToCalls[7]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[13], uints[14], uints[15], uints[16], uints[17]);
         return calculateMatchPrice(
           buy,
           sell
@@ -222,8 +231,8 @@ contract Exchange is ExchangeCore {
      */
     function atomicMatch_(
         address[14] addrs,
-        uint[14] uints,
-        uint8[6] sidesKindsHowToCalls,
+        uint[18] uints,
+        uint8[8] feeMethodsSidesKindsHowToCalls,
         bytes calldataBuy,
         bytes calldataSell,
         bytes replacementPatternBuy,
@@ -234,10 +243,11 @@ contract Exchange is ExchangeCore {
         bytes32[5] rssMetadata)
         public
     {
+
         return atomicMatch(
-          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], addrs[3], SaleKindInterface.Side(sidesKindsHowToCalls[0]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[1]), addrs[4], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[2]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[2], uints[3], uints[4], uints[5], uints[6]),
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], FeeMethod(feeMethodsSidesKindsHowToCalls[0]), SaleKindInterface.Side(feeMethodsSidesKindsHowToCalls[1]), SaleKindInterface.SaleKind(feeMethodsSidesKindsHowToCalls[2]), addrs[4], AuthenticatedProxy.HowToCall(feeMethodsSidesKindsHowToCalls[3]), calldataBuy, replacementPatternBuy, addrs[5], staticExtradataBuy, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8]),
           Sig(vs[0], rssMetadata[0], rssMetadata[1]),
-          Order(addrs[7], addrs[8], addrs[9], uints[7], uints[8], addrs[10], SaleKindInterface.Side(sidesKindsHowToCalls[3]), SaleKindInterface.SaleKind(sidesKindsHowToCalls[4]), addrs[11], AuthenticatedProxy.HowToCall(sidesKindsHowToCalls[5]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[9], uints[10], uints[11], uints[12], uints[13]),
+          Order(addrs[7], addrs[8], addrs[9], uints[9], uints[10], uints[11], uints[12], addrs[10], FeeMethod(feeMethodsSidesKindsHowToCalls[4]), SaleKindInterface.Side(feeMethodsSidesKindsHowToCalls[5]), SaleKindInterface.SaleKind(feeMethodsSidesKindsHowToCalls[6]), addrs[11], AuthenticatedProxy.HowToCall(feeMethodsSidesKindsHowToCalls[7]), calldataSell, replacementPatternSell, addrs[12], staticExtradataSell, ERC20(addrs[13]), uints[13], uints[14], uints[15], uints[16], uints[17]),
           Sig(vs[1], rssMetadata[2], rssMetadata[3]),
           rssMetadata[4]
         );
