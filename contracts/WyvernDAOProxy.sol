@@ -13,7 +13,7 @@ import "./dao/DelegateProxy.sol";
  * @author Project Wyvern Developers
  */
 contract WyvernDAOProxy is DelegateProxy {
-  
+
     function WyvernDAOProxy ()
         public
     {

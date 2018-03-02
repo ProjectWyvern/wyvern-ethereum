@@ -19,7 +19,7 @@ library WyvernAtomicizer {
         public
     {
         require(addrs.length == values.length && addrs.length == calldataLengths.length);
-        
+
         uint j = 0;
         for (uint i = 0; i < addrs.length; i++) {
             bytes memory calldata = new bytes(calldataLengths[i]);
@@ -29,6 +29,6 @@ library WyvernAtomicizer {
             }
             require(addrs[i].call.value(values[i])(calldata));
         }
-    }  
+    }
 
 }

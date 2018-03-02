@@ -18,7 +18,7 @@ contract TokenTransferProxy {
 
     /**
      * Call ERC20 `transferFrom`
-     * 
+     *
      * @dev Authenticated contract only
      * @param token ERC20 token address
      * @param from From address
@@ -31,6 +31,6 @@ contract TokenTransferProxy {
     {
         require(registry.contracts(msg.sender));
         return ERC20(token).transferFrom(from, to, amount);
-    } 
+    }
 
 }

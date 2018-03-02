@@ -1,4 +1,4 @@
-/* 
+/*
 
   DELEGATECALL proxy contract.
   Primarily intended to enable easy atomic composition of future transactions (unknown at the time of proxy creation).
@@ -37,7 +37,7 @@ contract DelegateProxy is TokenRecipient, Ownable {
 
     /**
      * Execute a DELEGATECALL and assert success
-     * 
+     *
      * @dev Same functionality as `delegateProxy`, just asserts the return value
      * @param dest Address to which the call will be sent
      * @param calldata Calldata to send

@@ -64,7 +64,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
 
     /* For split fee orders, minimum required protocol maker fee, in basis points. Paid to owner (who can change it). */
     uint public minimumMakerProtocolFee = 0;
-    
+
     /* For split fee orders, minimum required protocol taker fee, in basis points. Paid to owner (who can change it). */
     uint public minimumTakerProtocolFee = 0;
 
@@ -459,13 +459,13 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         /* Calculate match price. */
         uint price = calculateMatchPrice(buy, sell);
 
-        /* If paying using a token (not Ether), transfer tokens. This is done prior to fee payments to that a seller will have tokens before being charged fees. */ 
+        /* If paying using a token (not Ether), transfer tokens. This is done prior to fee payments to that a seller will have tokens before being charged fees. */
         if (price > 0 && sell.paymentToken != address(0)) {
             transferTokens(sell.paymentToken, buy.maker, sell.maker, price);
         }
 
         /* Amount that will be received by seller (for Ether). */
-        uint receiveAmount = price;  
+        uint receiveAmount = price;
 
         /* Amount that must be sent by buyer (for Ether). */
         uint requiredAmount = price;
@@ -476,7 +476,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
       
             /* Assert taker fee is less than or equal to maximum fee specified by buyer. */
             require(sell.takerRelayerFee <= buy.takerRelayerFee);
-        
+
             if (sell.feeMethod == FeeMethod.SplitFee) {
                 /* Assert taker fee is less than or equal to maximum fee specified by buyer. */
                 require(sell.takerProtocolFee <= buy.takerProtocolFee);
@@ -512,7 +512,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
                         transferTokens(sell.paymentToken, sell.maker, protocolFeeRecipient, makerProtocolFee);
                     }
                 }
-      
+
                 if (sell.takerProtocolFee > 0) {
                     uint takerProtocolFee = SafeMath.div(SafeMath.mul(sell.takerProtocolFee, price), INVERSE_BASIS_POINT);
                     if (sell.paymentToken == address(0)) {
@@ -522,7 +522,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
                         transferTokens(sell.paymentToken, buy.maker, protocolFeeRecipient, takerProtocolFee);
                     }
                 }
-  
+
             } else {
                 /* Charge maker fee to seller. */
                 chargeProtocolFee(sell.maker, sell.feeRecipient, sell.makerRelayerFee);
