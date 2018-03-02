@@ -181,6 +181,45 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should allow changing minimum maker protocol fee', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.changeMinimumMakerProtocolFee(1).then(() => {
+          return exchangeInstance.minimumMakerProtocolFee.call().then(res => {
+            assert.equal(res.toNumber(), 1, 'Protocol fee was not changed')
+            return exchangeInstance.changeMinimumMakerProtocolFee(0)
+          })
+        })
+      })
+  })
+
+  it('should allow changing minimum taker protocol fee', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.changeMinimumTakerProtocolFee(1).then(() => {
+          return exchangeInstance.minimumTakerProtocolFee.call().then(res => {
+            assert.equal(res.toNumber(), 1, 'Protocol fee was not changed')
+            return exchangeInstance.changeMinimumTakerProtocolFee(0)
+          })
+        })
+      })
+  })
+
+  it('should allow changing protocol fee recipient', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.changeProtocolFeeRecipient(accounts[1]).then(() => {
+          return exchangeInstance.protocolFeeRecipient.call().then(res => {
+            assert.equal(res, accounts[1], 'Protocol fee recipient was not changed')
+            return exchangeInstance.changeProtocolFeeRecipient(accounts[0])
+          })
+        })
+      })
+  })
+
   var proxy
 
   it('should allow proxy creation', () => {
