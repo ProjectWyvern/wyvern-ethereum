@@ -272,7 +272,32 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     }
 
     /**
-     * @dev Validate a provided order, hash, and signature
+     */
+    function validateOrderParameters(Order memory order)
+        internal
+        view
+        returns (bool)
+    {
+        /* Order must be targeted at this protocol version (this Exchange contract). */
+        if (order.exchange != address(this)) {
+            return false;
+        }
+
+        /* Order must possess valid sale kind parameter combination. */
+        if (!SaleKindInterface.validateParameters(order.saleKind, order.expirationTime)) {
+            return false;
+        }
+
+        /* If using the split fee method, order must have sufficient protocol fees. */
+        if (order.feeMethod == FeeMethod.SplitFee && (order.makerProtocolFee < minimumMakerProtocolFee || order.takerProtocolFee < minimumTakerProtocolFee)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @dev Validate a provided previously approved / signed order, hash, and signature.
      * @param hash Order hash (already calculated, passed to avoid recalculation)
      * @param order Order to validate
      * @param sig ECDSA signature
@@ -284,8 +309,8 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     {
         /* Not done in an if-conditional to prevent unnecessary ecrecover evaluation, which seems to happen even though it should short-circuit. */
 
-        /* Order must be targeted at this protocol version (this Exchange contract). */
-        if (order.exchange != address(this)) {
+        /* Order must have valid parameters. */
+        if (!validateOrderParameters(order)) {
             return false;
         }
 
@@ -294,28 +319,13 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
             return false;
         }
         
-        /* Order must possess valid sale kind parameter combination. */
-        if (!SaleKindInterface.validateParameters(order.saleKind, order.expirationTime)) {
-            return false;
-        }
-
-        /* If using the split fee method, order must have sufficient protocol fees. */
-        if (order.feeMethod == FeeMethod.SplitFee && (order.makerProtocolFee < minimumMakerProtocolFee || order.takerProtocolFee < minimumTakerProtocolFee)) {
-            return false;
-        }
-
         /* Order authentication. Order must be either:
-           (a) sent by maker */
-        if (msg.sender == order.maker) {
-            return true;
-        }
-  
-        /* (b) previously approved */
+        /* (a) previously approved */
         if (approvedOrders[hash]) {
             return true;
         }
 
-        /* or (c) ECDSA-signed by maker. */
+        /* or (b) ECDSA-signed by maker. */
         if (ecrecover(hash, sig.v, sig.r, sig.s) == order.maker) {
             return true;
         }
@@ -604,11 +614,21 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     {
         /* CHECKS */
       
-        /* Ensure buy order validity and calculate hash. */
-        bytes32 buyHash = requireValidOrder(buy, buySig);
+        /* Ensure buy order validity and calculate hash if necessary. */
+        bytes32 buyHash;
+        if (buy.maker == msg.sender) {
+            require(validateOrderParameters(buy));
+        } else {
+            buyHash = requireValidOrder(buy, buySig);
+        }
 
-        /* Ensure sell order validity and calculate hash. */
-        bytes32 sellHash = requireValidOrder(sell, sellSig); 
+        /* Ensure sell order validity and calculate hash if necessary. */
+        bytes32 sellHash;
+        if (sell.maker == msg.sender) {
+            require(validateOrderParameters(sell));
+        } else {
+            sellHash = requireValidOrder(sell, sellSig);
+        }
         
         /* Must be matchable. */
         require(ordersCanMatch(buy, sell));
@@ -638,11 +658,11 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
 
         /* EFFECTS */
 
-        /* Mark previously signed orders as finalized. */
-        if (buySig.v != 0 || approvedOrders[buyHash]) {
+        /* Mark previously signed or approved orders as finalized. */
+        if (msg.sender != buy.maker) {
             cancelledOrFinalized[buyHash] = true;
         }
-        if (sellSig.v != 0 || approvedOrders[sellHash]) {
+        if (msg.sender != sell.maker) {
             cancelledOrFinalized[sellHash] = true;
         }
 
