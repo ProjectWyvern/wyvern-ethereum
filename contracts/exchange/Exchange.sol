@@ -265,6 +265,7 @@ contract Exchange is ExchangeCore {
         uint8[2] vs,
         bytes32[5] rssMetadata)
         public
+        payable
     {
 
         return atomicMatch(

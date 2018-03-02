@@ -143,6 +143,39 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     event OrdersMatched           (bytes32 buyHash, bytes32 sellHash, address indexed maker, address indexed taker, uint price, bytes32 indexed metadata);
 
     /**
+     * @dev Change the minimum maker fee paid to the protocol (owner only)
+     * @param newMinimumMakerProtocolFee New fee to set in basis points
+     */
+    function changeMinimumMakerProtocolFee(uint newMinimumMakerProtocolFee)
+        public
+        onlyOwner
+    {
+        minimumMakerProtocolFee = newMinimumMakerProtocolFee;
+    }
+
+    /**
+     * @dev Change the minimum taker fee paid to the protocol (owner only)
+     * @param newMinimumTakerProtocolFee New fee to set in basis points
+     */
+    function changeMinimumTakerProtocolFee(uint newMinimumTakerProtocolFee)
+        public
+        onlyOwner
+    {
+        minimumTakerProtocolFee = newMinimumTakerProtocolFee;
+    }
+
+    /**
+     * @dev Change the protocol fee recipient (owner only)
+     * @param newProtocolFeeRecipient New protocol fee recipient address
+     */
+    function changeProtocolFeeRecipient(address newProtocolFeeRecipient)
+        public
+        onlyOwner
+    {
+        protocolFeeRecipient = newProtocolFeeRecipient;
+    }
+
+    /**
      * @dev Transfer tokens
      * @param token Token to transfer
      * @param from Address to charge fees
@@ -167,27 +200,6 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         internal
     {
         transferTokens(exchangeToken, from, to, amount);
-    }
-
-    function changeMinimumMakerProtocolFee(uint newMinimumMakerProtocolFee)
-        public
-        onlyOwner
-    {
-        minimumMakerProtocolFee = newMinimumMakerProtocolFee;
-    }
-
-    function changeMinimumTakerProtocolFee(uint newMinimumTakerProtocolFee)
-        public
-        onlyOwner
-    {
-        minimumTakerProtocolFee = newMinimumTakerProtocolFee;
-    }
-
-    function changeProtocolFeeRecipient(address newProtocolFeeRecipient)
-        public
-        onlyOwner
-    {
-        protocolFeeRecipient = newProtocolFeeRecipient;
     }
 
     /**
@@ -272,6 +284,8 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     }
 
     /**
+     * @dev Validate order parameters (does *not* check signature validity)
+     * @param order Order to validate
      */
     function validateOrderParameters(Order memory order)
         internal
@@ -437,6 +451,11 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         internal
         returns (uint)
     {
+        /* Only payable in the special case of unwrapped Ether. */
+        if (sell.paymentToken != address(0)) {
+            require(msg.value == 0);
+        }
+
         /* Calculate match price. */
         uint price = calculateMatchPrice(buy, sell);
 
@@ -563,6 +582,9 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
                 buy.maker.transfer(diff);
             }
         }
+
+        /* Assert the invariant that this contract should never hold Ether. */
+        require(this.balance == 0);
 
         return price;
     }

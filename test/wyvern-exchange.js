@@ -536,7 +536,7 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
-  const matchOrder = (buy, sell, thenFunc, catchFunc) => {
+  const matchOrder = (buy, sell, thenFunc, catchFunc, value) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
@@ -611,7 +611,7 @@ contract('WyvernExchange', (accounts) => {
                       buy.staticExtradata,
                       sell.staticExtradata,
                       [bv, sv],
-                      [br, bs, sr, ss, '0x0000000000000000000000000000000000000000000000000000000000000000'], {from: accounts[1]}).then(thenFunc)
+                      [br, bs, sr, ss, '0x0000000000000000000000000000000000000000000000000000000000000000'], {from: value ? accounts[0] : accounts[1], value: value || 0}).then(thenFunc)
                   })
                 })
               })
@@ -658,6 +658,59 @@ contract('WyvernExchange', (accounts) => {
         return matchOrder(buy, sell, () => {}, err => {
           assert.equal(false, err, 'Orders should have matched')
         })
+      })
+  })
+
+  it('should allow simple order matching with special-case Ether, nonzero price', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.paymentToken = '0x0000000000000000000000000000000000000000'
+        sell.paymentToken = '0x0000000000000000000000000000000000000000'
+        buy.basePrice = new BigNumber(100)
+        sell.basePrice = new BigNumber(100)
+        return matchOrder(buy, sell, () => {}, err => {
+          assert.equal(false, err, 'Orders should have matched')
+        }, 100)
+      })
+  })
+
+  it('should allow simple order matching with special-case Ether, nonzero price, overpayment', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.paymentToken = '0x0000000000000000000000000000000000000000'
+        sell.paymentToken = '0x0000000000000000000000000000000000000000'
+        buy.basePrice = new BigNumber(101)
+        sell.basePrice = new BigNumber(101)
+        return matchOrder(buy, sell, () => {}, err => {
+          assert.equal(false, err, 'Orders should have matched')
+        }, 105)
+      })
+  })
+
+  it('should not allow simple order matching with special-case Ether, nonzero price, wrong value', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.paymentToken = '0x0000000000000000000000000000000000000000'
+        sell.paymentToken = '0x0000000000000000000000000000000000000000'
+        buy.basePrice = new BigNumber(100)
+        sell.basePrice = new BigNumber(100)
+        return matchOrder(buy, sell, () => {
+          assert.equal(false, true, 'Orders should not have matched')
+        }, err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        }, 10)
       })
   })
 
