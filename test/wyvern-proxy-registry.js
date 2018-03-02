@@ -1,6 +1,7 @@
 /* global artifacts:false, it:false, contract:false, assert:false */
 
 const WyvernProxyRegistry = artifacts.require('WyvernProxyRegistry')
+const WyvernTokenTransferProxy = artifacts.require('WyvernTokenTransferProxy')
 const TestToken = artifacts.require('TestToken')
 const AuthenticatedProxy = artifacts.require('AuthenticatedProxy')
 const Web3 = require('web3')
@@ -17,6 +18,24 @@ const increaseTime = (addSeconds, callback) => {
     id: 0
   }, callback)
 }
+
+contract('WyvernTokenTransferProxy', (accounts) => {
+  it('should not allow transfer from unauthenticated contract', () => {
+    return WyvernTokenTransferProxy
+      .deployed()
+      .then(tokenTransferProxyInstance => {
+        return TestToken
+          .deployed()
+          .then(tokenInstance => {
+            return tokenTransferProxyInstance.transferFrom(tokenInstance.address, accounts[0], accounts[0], 0).then(() => {
+              assert.equal(true, false, 'Transfer allowed from unauthenticated contract')
+            }).catch(err => {
+              assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+            })
+          })
+      })
+  })
+})
 
 contract('WyvernProxyRegistry', (accounts) => {
   it('should not allow initial authentication twice', () => {

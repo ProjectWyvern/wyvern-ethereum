@@ -639,10 +639,10 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         /* EFFECTS */
 
         /* Mark previously signed orders as finalized. */
-        if (buySig.v != 0) {
+        if (buySig.v != 0 || approvedOrders[buyHash]) {
             cancelledOrFinalized[buyHash] = true;
         }
-        if (sellSig.v != 0) {
+        if (sellSig.v != 0 || approvedOrders[sellHash]) {
             cancelledOrFinalized[sellHash] = true;
         }
 

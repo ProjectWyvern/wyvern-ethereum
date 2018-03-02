@@ -561,6 +561,18 @@ contract('WyvernExchange', (accounts) => {
       }).catch(catchFunc)
   }
 
+  it('should allow approval', () => {
+    return WyvernTokenTransferProxy
+      .deployed()
+      .then(tokenTransferProxyInstance => {
+        return TestToken
+          .deployed()
+          .then(tokenInstance => {
+            return tokenInstance.approve(tokenTransferProxyInstance.address, 10000000000)
+          })
+      })
+  })
+
   it('should allow simple order matching', () => {
     return WyvernExchange
       .deployed()
@@ -570,6 +582,190 @@ contract('WyvernExchange', (accounts) => {
         sell.side = 1
         return matchOrder(buy, sell, () => {}, err => {
           assert.equal(false, err, 'Orders should have matched')
+        })
+      })
+  })
+
+  it('should allow simple order matching with special-case Ether', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.paymentToken = '0x0000000000000000000000000000000000000000'
+        sell.paymentToken = '0x0000000000000000000000000000000000000000'
+        return matchOrder(buy, sell, () => {}, err => {
+          assert.equal(false, err, 'Orders should have matched')
+        })
+      })
+  })
+
+  it('should allow simple order matching, second fee method', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        return TestToken.deployed().then(tokenInstance => {
+          buy.paymentToken = tokenInstance.address
+          sell.paymentToken = tokenInstance.address
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
+  it('should allow simple order matching, second fee method, nonzero price', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.basePrice = new BigNumber(10000)
+        sell.basePrice = new BigNumber(10000)
+        buy.salt = 5123
+        sell.salt = 12389
+        return TestToken.deployed().then(tokenInstance => {
+          buy.paymentToken = tokenInstance.address
+          sell.paymentToken = tokenInstance.address
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
+  it('should allow simple order matching, second fee method, real taker relayer fees', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.basePrice = new BigNumber(10000)
+        sell.basePrice = new BigNumber(10000)
+        sell.takerRelayerFee = new BigNumber(100)
+        buy.takerRelayerFee = new BigNumber(100)
+        return TestToken.deployed().then(tokenInstance => {
+          buy.paymentToken = tokenInstance.address
+          sell.paymentToken = tokenInstance.address
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
+  it('should allow simple order matching, second fee method, real taker protocol fees', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.basePrice = new BigNumber(10)
+        sell.basePrice = new BigNumber(10)
+        sell.takerProtocolFee = new BigNumber(100)
+        buy.takerProtocolFee = new BigNumber(100)
+        return TestToken.deployed().then(tokenInstance => {
+          buy.paymentToken = tokenInstance.address
+          sell.paymentToken = tokenInstance.address
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
+  it('should allow simple order matching, second fee method, real maker protocol fees', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.basePrice = new BigNumber(10000)
+        sell.basePrice = new BigNumber(10000)
+        sell.makerProtocolFee = new BigNumber(100)
+        buy.makerProtocolFee = new BigNumber(100)
+        return TestToken.deployed().then(tokenInstance => {
+          buy.paymentToken = tokenInstance.address
+          sell.paymentToken = tokenInstance.address
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
+  it('should allow simple order matching, second fee method, all fees', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.basePrice = new BigNumber(10000)
+        sell.basePrice = new BigNumber(10000)
+        sell.makerProtocolFee = new BigNumber(100)
+        buy.makerProtocolFee = new BigNumber(100)
+        sell.makerRelayerFee = new BigNumber(100)
+        buy.makerRelayerFee = new BigNumber(100)
+        sell.takerProtocolFee = new BigNumber(100)
+        buy.takerProtocolFee = new BigNumber(100)
+        sell.takerRelayerFee = new BigNumber(100)
+        buy.takerRelayerFee = new BigNumber(100)
+        return TestToken.deployed().then(tokenInstance => {
+          buy.paymentToken = tokenInstance.address
+          sell.paymentToken = tokenInstance.address
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
+        })
+      })
+  })
+
+  it('should allow simple order matching, second fee method, all fees, swapped maker/taker', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, false)
+        var sell = makeOrder(exchangeInstance.address, true)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.basePrice = new BigNumber(10000)
+        sell.basePrice = new BigNumber(10000)
+        sell.makerProtocolFee = new BigNumber(100)
+        buy.makerProtocolFee = new BigNumber(100)
+        sell.makerRelayerFee = new BigNumber(100)
+        buy.makerRelayerFee = new BigNumber(100)
+        sell.takerProtocolFee = new BigNumber(100)
+        buy.takerProtocolFee = new BigNumber(100)
+        sell.takerRelayerFee = new BigNumber(100)
+        buy.takerRelayerFee = new BigNumber(100)
+        return TestToken.deployed().then(tokenInstance => {
+          buy.paymentToken = tokenInstance.address
+          sell.paymentToken = tokenInstance.address
+          return matchOrder(buy, sell, () => {}, err => {
+            assert.equal(false, err, 'Orders should have matched')
+          })
         })
       })
   })
@@ -745,18 +941,6 @@ contract('WyvernExchange', (accounts) => {
         }, err => {
           assert.equal(err.message, 'Orders were not matchable!: expected false to equal true', 'Incorrect error')
         })
-      })
-  })
-
-  it('should allow approval', () => {
-    return WyvernTokenTransferProxy
-      .deployed()
-      .then(tokenTransferProxyInstance => {
-        return TestToken
-          .deployed()
-          .then(tokenInstance => {
-            return tokenInstance.approve(tokenTransferProxyInstance.address, 100000000)
-          })
       })
   })
 
