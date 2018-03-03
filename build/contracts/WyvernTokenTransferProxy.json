@@ -1,0 +1,291 @@
+{
+  "contractName": "WyvernTokenTransferProxy",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferFrom",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "registry",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "registryAddr",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    }
+  ],
+  "bytecode": "0x6060604052341561000f57600080fd5b6040516020806102438339810160405280805160008054600160a060020a03909216600160a060020a031990921691909117905550506101ef806100546000396000f3006060604052600436106100325763ffffffff60e060020a60003504166315dacbea81146100375780637b10399914610079575b600080fd5b341561004257600080fd5b610065600160a060020a03600435811690602435811690604435166064356100a8565b604051901515815260200160405180910390f35b341561008457600080fd5b61008c6101b4565b604051600160a060020a03909116815260200160405180910390f35b60008054600160a060020a03166369dc9ff333836040516020015260405160e060020a63ffffffff8416028152600160a060020a039091166004820152602401602060405180830381600087803b151561010157600080fd5b6102c65a03f1151561011257600080fd5b50505060405180519050151561012757600080fd5b84600160a060020a03166323b872dd85858560006040516020015260405160e060020a63ffffffff8616028152600160a060020a0393841660048201529190921660248201526044810191909152606401602060405180830381600087803b151561019157600080fd5b6102c65a03f115156101a257600080fd5b50505060405180519695505050505050565b600054600160a060020a0316815600a165627a7a723058205cdf24de1f26bdc2bef861e0d5510daa40f7af1c140ca4cc97da29c2aebf1e2d0029",
+  "deployedBytecode": "0x6060604052600436106100325763ffffffff60e060020a60003504166315dacbea81146100375780637b10399914610079575b600080fd5b341561004257600080fd5b610065600160a060020a03600435811690602435811690604435166064356100a8565b604051901515815260200160405180910390f35b341561008457600080fd5b61008c6101b4565b604051600160a060020a03909116815260200160405180910390f35b60008054600160a060020a03166369dc9ff333836040516020015260405160e060020a63ffffffff8416028152600160a060020a039091166004820152602401602060405180830381600087803b151561010157600080fd5b6102c65a03f1151561011257600080fd5b50505060405180519050151561012757600080fd5b84600160a060020a03166323b872dd85858560006040516020015260405160e060020a63ffffffff8616028152600160a060020a0393841660048201529190921660248201526044810191909152606401602060405180830381600087803b151561019157600080fd5b6102c65a03f115156101a257600080fd5b50505060405180519695505050505050565b600054600160a060020a0316815600a165627a7a723058205cdf24de1f26bdc2bef861e0d5510daa40f7af1c140ca4cc97da29c2aebf1e2d0029",
+  "sourceMap": "123:188:10:-;;;186:122;;;;;;;;;;;;;;;;;;;;;;278:8;:23;;-1:-1:-1;;;;;278:23:10;;;-1:-1:-1;;;;;;278:23:10;;;;;;;;;-1:-1:-1;;123:188:10;;;;;;",
+  "deployedSourceMap": "123:188:10:-;;;;;;;;;-1:-1:-1;;;123:188:10;;;;;;;;;;;;;;;;;;684:234:22;;;;;;;;;;-1:-1:-1;;;;;684:234:22;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;415:29;;;;;;;;;;;;;;;-1:-1:-1;;;;;415:29:22;;;;;;;;;;;;;;684:234;792:4;820:8;;-1:-1:-1;;;;;820:8:22;:18;839:10;792:4;820:30;;;;;;;-1:-1:-1;;;820:30:22;;;;;;-1:-1:-1;;;;;820:30:22;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;812:39;;;;;;;;874:5;-1:-1:-1;;;;;868:25:22;;894:4;900:2;904:6;868:43;;;;;;;;-1:-1:-1;;;868:43:22;;;;;;-1:-1:-1;;;;;868:43:22;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;684:234;-1:-1:-1;;;;;;684:234:22:o;415:29::-;;;-1:-1:-1;;;;;415:29:22;;:::o",
+  "source": "/*\n\n  << Project Wyvern Token Transfer Proxy >.\n\n*/\n\npragma solidity 0.4.18;\n\nimport \"./registry/TokenTransferProxy.sol\";\n\ncontract WyvernTokenTransferProxy is TokenTransferProxy {\n\n    function WyvernTokenTransferProxy (ProxyRegistry registryAddr)\n        public\n    {\n        registry = registryAddr;\n    }\n\n}\n",
+  "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/WyvernTokenTransferProxy.sol",
+  "ast": {
+    "attributes": {
+      "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/WyvernTokenTransferProxy.sol",
+      "exportedSymbols": {
+        "WyvernTokenTransferProxy": [
+          548
+        ]
+      }
+    },
+    "children": [
+      {
+        "attributes": {
+          "literals": [
+            "solidity",
+            "0.4",
+            ".18"
+          ]
+        },
+        "id": 534,
+        "name": "PragmaDirective",
+        "src": "53:23:10"
+      },
+      {
+        "attributes": {
+          "SourceUnit": 5153,
+          "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/registry/TokenTransferProxy.sol",
+          "file": "./registry/TokenTransferProxy.sol",
+          "scope": 549,
+          "symbolAliases": [
+            null
+          ],
+          "unitAlias": ""
+        },
+        "id": 535,
+        "name": "ImportDirective",
+        "src": "78:43:10"
+      },
+      {
+        "attributes": {
+          "contractDependencies": [
+            5152
+          ],
+          "contractKind": "contract",
+          "documentation": null,
+          "fullyImplemented": true,
+          "linearizedBaseContracts": [
+            548,
+            5152
+          ],
+          "name": "WyvernTokenTransferProxy",
+          "scope": 549
+        },
+        "children": [
+          {
+            "attributes": {
+              "arguments": [
+                null
+              ]
+            },
+            "children": [
+              {
+                "attributes": {
+                  "contractScope": null,
+                  "name": "TokenTransferProxy",
+                  "referencedDeclaration": 5152,
+                  "type": "contract TokenTransferProxy"
+                },
+                "id": 536,
+                "name": "UserDefinedTypeName",
+                "src": "160:18:10"
+              }
+            ],
+            "id": 537,
+            "name": "InheritanceSpecifier",
+            "src": "160:18:10"
+          },
+          {
+            "attributes": {
+              "constant": false,
+              "implemented": true,
+              "isConstructor": true,
+              "modifiers": [
+                null
+              ],
+              "name": "WyvernTokenTransferProxy",
+              "payable": false,
+              "scope": 548,
+              "stateMutability": "nonpayable",
+              "superFunction": null,
+              "visibility": "public"
+            },
+            "children": [
+              {
+                "children": [
+                  {
+                    "attributes": {
+                      "constant": false,
+                      "name": "registryAddr",
+                      "scope": 547,
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "type": "contract ProxyRegistry",
+                      "value": null,
+                      "visibility": "internal"
+                    },
+                    "children": [
+                      {
+                        "attributes": {
+                          "contractScope": null,
+                          "name": "ProxyRegistry",
+                          "referencedDeclaration": 5114,
+                          "type": "contract ProxyRegistry"
+                        },
+                        "id": 538,
+                        "name": "UserDefinedTypeName",
+                        "src": "221:13:10"
+                      }
+                    ],
+                    "id": 539,
+                    "name": "VariableDeclaration",
+                    "src": "221:26:10"
+                  }
+                ],
+                "id": 540,
+                "name": "ParameterList",
+                "src": "220:28:10"
+              },
+              {
+                "attributes": {
+                  "parameters": [
+                    null
+                  ]
+                },
+                "children": [],
+                "id": 541,
+                "name": "ParameterList",
+                "src": "268:0:10"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "attributes": {
+                          "argumentTypes": null,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "operator": "=",
+                          "type": "contract ProxyRegistry"
+                        },
+                        "children": [
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 5120,
+                              "type": "contract ProxyRegistry",
+                              "value": "registry"
+                            },
+                            "id": 542,
+                            "name": "Identifier",
+                            "src": "278:8:10"
+                          },
+                          {
+                            "attributes": {
+                              "argumentTypes": null,
+                              "overloadedDeclarations": [
+                                null
+                              ],
+                              "referencedDeclaration": 539,
+                              "type": "contract ProxyRegistry",
+                              "value": "registryAddr"
+                            },
+                            "id": 543,
+                            "name": "Identifier",
+                            "src": "289:12:10"
+                          }
+                        ],
+                        "id": 544,
+                        "name": "Assignment",
+                        "src": "278:23:10"
+                      }
+                    ],
+                    "id": 545,
+                    "name": "ExpressionStatement",
+                    "src": "278:23:10"
+                  }
+                ],
+                "id": 546,
+                "name": "Block",
+                "src": "268:40:10"
+              }
+            ],
+            "id": 547,
+            "name": "FunctionDefinition",
+            "src": "186:122:10"
+          }
+        ],
+        "id": 548,
+        "name": "ContractDefinition",
+        "src": "123:188:10"
+      }
+    ],
+    "id": 549,
+    "name": "SourceUnit",
+    "src": "53:259:10"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.4.18+commit.9cf6e910.Emscripten.clang"
+  },
+  "networks": {
+    "4": {
+      "events": {},
+      "links": {},
+      "address": "0xb89f6ac677a7530d9d6649d299350be90a50ad1e"
+    }
+  },
+  "schemaVersion": "1.0.1",
+  "updatedAt": "2018-03-03T21:31:53.413Z"
+}

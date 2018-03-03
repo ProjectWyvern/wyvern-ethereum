@@ -117,7 +117,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         AuthenticatedProxy.HowToCall howToCall;
         /* Calldata. */
         bytes calldata;
-        /* Calldata replacement pattern. */
+        /* Calldata replacement pattern, or an empty byte array for no replacement. */
         bytes replacementPattern;
         /* Static call target, zero-address for no static call. */
         address staticTarget;
