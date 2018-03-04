@@ -678,6 +678,76 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should allow simple order matching with special-case Ether, nonzero fees, new fee method', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, false)
+        var sell = makeOrder(exchangeInstance.address, true)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.paymentToken = '0x0000000000000000000000000000000000000000'
+        sell.paymentToken = '0x0000000000000000000000000000000000000000'
+        buy.basePrice = new BigNumber(10000)
+        sell.basePrice = new BigNumber(10000)
+        sell.makerProtocolFee = new BigNumber(100)
+        sell.makerRelayerFee = new BigNumber(100)
+        return matchOrder(buy, sell, () => {}, err => {
+          assert.equal(false, err, 'Orders should have matched')
+        }, 10000)
+      })
+  })
+
+  it('should allow simple order matching with special-case Ether, nonzero fees, new fee method, taker', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, false)
+        var sell = makeOrder(exchangeInstance.address, true)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.paymentToken = '0x0000000000000000000000000000000000000000'
+        sell.paymentToken = '0x0000000000000000000000000000000000000000'
+        buy.basePrice = new BigNumber(10000)
+        sell.basePrice = new BigNumber(10000)
+        sell.takerProtocolFee = new BigNumber(100)
+        sell.takerRelayerFee = new BigNumber(100)
+        buy.takerProtocolFee = new BigNumber(100)
+        buy.takerRelayerFee = new BigNumber(100)
+        return matchOrder(buy, sell, () => {}, err => {
+          assert.equal(false, err, 'Orders should have matched')
+        }, 10200)
+      })
+  })
+
+  it('should allow simple order matching with special-case Ether, nonzero fees, new fee method, both maker / taker', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, false)
+        var sell = makeOrder(exchangeInstance.address, true)
+        sell.side = 1
+        buy.feeMethod = 1
+        sell.feeMethod = 1
+        buy.salt = 40
+        buy.paymentToken = '0x0000000000000000000000000000000000000000'
+        sell.paymentToken = '0x0000000000000000000000000000000000000000'
+        buy.basePrice = new BigNumber(10000)
+        sell.basePrice = new BigNumber(10000)
+        sell.makerProtocolFee = new BigNumber(100)
+        sell.makerRelayerFee = new BigNumber(100)
+        sell.takerProtocolFee = new BigNumber(100)
+        sell.takerRelayerFee = new BigNumber(100)
+        buy.takerProtocolFee = new BigNumber(100)
+        buy.takerRelayerFee = new BigNumber(100)
+        return matchOrder(buy, sell, () => {}, err => {
+          assert.equal(false, err, 'Orders should have matched')
+        }, 10200)
+      })
+  })
+
   it('should allow simple order matching with special-case Ether, nonzero price, overpayment', () => {
     return WyvernExchange
       .deployed()
