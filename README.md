@@ -4,6 +4,10 @@
 
 [![https://badges.frapsoft.com/os/mit/mit.svg?v=102](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://opensource.org/licenses/MIT) [![Build Status](https://travis-ci.org/ProjectWyvern/wyvern-ethereum.svg?branch=master)](https://travis-ci.org/ProjectWyvern/wyvern-ethereum) [![Coverage Status](https://coveralls.io/repos/github/ProjectWyvern/wyvern-ethereum/badge.svg?branch=master)](https://coveralls.io/github/ProjectWyvern/wyvern-ethereum?branch=master)
 
+<a href="https://gitcoin.co/explorer/?q=https://github.com/ProjectWyvern/wyvern-ethereum" title=”Push Open Source Forward”>
+  <img src='https://gitcoin.co/static/v2/images/promo_buttons/slice_01.png' alt=’Browse Gitcoin Bounties’ width="267px" height="52px"/>
+</a>
+
 ### Synopsis
 
 *Autonomously governed decentralized digital asset exchange.*
@@ -44,7 +48,7 @@ These are the Ethereum smart contracts for the Wyvern Protocol, the Wyvern ERC20
 
 #### Setup
 
-[Node >= v6.9.1](https://nodejs.org/en/) and [Yarn](https://yarnpkg.com/en/) required.
+[Node >= v8](https://nodejs.org/en/) and [Yarn](https://yarnpkg.com/en/) required.
 
 Before any development, install the required NPM dependencies:
 
