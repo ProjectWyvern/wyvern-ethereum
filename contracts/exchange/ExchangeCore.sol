@@ -583,8 +583,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
             }
         }
 
-        /* Assert the invariant that this contract should never hold Ether. */
-        require(this.balance == 0);
+        /* This contract should never hold Ether, however, we cannot assert this, since it is impossible to prevent anyone from sending Ether e.g. with selfdestruct. */
 
         return price;
     }

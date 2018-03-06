@@ -9,6 +9,9 @@ cd ..
 
 alias flatten="solidity_flattener --solc-paths zeppelin-solidity=$(pwd)/node_modules/zeppelin-solidity"
 
+flatten contracts/WyvernAtomicizer.sol --output temp/WyvernAtomicizer.sol
+flatten contracts/WyvernTokenTransferProxy.sol --output temp/WyvernTokenTransferProxy.sol
+flatten contracts/WyvernDAOProxy.sol --output temp/WyvernDAOProxy.sol
 flatten contracts/WyvernToken.sol --output temp/WyvernTokenFlattened.sol
 flatten contracts/WyvernDAO.sol --output temp/WyvernDAOFlattened.sol
 flatten contracts/WyvernExchange.sol --output temp/WyvernExchangeFlattened.sol

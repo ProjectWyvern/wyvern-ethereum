@@ -30,15 +30,15 @@ These are the Ethereum smart contracts for the Wyvern Protocol, the Wyvern ERC20
 
 #### Rinkeby Testnet
 
-[Wyvern Exchange](https://rinkeby.etherscan.io/address/0xdca1fbe9f9469613aa2101b5e797226a9b586297)
+[Wyvern Exchange](https://rinkeby.etherscan.io/address/0x62ee01ead092092f530bf5daba8d400fb33a5552)
 
-[Wyvern Atomicizer](https://rinkeby.etherscan.io/address/0x90b0c4d26520be6a941954d565f90ecf2991d8a7)
+[Wyvern Atomicizer](https://rinkeby.etherscan.io/address/0x147b37da892e4dd6442c4bf640126bad32ec90e9)
 
-[Wyvern DAO Proxy](https://rinkeby.etherscan.io/address/0x32f51cefe7d1cac49334b7267da6ae7a127526da)
+[Wyvern DAO Proxy](https://rinkeby.etherscan.io/address/0x2a86feeada21162d49ded01c8829be6617e819a3)
 
-[Wyvern Token Transfer Proxy](https://rinkeby.etherscan.io/address/0xb89f6ac677a7530d9d6649d299350be90a50ad1e)
+[Wyvern Token Transfer Proxy](https://rinkeby.etherscan.io/address/0xd0f8606bb69e8b898b3643d06755a27a42e93ae0)
 
-[Wyvern Proxy Registry](https://rinkeby.etherscan.io/address/0xeceaa7453a77bfe339b25d9d9e91009cde71c768)
+[Wyvern Proxy Registry](https://rinkeby.etherscan.io/address/0xfcd04fb983ca034bb9c4c4429d1b52e78a867425)
 
 [Wyvern Token](https://rinkeby.etherscan.io/address/0xd1be358dab323802a3c469b0787476fdcb8af5d6)
 
