@@ -20,7 +20,17 @@ These are the Ethereum smart contracts for the Wyvern Protocol, the Wyvern ERC20
 
 #### Mainnet
 
-[Wyvern Exchange](https://etherscan.io/address/wyvernexchange.eth)
+[Wyvern Exchange (latest, by ENS)](https://etherscan.io/address/wyvernexchange.eth)
+
+[Wyvern Exchange v2](https://etherscan.io/address/0xb5aa1fb7027290d6d5cbbe3b1aecd5317fa582ec)
+
+[Wyvern Exchange v1](https://etherscan.io/address/0xf14f06e227C015b398b8069314F4B8d1d7022c9e)
+
+[Wyvern Atomicizer](https://etherscan.io/address/wyvernatomicizer.eth)
+
+[Wyvern DAO Proxy](https://etherscan.io/address/wyverndaoproxy.eth)
+
+[Wyvern Token Transfer Proxy](https://etherscan.io/address/0x9a33a92b408b07d3be90e9828731b21a7d794af4)
 
 [Wyvern Proxy Registry](https://etherscan.io/address/wyvernproxyregistry.eth)
 

@@ -7,6 +7,7 @@ const TestStatic = artifacts.require('./TestStatic.sol')
 const { setConfig } = require('./config.js')
 
 module.exports = (deployer, network) => {
+  if (network === 'main') return
   deployer.deploy(TestToken)
     .then(() => {
       setConfig('deployed.' + network + '.TestToken', TestToken.address)

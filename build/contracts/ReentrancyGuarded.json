@@ -3,8 +3,8 @@
   "abi": [],
   "bytecode": "0x60606040526000805460ff191690553415601857600080fd5b60358060256000396000f3006060604052600080fd00a165627a7a723058209e6a70a661a126b4752c5729a2fc01c4e9eb7530b0986a1aacb69afcc6bd4a8f0029",
   "deployedBytecode": "0x6060604052600080fd00a165627a7a723058209e6a70a661a126b4752c5729a2fc01c4e9eb7530b0986a1aacb69afcc6bd4a8f0029",
-  "sourceMap": "195:306:12:-;;;251:5;229:27;;-1:-1:-1;;229:27:12;;;195:306;;;;;;;;;;;;;;",
-  "deployedSourceMap": "195:306:12:-;;;;;",
+  "sourceMap": "195:306:9:-;;;251:5;229:27;;-1:-1:-1;;229:27:9;;;195:306;;;;;;;;;;;;;;",
+  "deployedSourceMap": "195:306:9:-;;;;;",
   "source": "/*\n\n  Simple contract extension to provide a contract-global reentrancy guard on functions.\n\n*/\n\npragma solidity 0.4.18;\n\n/**\n * @title ReentrancyGuarded\n * @author Project Wyvern Developers\n */\ncontract ReentrancyGuarded {\n\n    bool reentrancyLock = false;\n\n    /* Prevent a contract function from being reentrant-called. */\n    modifier reentrancyGuard {\n        if (reentrancyLock) {\n            revert();\n        }\n        reentrancyLock = true;\n        _;\n        reentrancyLock = false;\n    }\n\n}\n",
   "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ReentrancyGuarded.sol",
   "ast": {
@@ -12,7 +12,7 @@
       "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ReentrancyGuarded.sol",
       "exportedSymbols": {
         "ReentrancyGuarded": [
-          740
+          570
         ]
       }
     },
@@ -25,9 +25,9 @@
             ".18"
           ]
         },
-        "id": 718,
+        "id": 548,
         "name": "PragmaDirective",
-        "src": "97:23:12"
+        "src": "97:23:9"
       },
       {
         "attributes": {
@@ -41,17 +41,17 @@
           "documentation": "@title ReentrancyGuarded\n@author Project Wyvern Developers",
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            740
+            570
           ],
           "name": "ReentrancyGuarded",
-          "scope": 741
+          "scope": 571
         },
         "children": [
           {
             "attributes": {
               "constant": false,
               "name": "reentrancyLock",
-              "scope": 740,
+              "scope": 570,
               "stateVariable": true,
               "storageLocation": "default",
               "type": "bool",
@@ -63,9 +63,9 @@
                   "name": "bool",
                   "type": "bool"
                 },
-                "id": 719,
+                "id": 549,
                 "name": "ElementaryTypeName",
-                "src": "229:4:12"
+                "src": "229:4:9"
               },
               {
                 "attributes": {
@@ -80,14 +80,14 @@
                   "type": "bool",
                   "value": "false"
                 },
-                "id": 720,
+                "id": 550,
                 "name": "Literal",
-                "src": "251:5:12"
+                "src": "251:5:9"
               }
             ],
-            "id": 721,
+            "id": 551,
             "name": "VariableDeclaration",
-            "src": "229:27:12"
+            "src": "229:27:9"
           },
           {
             "attributes": {
@@ -102,9 +102,9 @@
                   ]
                 },
                 "children": [],
-                "id": 722,
+                "id": 552,
                 "name": "ParameterList",
-                "src": "355:0:12"
+                "src": "355:0:9"
               },
               {
                 "children": [
@@ -119,13 +119,13 @@
                           "overloadedDeclarations": [
                             null
                           ],
-                          "referencedDeclaration": 721,
+                          "referencedDeclaration": 551,
                           "type": "bool",
                           "value": "reentrancyLock"
                         },
-                        "id": 723,
+                        "id": 553,
                         "name": "Identifier",
-                        "src": "369:14:12"
+                        "src": "369:14:9"
                       },
                       {
                         "children": [
@@ -157,33 +157,33 @@
                                       "overloadedDeclarations": [
                                         null
                                       ],
-                                      "referencedDeclaration": 6326,
+                                      "referencedDeclaration": 6156,
                                       "type": "function () pure",
                                       "value": "revert"
                                     },
-                                    "id": 724,
+                                    "id": 554,
                                     "name": "Identifier",
-                                    "src": "399:6:12"
+                                    "src": "399:6:9"
                                   }
                                 ],
-                                "id": 725,
+                                "id": 555,
                                 "name": "FunctionCall",
-                                "src": "399:8:12"
+                                "src": "399:8:9"
                               }
                             ],
-                            "id": 726,
+                            "id": 556,
                             "name": "ExpressionStatement",
-                            "src": "399:8:12"
+                            "src": "399:8:9"
                           }
                         ],
-                        "id": 727,
+                        "id": 557,
                         "name": "Block",
-                        "src": "385:33:12"
+                        "src": "385:33:9"
                       }
                     ],
-                    "id": 728,
+                    "id": 558,
                     "name": "IfStatement",
-                    "src": "365:53:12"
+                    "src": "365:53:9"
                   },
                   {
                     "children": [
@@ -204,13 +204,13 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 721,
+                              "referencedDeclaration": 551,
                               "type": "bool",
                               "value": "reentrancyLock"
                             },
-                            "id": 729,
+                            "id": 559,
                             "name": "Identifier",
-                            "src": "427:14:12"
+                            "src": "427:14:9"
                           },
                           {
                             "attributes": {
@@ -225,24 +225,24 @@
                               "type": "bool",
                               "value": "true"
                             },
-                            "id": 730,
+                            "id": 560,
                             "name": "Literal",
-                            "src": "444:4:12"
+                            "src": "444:4:9"
                           }
                         ],
-                        "id": 731,
+                        "id": 561,
                         "name": "Assignment",
-                        "src": "427:21:12"
+                        "src": "427:21:9"
                       }
                     ],
-                    "id": 732,
+                    "id": 562,
                     "name": "ExpressionStatement",
-                    "src": "427:21:12"
+                    "src": "427:21:9"
                   },
                   {
-                    "id": 733,
+                    "id": 563,
                     "name": "PlaceholderStatement",
-                    "src": "458:1:12"
+                    "src": "458:1:9"
                   },
                   {
                     "children": [
@@ -263,13 +263,13 @@
                               "overloadedDeclarations": [
                                 null
                               ],
-                              "referencedDeclaration": 721,
+                              "referencedDeclaration": 551,
                               "type": "bool",
                               "value": "reentrancyLock"
                             },
-                            "id": 734,
+                            "id": 564,
                             "name": "Identifier",
-                            "src": "469:14:12"
+                            "src": "469:14:9"
                           },
                           {
                             "attributes": {
@@ -284,39 +284,39 @@
                               "type": "bool",
                               "value": "false"
                             },
-                            "id": 735,
+                            "id": 565,
                             "name": "Literal",
-                            "src": "486:5:12"
+                            "src": "486:5:9"
                           }
                         ],
-                        "id": 736,
+                        "id": 566,
                         "name": "Assignment",
-                        "src": "469:22:12"
+                        "src": "469:22:9"
                       }
                     ],
-                    "id": 737,
+                    "id": 567,
                     "name": "ExpressionStatement",
-                    "src": "469:22:12"
+                    "src": "469:22:9"
                   }
                 ],
-                "id": 738,
+                "id": 568,
                 "name": "Block",
-                "src": "355:143:12"
+                "src": "355:143:9"
               }
             ],
-            "id": 739,
+            "id": 569,
             "name": "ModifierDefinition",
-            "src": "330:168:12"
+            "src": "330:168:9"
           }
         ],
-        "id": 740,
+        "id": 570,
         "name": "ContractDefinition",
-        "src": "195:306:12"
+        "src": "195:306:9"
       }
     ],
-    "id": 741,
+    "id": 571,
     "name": "SourceUnit",
-    "src": "97:405:12"
+    "src": "97:405:9"
   },
   "compiler": {
     "name": "solc",
@@ -324,5 +324,5 @@
   },
   "networks": {},
   "schemaVersion": "1.0.1",
-  "updatedAt": "2018-03-06T22:28:03.365Z"
+  "updatedAt": "2018-03-08T20:08:22.633Z"
 }
