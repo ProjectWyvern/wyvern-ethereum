@@ -29,7 +29,7 @@
  
 */
 
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
@@ -228,32 +228,6 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     }
 
     /**
-     * @dev Keccak256 order hash, part one
-     * @param order Order to hash
-     * @return Part one of the order hash 
-     */
-    function hashOrderPartOne(Order memory order)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(order.exchange, order.maker, order.taker, order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.feeRecipient, order.feeMethod, order.side, order.saleKind, order.target, order.howToCall);
-    }
-
-    /**
-     * @dev Keccak256 order hash, part two
-     * @param order Order to hash
-     * @return Part two of the order hash
-     */
-    function hashOrderPartTwo(Order memory order)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(order.calldata, order.replacementPattern, order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
-    }
-
-    /**
      * @dev Hash an order, returning the hash that a client must sign, including the standard message prefix
      * @param order Order to hash
      * @return Hash of message prefix, order hash part one, and order hash part two concatenated
@@ -263,9 +237,9 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         pure
         returns (bytes32)
     {
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 hash = keccak256(prefix, hashOrderPartOne(order), hashOrderPartTwo(order));
-        return hash;
+        bytes32 partOne = keccak256(order.exchange, order.maker, order.taker, order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.feeRecipient, order.feeMethod, order.side, order.saleKind, order.target, order.howToCall);
+        bytes32 partTwo = keccak256(order.calldata, order.replacementPattern, order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
+        return keccak256("\x19Ethereum Signed Message:\n64", partOne, partTwo);
     }
 
     /**

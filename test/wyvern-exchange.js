@@ -20,6 +20,25 @@ const promisify = (inner) =>
     })
   )
 
+var byName = {}
+
+const traceGas = (name, res) => {
+  const receipt = res.receipt
+  console.log('\x1b[33m%s\x1b[0m', 'GAS', '\x1b[0m', name, ' <=> ', receipt.gasUsed)
+  if (!byName[name]) {
+    byName[name] = []
+  }
+  byName[name].push(receipt.gasUsed)
+}
+
+const finalGas = () => {
+  Object.keys(byName).map(key => {
+    const values = byName[key]
+    const mean = values.reduce((x, y) => x + y, 0) / values.length
+    console.log('\x1b[36m%s\x1b[0m', 'GAS MEAN', '\x1b[0m', key, ' <=> ', mean)
+  })
+}
+
 const hashOrder = (order) => {
   const partOne = Buffer.from(web3.utils.soliditySha3(
     {type: 'address', value: order.exchange},
@@ -80,7 +99,7 @@ const hashToSign = (order) => {
     {type: 'uint', value: order.salt}
   ).toString('hex')
   return web3.utils.soliditySha3(
-    {type: 'string', value: '\x19Ethereum Signed Message:\n32'},
+    {type: 'string', value: '\x19Ethereum Signed Message:\n64'},
     {type: 'bytes32', value: partOne},
     {type: 'bytes32', value: partTwo}
   ).toString('hex')
@@ -93,6 +112,9 @@ contract('WyvernExchange', (accounts) => {
       .then(exchangeInstance => {
         return exchangeInstance.guardedArrayReplace.call('0xff', '0x00', '0xff').then(res => {
           assert.equal(res, '0x00', 'Array was not properly replaced!')
+          return exchangeInstance.guardedArrayReplace.estimateGas('0xff', '0x00', '0xff').then(gas => {
+            traceGas('guardedArrayReplace', {receipt: { gasUsed: gas }})
+          })
         })
       })
   })
@@ -103,6 +125,9 @@ contract('WyvernExchange', (accounts) => {
       .then(exchangeInstance => {
         return exchangeInstance.guardedArrayReplace.call('0xff', '0x00', '0x00').then(res => {
           assert.equal(res, '0xff', 'Array replacement was not disallowed!')
+          return exchangeInstance.guardedArrayReplace.estimateGas('0xff', '0x00', '0x00').then(gas => {
+            traceGas('guardedArrayReplace', {receipt: { gasUsed: gas }})
+          })
         })
       })
   })
@@ -111,8 +136,24 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return exchangeInstance.guardedArrayReplace.call('0x0000000000000000', '0xffffffffffffffff', '0x55').then(res => {
+        return exchangeInstance.guardedArrayReplace.call('0x0000000000000000', '0xffffffffffffffff', '0x00ff00ff00ff00ff').then(res => {
           assert.equal(res, '0x00ff00ff00ff00ff', 'Complex array replacement did not replace properly!')
+          return exchangeInstance.guardedArrayReplace.estimateGas('0x0000000000000000', '0xffffffffffffffff', '0x00ff00ff00ff00ff').then(gas => {
+            traceGas('guardedArrayReplace', {receipt: { gasUsed: gas }})
+          })
+        })
+      })
+  })
+
+  it('should allow large complex array replacment', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.guardedArrayReplace.call('0x0000000000000000000000000000000000000000000000000000000000000000', '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff').then(res => {
+          assert.equal(res, '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff', 'Complex array replacement did not replace properly!')
+          return exchangeInstance.guardedArrayReplace.estimateGas('0x0000000000000000000000000000000000000000000000000000000000000000', '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff').then(gas => {
+            traceGas('guardedArrayReplace', {receipt: { gasUsed: gas }})
+          })
         })
       })
   })
@@ -123,6 +164,9 @@ contract('WyvernExchange', (accounts) => {
       .then(exchangeInstance => {
         return exchangeInstance.orderCalldataCanMatch.call('0x00', '0xff', '0xff', '0x00').then(res => {
           assert.equal(res, true, 'Simple calldata match was not allowed')
+          return exchangeInstance.orderCalldataCanMatch.estimateGas('0x00', '0xff', '0xff', '0x00').then(gas => {
+            traceGas('orderCalldataCanMatch', {receipt: { gasUsed: gas }})
+          })
         })
       })
   })
@@ -133,6 +177,9 @@ contract('WyvernExchange', (accounts) => {
       .then(exchangeInstance => {
         return exchangeInstance.orderCalldataCanMatch.call('0x00', '0xff', '0xff', '0xff').then(res => {
           assert.equal(res, true, 'Flexible calldata match was not allowed')
+          return exchangeInstance.orderCalldataCanMatch.estimateGas('0x00', '0xff', '0xff', '0xff').then(gas => {
+            traceGas('orderCalldataCanMatch', {receipt: { gasUsed: gas }})
+          })
         })
       })
   })
@@ -141,8 +188,24 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x55', '0x00ff00ff00ff00ff', '0x00').then(res => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x00ff00ff00ff00ff', '0x00ff00ff00ff00ff', '0x0000000000000000').then(res => {
           assert.equal(res, true, 'Complex calldata match was not allowed')
+          return exchangeInstance.orderCalldataCanMatch.estimateGas('0x0000000000000000', '0x00ff00ff00ff00ff', '0x00ff00ff00ff00ff', '0x0000000000000000').then(gas => {
+            traceGas('orderCalldataCanMatch', {receipt: { gasUsed: gas }})
+          })
+        })
+      })
+  })
+
+  it('should allow complex large calldata match', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000000000000000000000000000000000000000000000000000', '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff', '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff', '0x0000000000000000000000000000000000000000000000000000000000000000').then(res => {
+          assert.equal(res, true, 'Complex calldata match was not allowed')
+          return exchangeInstance.orderCalldataCanMatch.estimateGas('0x0000000000000000000000000000000000000000000000000000000000000000', '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff', '0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff', '0x0000000000000000000000000000000000000000000000000000000000000000').then(gas => {
+            traceGas('orderCalldataCanMatch', {receipt: { gasUsed: gas }})
+          })
         })
       })
   })
@@ -151,7 +214,7 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x00', '0x00ff00ff00ff00ff', '0x00').then(res => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x0000000000000000', '0x00ff00ff00ff00ff', '0x0000000000000000').then(res => {
           assert.equal(res, false, 'Complex calldata match was not allowed')
         })
       })
@@ -161,7 +224,7 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x00', '0x00ff00ff00ff00', '0x00').then(() => {
+        return exchangeInstance.orderCalldataCanMatch.call('0x0000000000000000', '0x0000000000000000', '0x00ff00ff00ff00', '0x0000000000000000').then(() => {
           assert.equal(true, false, 'Did not revert on different bytecode size')
         }).catch(err => {
           assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
@@ -185,7 +248,8 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return exchangeInstance.changeMinimumMakerProtocolFee(1).then(() => {
+        return exchangeInstance.changeMinimumMakerProtocolFee(1).then(res => {
+          traceGas('changeMinimumMakerProtocolFee', res)
           return exchangeInstance.minimumMakerProtocolFee.call().then(res => {
             assert.equal(res.toNumber(), 1, 'Protocol fee was not changed')
             return exchangeInstance.changeMinimumMakerProtocolFee(0)
@@ -198,7 +262,8 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return exchangeInstance.changeMinimumTakerProtocolFee(1).then(() => {
+        return exchangeInstance.changeMinimumTakerProtocolFee(1).then(res => {
+          traceGas('changeMinimumTakerProtocolFee', res)
           return exchangeInstance.minimumTakerProtocolFee.call().then(res => {
             assert.equal(res.toNumber(), 1, 'Protocol fee was not changed')
             return exchangeInstance.changeMinimumTakerProtocolFee(0)
@@ -211,7 +276,8 @@ contract('WyvernExchange', (accounts) => {
     return WyvernExchange
       .deployed()
       .then(exchangeInstance => {
-        return exchangeInstance.changeProtocolFeeRecipient(accounts[1]).then(() => {
+        return exchangeInstance.changeProtocolFeeRecipient(accounts[1]).then(res => {
+          traceGas('changeProtocolFeeRecipient', res)
           return exchangeInstance.protocolFeeRecipient.call().then(res => {
             assert.equal(res, accounts[1], 'Protocol fee recipient was not changed')
             return exchangeInstance.changeProtocolFeeRecipient(accounts[0])
@@ -227,7 +293,8 @@ contract('WyvernExchange', (accounts) => {
       .deployed()
       .then(registryInstance => {
         return registryInstance.registerProxy()
-          .then(() => {
+          .then(res => {
+            traceGas('registerProxy', res)
             return registryInstance.proxies(accounts[0])
               .then(prx => {
                 proxy = prx
@@ -465,7 +532,7 @@ contract('WyvernExchange', (accounts) => {
       .deployed()
       .then(exchangeInstance => {
         const order = makeOrder(exchangeInstance.address)
-        return exchangeInstance.approveOrder_(
+        return exchangeInstance.hashOrder_.estimateGas(
           [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
           [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
           order.feeMethod,
@@ -474,24 +541,9 @@ contract('WyvernExchange', (accounts) => {
           order.howToCall,
           order.calldata,
           order.replacementPattern,
-          order.staticExtradata,
-          true
-        ).then(() => {
-          return exchangeInstance.validateOrder_.call(
-            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
-            [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
-            order.feeMethod,
-            order.side,
-            order.saleKind,
-            order.howToCall,
-            order.calldata,
-            order.replacementPattern,
-            order.staticExtradata,
-            0, '0x', '0x',
-            {from: accounts[1]}
-          ).then(ret => {
-            assert.equal(ret, true, 'Order did not validate')
-            return exchangeInstance.cancelOrder_(
+          order.staticExtradata).then(gas => {
+            traceGas('hashOrder_', { receipt: { gasUsed: gas } })
+            return exchangeInstance.approveOrder_(
               [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
               [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
               order.feeMethod,
@@ -501,8 +553,9 @@ contract('WyvernExchange', (accounts) => {
               order.calldata,
               order.replacementPattern,
               order.staticExtradata,
-              0, '0x', '0x'
-            ).then(() => {
+              true
+            ).then(res => {
+              traceGas('approveOrder_', res)
               return exchangeInstance.validateOrder_.call(
                 [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
                 [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
@@ -513,13 +566,41 @@ contract('WyvernExchange', (accounts) => {
                 order.calldata,
                 order.replacementPattern,
                 order.staticExtradata,
-                0, '0x', '0x'
+                0, '0x', '0x',
+                {from: accounts[1]}
               ).then(ret => {
-                assert.equal(ret, false, 'Order did not validate')
+                assert.equal(ret, true, 'Order did not validate')
+                return exchangeInstance.cancelOrder_(
+                  [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+                  [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+                  order.feeMethod,
+                  order.side,
+                  order.saleKind,
+                  order.howToCall,
+                  order.calldata,
+                  order.replacementPattern,
+                  order.staticExtradata,
+                  0, '0x', '0x'
+                ).then(res => {
+                  traceGas('cancelOrder_', res)
+                  return exchangeInstance.validateOrder_.call(
+                    [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+                    [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+                    order.feeMethod,
+                    order.side,
+                    order.saleKind,
+                    order.howToCall,
+                    order.calldata,
+                    order.replacementPattern,
+                    order.staticExtradata,
+                    0, '0x', '0x'
+                  ).then(ret => {
+                    assert.equal(ret, false, 'Order did not validate')
+                  })
+                })
               })
             })
           })
-        })
       })
   })
 
@@ -547,11 +628,35 @@ contract('WyvernExchange', (accounts) => {
           const br = '0x' + signature.slice(0, 64)
           const bs = '0x' + signature.slice(64, 128)
           const bv = 27 + parseInt('0x' + signature.slice(128, 130), 16)
-          return web3.eth.sign(sellHash, accounts[0]).then(signature => {
+          return web3.eth.sign(sellHash, accounts[0]).then(async signature => {
             signature = signature.substr(2)
             const sr = '0x' + signature.slice(0, 64)
             const ss = '0x' + signature.slice(64, 128)
             const sv = 27 + parseInt('0x' + signature.slice(128, 130), 16)
+            await exchangeInstance.hashOrder_.estimateGas(
+              [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken],
+              [buy.makerRelayerFee, buy.takerRelayerFee, buy.makerProtocolFee, buy.takerProtocolFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt],
+              buy.feeMethod,
+              buy.side,
+              buy.saleKind,
+              buy.howToCall,
+              buy.calldata,
+              buy.replacementPattern,
+              buy.staticExtradata).then(gas => {
+                traceGas('hashOrder_', { receipt: { gasUsed: gas } })
+              })
+            await exchangeInstance.hashOrder_.estimateGas(
+              [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
+              [sell.makerRelayerFee, sell.takerRelayerFee, sell.makerProtocolFee, sell.takerProtocolFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+              sell.feeMethod,
+              sell.side,
+              sell.saleKind,
+              sell.howToCall,
+              sell.calldata,
+              sell.replacementPattern,
+              sell.staticExtradata).then(gas => {
+                traceGas('hashOrder_', { receipt: { gasUsed: gas } })
+              })
             return exchangeInstance.ordersCanMatch_.call(
               [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
               [buy.makerRelayerFee, buy.takerRelayerFee, buy.makerProtocolFee, buy.takerProtocolFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerRelayerFee, sell.takerRelayerFee, sell.makerProtocolFee, sell.takerProtocolFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
@@ -587,7 +692,8 @@ contract('WyvernExchange', (accounts) => {
                   buy.replacementPattern,
                   buy.staticExtradata,
                   true
-                ).then(() => {
+                ).then(res => {
+                  traceGas('approveOrder_', res)
                   return exchangeInstance.approveOrder_(
                     [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
                     [sell.makerRelayerFee, sell.takerRelayerFee, sell.makerProtocolFee, sell.takerProtocolFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
@@ -599,7 +705,8 @@ contract('WyvernExchange', (accounts) => {
                     sell.replacementPattern,
                     sell.staticExtradata,
                     true
-                  ).then(() => {
+                  ).then(res => {
+                    traceGas('approveOrder_', res)
                     return exchangeInstance.atomicMatch_(
                       [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
                       [buy.makerRelayerFee, buy.takerRelayerFee, buy.makerProtocolFee, buy.takerProtocolFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerRelayerFee, sell.takerRelayerFee, sell.makerProtocolFee, sell.takerProtocolFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
@@ -611,7 +718,10 @@ contract('WyvernExchange', (accounts) => {
                       buy.staticExtradata,
                       sell.staticExtradata,
                       [bv, sv],
-                      [br, bs, sr, ss, '0x0000000000000000000000000000000000000000000000000000000000000000'], {from: value ? accounts[0] : accounts[1], value: value || 0}).then(thenFunc)
+                      [br, bs, sr, ss, '0x0000000000000000000000000000000000000000000000000000000000000000'], {from: value ? accounts[0] : accounts[1], value: value || 0}).then(res => {
+                        traceGas('atomicMatch_', res)
+                        return thenFunc()
+                      })
                   })
                 })
               })
@@ -1382,5 +1492,9 @@ contract('WyvernExchange', (accounts) => {
             })
           })
       })
+  })
+
+  it('should display final gas', () => {
+    finalGas()
   })
 })

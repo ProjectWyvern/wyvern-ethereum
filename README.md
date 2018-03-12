@@ -30,7 +30,7 @@ These are the Ethereum smart contracts for the Wyvern Protocol, the Wyvern ERC20
 
 [Wyvern DAO Proxy](https://etherscan.io/address/wyverndaoproxy.eth)
 
-[Wyvern Token Transfer Proxy](https://etherscan.io/address/0x9a33a92b408b07d3be90e9828731b21a7d794af4)
+[Wyvern Token Transfer Proxy](https://etherscan.io/address/wyverntokentransferproxy.eth)
 
 [Wyvern Proxy Registry](https://etherscan.io/address/wyvernproxyregistry.eth)
 

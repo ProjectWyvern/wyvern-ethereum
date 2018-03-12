@@ -5,7 +5,9 @@
 
 */
 
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
+
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title ArrayUtils
@@ -14,9 +16,10 @@ pragma solidity 0.4.18;
 library ArrayUtils {
 
     /**
-     * Replace bytes in an array with bytes in another array, guarded by a "bytemask"
+     * Replace bytes in an array with bytes in another array, guarded by a bitmask
+     * Efficiency of this function is a bit unpredictable because of the EVM's word-specific model (arrays under 32 bytes will be slower)
      * 
-     * @dev Mask must be 1/8th the size of the byte array. A 1-bit means the byte array can be changed.
+     * @dev Mask must be the size of the byte array. A nonzero byte means the byte array can be changed.
      * @param array The original array
      * @param desired The target array
      * @param mask The mask specifying which bytes can be changed
@@ -26,21 +29,43 @@ library ArrayUtils {
         pure
         internal
     {
-        byte[8] memory bitmasks = [byte(2 ** 7), byte(2 ** 6), byte(2 ** 5), byte(2 ** 4), byte(2 ** 3), byte(2 ** 2), byte(2 ** 1), byte(2 ** 0)];
         require(array.length == desired.length);
-        require(mask.length >= array.length / 8);
-        bool masked;
-        for (uint i = 0; i < array.length; i++ ) {
-            /* 1-bit means value can be changed. */
-            masked = (mask[i / 8] & bitmasks[i % 8]) == 0;
-            if (!masked) {
-                array[i] = desired[i];
+        require(array.length == mask.length);
+
+        uint words = SafeMath.div(array.length, 0x20);
+        uint index = SafeMath.mul(words, 0x20);
+        uint i;
+
+        for (i = 0; i < words; i++) {
+            /* Conceptually: array[i] = (!mask && array[i]) || (mask && desired[i]), bitwise in word chunks. */
+            assembly {
+                let commonIndex := mul(0x20, add(1, i))
+                let maskValue := mload(add(mask, commonIndex))
+                mstore(add(array, commonIndex), or(and(not(maskValue), mload(add(array, commonIndex))), and(maskValue, mload(add(mask, commonIndex)))))
+            }
+        }
+
+        /* Deal with the last section of the byte array. */
+        if (words > 0) {
+            /* This overlaps with bytes already set but is still more efficient than iterating through each of the remaining bytes individually. */
+            i = array.length - 0x20;
+            assembly {
+                let commonIndex := mul(0x20, add(1, i))
+                let maskValue := mload(add(mask, commonIndex))
+                mstore(add(array, commonIndex), or(and(not(maskValue), mload(add(array, commonIndex))), and(maskValue, mload(add(mask, commonIndex)))))
+            }
+        } else {
+            /* If the byte array is shorter than a word, we must unfortunately do the whole thing bytewise.
+               (bounds checks could still probably be optimized away in assembly, but this is a rare case) */
+            for (i = index; i < array.length; i++) {
+                array[i] = ((mask[i] ^ 0xff) & array[i]) | (mask[i] & desired[i]);
             }
         }
     }
 
     /**
      * Test if two arrays are equal
+     * Source: https://github.com/GNSPS/solidity-bytes-utils/blob/master/contracts/BytesLib.sol
      * 
      * @dev Arrays must be of equal length, otherwise will return false
      * @param a First array
@@ -52,15 +77,46 @@ library ArrayUtils {
         internal
         returns (bool)
     {
-        if (a.length != b.length) {
-            return false;
-        }
-        for (uint i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                return false;
+        bool success = true;
+
+        assembly {
+            let length := mload(a)
+
+            // if lengths don't match the arrays are not equal
+            switch eq(length, mload(b))
+            case 1 {
+                // cb is a circuit breaker in the for loop since there's
+                //  no said feature for inline assembly loops
+                // cb = 1 - don't breaker
+                // cb = 0 - break
+                let cb := 1
+
+                let mc := add(a, 0x20)
+                let end := add(mc, length)
+
+                for {
+                    let cc := add(b, 0x20)
+                // the next line is the loop condition:
+                // while(uint(mc < end) + cb == 2)
+                } eq(add(lt(mc, end), cb), 2) {
+                    mc := add(mc, 0x20)
+                    cc := add(cc, 0x20)
+                } {
+                    // if any of these checks fails then arrays are not equal
+                    if iszero(eq(mload(mc), mload(cc))) {
+                        // unsuccess:
+                        success := 0
+                        cb := 0
+                    }
+                }
+            }
+            default {
+                // unsuccess:
+                success := 0
             }
         }
-        return true;
+
+        return success;
     }
 
 }
