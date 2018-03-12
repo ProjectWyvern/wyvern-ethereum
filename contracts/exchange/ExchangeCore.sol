@@ -214,6 +214,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         view
         returns (bool result)
     {
+        /* TODO optimize me */
         bytes memory combined = new bytes(SafeMath.add(calldata.length, extradata.length));
         for (uint i = 0; i < extradata.length; i++) {
             combined[i] = extradata[i];
@@ -227,6 +228,124 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         return result;
     }
 
+    function sizeOf(Order memory order)
+        internal
+        pure
+        returns (uint)
+    {
+        return ((0x20 * 7) + (0x20 * 9) + 4 + order.calldata.length + order.replacementPattern.length + order.staticExtradata.length);
+    }
+
+    function encodeOrderA(Order memory order, uint index)
+        internal
+        pure
+        returns (uint)
+    {
+        address exchange = order.exchange;
+        address maker = order.maker;
+        address taker = order.taker;
+        uint makerRelayerFee = order.makerRelayerFee;
+        uint takerRelayerFee = order.takerRelayerFee;
+        uint makerProtocolFee = order.makerProtocolFee;
+        uint takerProtocolFee = order.takerProtocolFee;
+        address feeRecipient = order.feeRecipient;
+        FeeMethod feeMethod = order.feeMethod;
+        SaleKindInterface.Side side = order.side;
+        SaleKindInterface.SaleKind saleKind = order.saleKind;
+        address target = order.target;
+        assembly {
+            mstore(index, exchange)
+            index := add(index, 0x20)
+            mstore(index, maker)
+            index := add(index, 0x20)
+            mstore(index, taker)
+            index := add(index, 0x20)
+            mstore(index, makerRelayerFee)
+            index := add(index, 0x20)
+            mstore(index, takerRelayerFee)
+            index := add(index, 0x20)
+            mstore(index, makerProtocolFee)
+            index := add(index, 0x20)
+            mstore(index, takerProtocolFee)
+            index := add(index, 0x20)
+            mstore(index, feeRecipient)
+            index := add(index, 0x20)
+            mstore8(index, feeMethod)
+            index := add(index, 0x1)
+            mstore8(index, side)
+            index := add(index, 0x1)
+            mstore8(index, saleKind)
+            index := add(index, 0x1)
+            mstore(index, target)
+            index := add(index, 0x20)
+        }
+        return index; 
+    }
+
+    function unsafeCopy(uint index, bytes source)
+        internal
+        pure
+        returns (uint)
+    {
+        if (source.length > 0) {
+            assembly {
+                let length := mload(source)
+                let end := add(source, add(0x20, length))
+                let arrIndex := add(source, 0x20)
+                let tempIndex := index
+                for { } eq(lt(arrIndex, end), 1) {
+                    arrIndex := add(arrIndex, 0x20)
+                    tempIndex := add(tempIndex, 0x20)
+                } {
+                    mstore(tempIndex, mload(arrIndex))
+                }
+                index := add(index, length)
+            }
+        }
+        return index;
+    }
+
+    function encodeOrderB(Order memory order, uint index)
+        internal
+        pure
+        returns (uint)
+    {
+        AuthenticatedProxy.HowToCall howToCall = order.howToCall;
+        assembly {
+            mstore8(index, howToCall)
+            index := add(index, 0x1)
+        }
+        index = unsafeCopy(index, order.calldata);
+        index = unsafeCopy(index, order.replacementPattern);
+        address target = order.staticTarget;
+        assembly {
+            mstore(index, target)
+            index := add(index, 0x20)
+        }
+        index = unsafeCopy(index, order.staticExtradata);
+        address paymentToken = order.paymentToken;
+        uint basePrice = order.basePrice;
+        uint extra = order.extra;
+        uint listingTime = order.listingTime;
+        uint expirationTime = order.expirationTime;
+        uint salt = order.salt;
+        assembly {
+            mstore(index, paymentToken)
+            index := add(index, 0x20)
+            mstore(index, basePrice)
+            index := add(index, 0x20)
+            mstore(index, extra)
+            index := add(index, 0x20)
+            mstore(index, listingTime)
+            index := add(index, 0x20)
+            mstore(index, expirationTime)
+            index := add(index, 0x20)
+            mstore(index, salt)
+            index := add(index, 0x20)
+        }
+        return index;
+    }
+
     /**
      * @dev Hash an order, returning the hash that a client must sign, including the standard message prefix
      * @param order Order to hash
@@ -237,9 +356,19 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         pure
         returns (bytes32)
     {
-        bytes32 partOne = keccak256(order.exchange, order.maker, order.taker, order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.feeRecipient, order.feeMethod, order.side, order.saleKind, order.target, order.howToCall);
-        bytes32 partTwo = keccak256(order.calldata, order.replacementPattern, order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt);
-        return keccak256("\x19Ethereum Signed Message:\n64", partOne, partTwo);
+        uint size = sizeOf(order);
+        bytes memory array = new bytes(size);
+        uint index;
+        assembly {
+            index := add(array, 0x20)
+        }
+        index = encodeOrderA(order, index);
+        index = encodeOrderB(order, index);
+        bytes32 hash;
+        assembly {
+            hash := keccak256(add(array, 0x20), size)
+        }
+        return keccak256("\x19Ethereum Signed Message:\n32", hash);
     }
 
     /**

@@ -71,7 +71,7 @@ const hashOrder = (order) => {
 }
 
 const hashToSign = (order) => {
-  const partOne = web3.utils.soliditySha3(
+  const packed = web3.utils.soliditySha3(
     {type: 'address', value: order.exchange},
     {type: 'address', value: order.maker},
     {type: 'address', value: order.taker},
@@ -84,9 +84,7 @@ const hashToSign = (order) => {
     {type: 'uint8', value: order.side},
     {type: 'uint8', value: order.saleKind},
     {type: 'address', value: order.target},
-    {type: 'uint8', value: order.howToCall}
-  ).toString('hex')
-  const partTwo = web3.utils.soliditySha3(
+    {type: 'uint8', value: order.howToCall},
     {type: 'bytes', value: order.calldata},
     {type: 'bytes', value: order.replacementPattern},
     {type: 'address', value: order.staticTarget},
@@ -99,9 +97,8 @@ const hashToSign = (order) => {
     {type: 'uint', value: order.salt}
   ).toString('hex')
   return web3.utils.soliditySha3(
-    {type: 'string', value: '\x19Ethereum Signed Message:\n64'},
-    {type: 'bytes32', value: partOne},
-    {type: 'bytes32', value: partTwo}
+    {type: 'string', value: '\x19Ethereum Signed Message:\n32'},
+    {type: 'bytes32', value: packed}
   ).toString('hex')
 }
 
