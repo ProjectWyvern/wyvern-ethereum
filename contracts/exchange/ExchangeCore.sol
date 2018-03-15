@@ -124,7 +124,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         /* Static call extra data. */
         bytes staticExtradata;
         /* Token used to pay for the order, or the zero-address as a sentinel value for Ether. */
-        ERC20 paymentToken;
+        address paymentToken;
         /* Base price of the order (in paymentTokens). */
         uint basePrice;
         /* Auction extra parameter - minimum bid increment for English auctions, starting/ending price difference. */
@@ -138,7 +138,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     }
     
     event OrderApprovedPartOne    (bytes32 indexed hash, address exchange, address indexed maker, address taker, uint makerRelayerFee, uint takerRelayerFee, uint makerProtocolFee, uint takerProtocolFee, address indexed feeRecipient, FeeMethod feeMethod, SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, address target);
-    event OrderApprovedPartTwo    (bytes32 indexed hash, AuthenticatedProxy.HowToCall howToCall, bytes calldata, bytes replacementPattern, address staticTarget, bytes staticExtradata, ERC20 paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
+    event OrderApprovedPartTwo    (bytes32 indexed hash, AuthenticatedProxy.HowToCall howToCall, bytes calldata, bytes replacementPattern, address staticTarget, bytes staticExtradata, address paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
     event OrderCancelled          (bytes32 indexed hash);
     event OrdersMatched           (bytes32 buyHash, bytes32 sellHash, address indexed maker, address indexed taker, uint price, bytes32 indexed metadata);
 
@@ -254,12 +254,12 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         SaleKindInterface.SaleKind saleKind = order.saleKind;
         address target = order.target;
         assembly {
-            mstore(index, exchange)
-            index := add(index, 0x20)
-            mstore(index, maker)
-            index := add(index, 0x20)
-            mstore(index, taker)
-            index := add(index, 0x20)
+            mstore(index, xor(exchange, 0x140000000000000000000000000000000000000000))
+            index := add(index, 0x14)
+            mstore(index, xor(maker, 0x140000000000000000000000000000000000000000))
+            index := add(index, 0x14)
+            mstore(index, xor(taker, 0x140000000000000000000000000000000000000000))
+            index := add(index, 0x14)
             mstore(index, makerRelayerFee)
             index := add(index, 0x20)
             mstore(index, takerRelayerFee)
@@ -268,16 +268,16 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
             index := add(index, 0x20)
             mstore(index, takerProtocolFee)
             index := add(index, 0x20)
-            mstore(index, feeRecipient)
-            index := add(index, 0x20)
+            mstore(index, xor(feeRecipient, 0x140000000000000000000000000000000000000000))
+            index := add(index, 0x14)
             mstore8(index, feeMethod)
             index := add(index, 0x1)
             mstore8(index, side)
             index := add(index, 0x1)
             mstore8(index, saleKind)
             index := add(index, 0x1)
-            mstore(index, target)
-            index := add(index, 0x20)
+            mstore(index, xor(target, 0x140000000000000000000000000000000000000000))
+            index := add(index, 0x14)
         }
         return index; 
     }
@@ -317,10 +317,10 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         }
         index = unsafeCopy(index, order.calldata);
         index = unsafeCopy(index, order.replacementPattern);
-        address target = order.staticTarget;
+        address staticTarget = order.staticTarget;
         assembly {
-            mstore(index, target)
-            index := add(index, 0x20)
+            mstore(index, xor(staticTarget, 0x140000000000000000000000000000000000000000))
+            index := add(index, 0x14)
         }
         index = unsafeCopy(index, order.staticExtradata);
         address paymentToken = order.paymentToken;
@@ -330,8 +330,8 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         uint expirationTime = order.expirationTime;
         uint salt = order.salt;
         assembly {
-            mstore(index, paymentToken)
-            index := add(index, 0x20)
+            mstore(index, xor(paymentToken, 0x140000000000000000000000000000000000000000))
+            index := add(index, 0x14)
             mstore(index, basePrice)
             index := add(index, 0x20)
             mstore(index, extra)
