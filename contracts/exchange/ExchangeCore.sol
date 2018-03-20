@@ -233,7 +233,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         pure
         returns (uint)
     {
-        return ((0x20 * 7) + (0x20 * 9) + 4 + order.calldata.length + order.replacementPattern.length + order.staticExtradata.length);
+        return ((0x14 * 7) + (0x20 * 9) + 4 + order.calldata.length + order.replacementPattern.length + order.staticExtradata.length);
     }
 
     function encodeOrderA(Order memory order, uint index)
@@ -241,68 +241,19 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         pure
         returns (uint)
     {
-        address exchange = order.exchange;
-        address maker = order.maker;
-        address taker = order.taker;
-        uint makerRelayerFee = order.makerRelayerFee;
-        uint takerRelayerFee = order.takerRelayerFee;
-        uint makerProtocolFee = order.makerProtocolFee;
-        uint takerProtocolFee = order.takerProtocolFee;
-        address feeRecipient = order.feeRecipient;
-        FeeMethod feeMethod = order.feeMethod;
-        SaleKindInterface.Side side = order.side;
-        SaleKindInterface.SaleKind saleKind = order.saleKind;
-        address target = order.target;
-        assembly {
-            mstore(index, xor(exchange, 0x140000000000000000000000000000000000000000))
-            index := add(index, 0x14)
-            mstore(index, xor(maker, 0x140000000000000000000000000000000000000000))
-            index := add(index, 0x14)
-            mstore(index, xor(taker, 0x140000000000000000000000000000000000000000))
-            index := add(index, 0x14)
-            mstore(index, makerRelayerFee)
-            index := add(index, 0x20)
-            mstore(index, takerRelayerFee)
-            index := add(index, 0x20)
-            mstore(index, makerProtocolFee)
-            index := add(index, 0x20)
-            mstore(index, takerProtocolFee)
-            index := add(index, 0x20)
-            mstore(index, xor(feeRecipient, 0x140000000000000000000000000000000000000000))
-            index := add(index, 0x14)
-            mstore8(index, feeMethod)
-            index := add(index, 0x1)
-            mstore8(index, side)
-            index := add(index, 0x1)
-            mstore8(index, saleKind)
-            index := add(index, 0x1)
-            mstore(index, xor(target, 0x140000000000000000000000000000000000000000))
-            index := add(index, 0x14)
-        }
+        index = ArrayUtils.unsafeWriteAddress(index, order.exchange);
+        index = ArrayUtils.unsafeWriteAddress(index, order.maker);
+        index = ArrayUtils.unsafeWriteAddress(index, order.taker);
+        index = ArrayUtils.unsafeWriteUint(index, order.makerRelayerFee);
+        index = ArrayUtils.unsafeWriteUint(index, order.takerRelayerFee);
+        index = ArrayUtils.unsafeWriteUint(index, order.makerProtocolFee);
+        index = ArrayUtils.unsafeWriteUint(index, order.takerProtocolFee);
+        index = ArrayUtils.unsafeWriteAddress(index, order.feeRecipient);
+        index = ArrayUtils.unsafeWriteUint8(index, uint8(order.feeMethod));
+        index = ArrayUtils.unsafeWriteUint8(index, uint8(order.side));
+        index = ArrayUtils.unsafeWriteUint8(index, uint8(order.saleKind));
+        index = ArrayUtils.unsafeWriteAddress(index, order.target);
         return index; 
-    }
-
-    function unsafeCopy(uint index, bytes source)
-        internal
-        pure
-        returns (uint)
-    {
-        if (source.length > 0) {
-            assembly {
-                let length := mload(source)
-                let end := add(source, add(0x20, length))
-                let arrIndex := add(source, 0x20)
-                let tempIndex := index
-                for { } eq(lt(arrIndex, end), 1) {
-                    arrIndex := add(arrIndex, 0x20)
-                    tempIndex := add(tempIndex, 0x20)
-                } {
-                    mstore(tempIndex, mload(arrIndex))
-                }
-                index := add(index, length)
-            }
-        }
-        return index;
     }
 
     function encodeOrderB(Order memory order, uint index)
@@ -310,40 +261,60 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         pure
         returns (uint)
     {
-        AuthenticatedProxy.HowToCall howToCall = order.howToCall;
-        assembly {
-            mstore8(index, howToCall)
-            index := add(index, 0x1)
-        }
-        index = unsafeCopy(index, order.calldata);
-        index = unsafeCopy(index, order.replacementPattern);
-        address staticTarget = order.staticTarget;
-        assembly {
-            mstore(index, xor(staticTarget, 0x140000000000000000000000000000000000000000))
-            index := add(index, 0x14)
-        }
-        index = unsafeCopy(index, order.staticExtradata);
-        address paymentToken = order.paymentToken;
-        uint basePrice = order.basePrice;
-        uint extra = order.extra;
-        uint listingTime = order.listingTime;
-        uint expirationTime = order.expirationTime;
-        uint salt = order.salt;
-        assembly {
-            mstore(index, xor(paymentToken, 0x140000000000000000000000000000000000000000))
-            index := add(index, 0x14)
-            mstore(index, basePrice)
-            index := add(index, 0x20)
-            mstore(index, extra)
-            index := add(index, 0x20)
-            mstore(index, listingTime)
-            index := add(index, 0x20)
-            mstore(index, expirationTime)
-            index := add(index, 0x20)
-            mstore(index, salt)
-            index := add(index, 0x20)
-        }
+        index = ArrayUtils.unsafeWriteUint8(index, uint8(order.howToCall));
+        index = ArrayUtils.unsafeWriteBytes(index, order.calldata);
+        index = ArrayUtils.unsafeWriteBytes(index, order.replacementPattern);
+        index = ArrayUtils.unsafeWriteAddress(index, order.staticTarget);
+        index = ArrayUtils.unsafeWriteBytes(index, order.staticExtradata);
+        index = ArrayUtils.unsafeWriteAddress(index, order.paymentToken);
+        index = ArrayUtils.unsafeWriteUint(index, order.basePrice);
+        index = ArrayUtils.unsafeWriteUint(index, order.extra);
+        index = ArrayUtils.unsafeWriteUint(index, order.listingTime);
+        index = ArrayUtils.unsafeWriteUint(index, order.expirationTime);
+        index = ArrayUtils.unsafeWriteUint(index, order.salt);
         return index;
+    }
+
+    function testCopy(bytes arrToCopy)
+        public
+        pure
+        returns (bytes)
+    {
+        bytes memory arr = new bytes(arrToCopy.length);
+        uint index;
+        assembly {
+            index := add(arr, 0x20)
+        }
+        ArrayUtils.unsafeWriteBytes(index, arrToCopy);
+        return arr;
+    }
+
+    function testCopyAddress(address addr)
+        public
+        pure
+        returns (bytes)
+    {
+        bytes memory arr = new bytes(0x14);
+        uint index;
+        assembly {
+            index := add(arr, 0x20)
+        }
+        ArrayUtils.unsafeWriteAddress(index, addr);
+        return arr;
+    }
+
+    function testUint8(uint8 param)
+        public
+        pure
+        returns (bytes)
+    {
+        bytes memory arr = new bytes(0x1);
+        uint index;
+        assembly {
+            index := add(arr, 0x20)
+        }
+        ArrayUtils.unsafeWriteUint8(index, param);
+        return arr;
     }
 
     /**
@@ -364,6 +335,10 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         }
         index = encodeOrderA(order, index);
         index = encodeOrderB(order, index);
+        assembly {
+            index := sub(index, add(array, 0x20))
+        }
+        require(index == size);
         bytes32 hash;
         assembly {
             hash := keccak256(add(array, 0x20), size)

@@ -119,4 +119,64 @@ library ArrayUtils {
         return success;
     }
 
+    function unsafeWriteBytes(uint index, bytes source)
+        internal
+        pure
+        returns (uint)
+    {
+        if (source.length > 0) {
+            assembly {
+                let length := mload(source)
+                let end := add(source, add(0x20, length))
+                let arrIndex := add(source, 0x20)
+                let tempIndex := index
+                for { } eq(lt(arrIndex, end), 1) {
+                    arrIndex := add(arrIndex, 0x20)
+                    tempIndex := add(tempIndex, 0x20)
+                } {
+                    mstore(tempIndex, mload(arrIndex))
+                }
+                index := add(index, length)
+            }
+        }
+        return index;
+    }
+
+    function unsafeWriteAddress(uint index, address source)
+        internal
+        pure
+        returns (uint)
+    {
+        uint conv = uint(source) << 0x60;
+        assembly {
+            mstore(index, conv)
+            index := add(index, 0x14)
+        }
+        return index;
+    }
+    
+    function unsafeWriteUint(uint index, uint source)
+        internal
+        pure
+        returns (uint)
+    {
+        assembly {
+            mstore(index, source)
+            index := add(index, 0x20)
+        }
+        return index;
+    }
+
+    function unsafeWriteUint8(uint index, uint8 source)
+        internal
+        pure
+        returns (uint)
+    {
+        assembly {
+            mstore8(index, source)
+            index := add(index, 0x1)
+        }
+        return index;
+    }
+
 }
