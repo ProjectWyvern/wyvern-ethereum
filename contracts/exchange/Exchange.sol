@@ -27,6 +27,66 @@ contract Exchange is ExchangeCore {
     }
 
     /**
+     * Test copy byte array
+     *
+     * @param arrToCopy Array to copy
+     * @return byte array
+     */
+    function testCopy(bytes arrToCopy)
+        public
+        pure
+        returns (bytes)
+    {
+        bytes memory arr = new bytes(arrToCopy.length);
+        uint index;
+        assembly {
+            index := add(arr, 0x20)
+        }
+        ArrayUtils.unsafeWriteBytes(index, arrToCopy);
+        return arr;
+    }
+
+    /**
+     * Test write address to bytes
+     *
+     * @param addr Address to write
+     * @return byte array
+     */
+    function testCopyAddress(address addr)
+        public
+        pure
+        returns (bytes)
+    {
+        bytes memory arr = new bytes(0x14);
+        uint index;
+        assembly {
+            index := add(arr, 0x20)
+        }
+        ArrayUtils.unsafeWriteAddress(index, addr);
+        return arr;
+    }
+
+    /**
+     * Test write uint8 to bytes
+     * 
+     * @param param uint8 to write
+     * @return byte array
+     */
+    function testUint8(uint8 param)
+        public
+        pure
+        returns (bytes)
+    {
+        bytes memory arr = new bytes(0x1);
+        uint index;
+        assembly {
+            index := add(arr, 0x20)
+        }
+        ArrayUtils.unsafeWriteUint8(index, param);
+        return arr;
+    }
+
+    /**
      * @dev Call calculateFinalPrice - library function exposed for testing.
      */
     function calculateFinalPrice(SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)
@@ -41,6 +101,28 @@ contract Exchange is ExchangeCore {
      * @dev Call hashOrder - Solidity ABI encoding limitation workaround, hopefully temporary.
      */
     function hashOrder_(
+        address[7] addrs,
+        uint[9] uints,
+        FeeMethod feeMethod,
+        SaleKindInterface.Side side,
+        SaleKindInterface.SaleKind saleKind,
+        AuthenticatedProxy.HowToCall howToCall,
+        bytes calldata,
+        bytes replacementPattern,
+        bytes staticExtradata)
+        public
+        pure
+        returns (bytes32)
+    { 
+        return hashOrder(
+          Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], feeMethod, side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8])
+        );
+    }
+
+    /**
+     * @dev Call hashToSign - Solidity ABI encoding limitation workaround, hopefully temporary.
+     */
+    function hashToSign_(
         address[7] addrs,
         uint[9] uints,
         FeeMethod feeMethod,

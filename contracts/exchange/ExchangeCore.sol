@@ -214,20 +214,25 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         view
         returns (bool result)
     {
-        /* TODO optimize me */
-        bytes memory combined = new bytes(SafeMath.add(calldata.length, extradata.length));
-        for (uint i = 0; i < extradata.length; i++) {
-            combined[i] = extradata[i];
+        bytes memory combined = new bytes(calldata.length + extradata.length);
+        uint index;
+        assembly {
+            index := add(combined, 0x20)
         }
-        for (uint j = 0; j < calldata.length; j++) {
-            combined[j + extradata.length] = calldata[j];
-        }
+        index = ArrayUtils.unsafeWriteBytes(index, extradata);
+        ArrayUtils.unsafeWriteBytes(index, calldata);
         assembly {
             result := staticcall(gas, target, add(combined, 0x20), mload(combined), mload(0x40), 0)
         }
         return result;
     }
 
+    /**
+     * Calculate size of an order struct when tightly packed
+     *
+     * @param order Order to calculate size of
+     * @return Size in bytes
+     */
     function sizeOf(Order memory order)
         internal
         pure
@@ -236,11 +241,22 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         return ((0x14 * 7) + (0x20 * 9) + 4 + order.calldata.length + order.replacementPattern.length + order.staticExtradata.length);
     }
 
-    function encodeOrderA(Order memory order, uint index)
+    /**
+     * @dev Hash an order, returning the canonical order hash, without the message prefix
+     * @param order Order to hash
+     * @return Hash of order
+     */
+    function hashOrder(Order memory order)
         internal
         pure
-        returns (uint)
+        returns (bytes32 hash)
     {
+        uint size = sizeOf(order);
+        bytes memory array = new bytes(size);
+        uint index;
+        assembly {
+            index := add(array, 0x20)
+        }
         index = ArrayUtils.unsafeWriteAddress(index, order.exchange);
         index = ArrayUtils.unsafeWriteAddress(index, order.maker);
         index = ArrayUtils.unsafeWriteAddress(index, order.taker);
@@ -253,14 +269,6 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         index = ArrayUtils.unsafeWriteUint8(index, uint8(order.side));
         index = ArrayUtils.unsafeWriteUint8(index, uint8(order.saleKind));
         index = ArrayUtils.unsafeWriteAddress(index, order.target);
-        return index; 
-    }
-
-    function encodeOrderB(Order memory order, uint index)
-        internal
-        pure
-        returns (uint)
-    {
         index = ArrayUtils.unsafeWriteUint8(index, uint8(order.howToCall));
         index = ArrayUtils.unsafeWriteBytes(index, order.calldata);
         index = ArrayUtils.unsafeWriteBytes(index, order.replacementPattern);
@@ -272,78 +280,23 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         index = ArrayUtils.unsafeWriteUint(index, order.listingTime);
         index = ArrayUtils.unsafeWriteUint(index, order.expirationTime);
         index = ArrayUtils.unsafeWriteUint(index, order.salt);
-        return index;
-    }
-
-    function testCopy(bytes arrToCopy)
-        public
-        pure
-        returns (bytes)
-    {
-        bytes memory arr = new bytes(arrToCopy.length);
-        uint index;
         assembly {
-            index := add(arr, 0x20)
+            hash := keccak256(add(array, 0x20), size)
         }
-        ArrayUtils.unsafeWriteBytes(index, arrToCopy);
-        return arr;
-    }
-
-    function testCopyAddress(address addr)
-        public
-        pure
-        returns (bytes)
-    {
-        bytes memory arr = new bytes(0x14);
-        uint index;
-        assembly {
-            index := add(arr, 0x20)
-        }
-        ArrayUtils.unsafeWriteAddress(index, addr);
-        return arr;
-    }
-
-    function testUint8(uint8 param)
-        public
-        pure
-        returns (bytes)
-    {
-        bytes memory arr = new bytes(0x1);
-        uint index;
-        assembly {
-            index := add(arr, 0x20)
-        }
-        ArrayUtils.unsafeWriteUint8(index, param);
-        return arr;
+        return hash;
     }
 
     /**
      * @dev Hash an order, returning the hash that a client must sign, including the standard message prefix
      * @param order Order to hash
-     * @return Hash of message prefix, order hash part one, and order hash part two concatenated
+     * @return Hash of message prefix and order hash per Ethereum format
      */
     function hashToSign(Order memory order)
         internal
         pure
         returns (bytes32)
     {
-        uint size = sizeOf(order);
-        bytes memory array = new bytes(size);
-        uint index;
-        assembly {
-            index := add(array, 0x20)
-        }
-        index = encodeOrderA(order, index);
-        index = encodeOrderB(order, index);
-        assembly {
-            index := sub(index, add(array, 0x20))
-        }
-        require(index == size);
-        bytes32 hash;
-        assembly {
-            hash := keccak256(add(array, 0x20), size)
-        }
-        return keccak256("\x19Ethereum Signed Message:\n32", hash);
+        return keccak256("\x19Ethereum Signed Message:\n32", hashOrder(order));
     }
 
     /**

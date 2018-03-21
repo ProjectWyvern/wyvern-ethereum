@@ -22,7 +22,7 @@ library ArrayUtils {
      * @dev Mask must be the size of the byte array. A nonzero byte means the byte array can be changed.
      * @param array The original array
      * @param desired The target array
-     * @param mask The mask specifying which bytes can be changed
+     * @param mask The mask specifying which bits can be changed
      * @return The updated byte array (the parameter will be modified inplace)
      */
     function guardedArrayReplace(bytes memory array, bytes memory desired, bytes memory mask)
@@ -119,6 +119,13 @@ library ArrayUtils {
         return success;
     }
 
+    /**
+     * Unsafe write byte array into a memory location
+     * 
+     * @param index Memory location
+     * @param source Byte array to write
+     * @return End memory index
+     */
     function unsafeWriteBytes(uint index, bytes source)
         internal
         pure
@@ -142,6 +149,13 @@ library ArrayUtils {
         return index;
     }
 
+    /**
+     * Unsafe write address into a memory location
+     *
+     * @param index Memory location
+     * @param source Address to write
+     * @return End memory index
+     */
     function unsafeWriteAddress(uint index, address source)
         internal
         pure
@@ -155,6 +169,13 @@ library ArrayUtils {
         return index;
     }
     
+    /**
+     * Unsafe write uint into a memory location
+     *
+     * @param index Memory location
+     * @param source uint to write
+     * @return End memory index
+     */
     function unsafeWriteUint(uint index, uint source)
         internal
         pure
@@ -167,6 +188,13 @@ library ArrayUtils {
         return index;
     }
 
+    /**
+     * Unsafe write uint8 into a memory location
+     *
+     * @param index Memory location
+     * @param source uint8 to write
+     * @return End memory index
+     */
     function unsafeWriteUint8(uint index, uint8 source)
         internal
         pure

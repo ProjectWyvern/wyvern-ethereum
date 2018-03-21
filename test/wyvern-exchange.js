@@ -40,7 +40,7 @@ const finalGas = () => {
 }
 
 const hashOrder = (order) => {
-  const partOne = Buffer.from(web3.utils.soliditySha3(
+  return web3.utils.soliditySha3(
     {type: 'address', value: order.exchange},
     {type: 'address', value: order.maker},
     {type: 'address', value: order.taker},
@@ -53,9 +53,7 @@ const hashOrder = (order) => {
     {type: 'uint8', value: order.side},
     {type: 'uint8', value: order.saleKind},
     {type: 'address', value: order.target},
-    {type: 'uint8', value: order.howToCall}
-  ).slice(2), 'hex')
-  const partTwo = Buffer.from(web3.utils.soliditySha3(
+    {type: 'uint8', value: order.howToCall},
     {type: 'bytes', value: order.calldata},
     {type: 'bytes', value: order.replacementPattern},
     {type: 'address', value: order.staticTarget},
@@ -66,8 +64,7 @@ const hashOrder = (order) => {
     {type: 'uint', value: new BigNumber(order.listingTime)},
     {type: 'uint', value: new BigNumber(order.expirationTime)},
     {type: 'uint', value: order.salt}
-  ).slice(2), 'hex')
-  return Buffer.concat([partOne, partTwo]).toString('hex')
+  ).toString('hex')
 }
 
 const hashToSign = (order) => {
@@ -332,8 +329,29 @@ contract('WyvernExchange', (accounts) => {
       .deployed()
       .then(exchangeInstance => {
         const order = makeOrder(exchangeInstance.address)
-        const hash = hashToSign(order)
+        const hash = hashOrder(order)
         return exchangeInstance.hashOrder_.call(
+            [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+            [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+            order.feeMethod,
+            order.side,
+            order.saleKind,
+            order.howToCall,
+            order.calldata,
+            order.replacementPattern,
+            order.staticExtradata).then(solHash => {
+              assert.equal(solHash, hash, 'Hashes were not equal')
+            })
+      })
+  })
+
+  it('should match order hash to sign', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        const order = makeOrder(exchangeInstance.address)
+        const hash = hashToSign(order)
+        return exchangeInstance.hashToSign_.call(
             [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
             [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
             order.feeMethod,
