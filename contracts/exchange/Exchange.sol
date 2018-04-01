@@ -67,26 +67,6 @@ contract Exchange is ExchangeCore {
     }
 
     /**
-     * Test write uint8 to bytes
-     * 
-     * @param param uint8 to write
-     * @return byte array
-     */
-    function testUint8(uint8 param)
-        public
-        pure
-        returns (bytes)
-    {
-        bytes memory arr = new bytes(0x1);
-        uint index;
-        assembly {
-            index := add(arr, 0x20)
-        }
-        ArrayUtils.unsafeWriteUint8(index, param);
-        return arr;
-    }
-
-    /**
      * @dev Call calculateFinalPrice - library function exposed for testing.
      */
     function calculateFinalPrice(SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)
@@ -113,7 +93,7 @@ contract Exchange is ExchangeCore {
         public
         pure
         returns (bytes32)
-    { 
+    {
         return hashOrder(
           Order(addrs[0], addrs[1], addrs[2], uints[0], uints[1], uints[2], uints[3], addrs[3], feeMethod, side, saleKind, addrs[4], howToCall, calldata, replacementPattern, addrs[5], staticExtradata, ERC20(addrs[6]), uints[4], uints[5], uints[6], uints[7], uints[8])
         );

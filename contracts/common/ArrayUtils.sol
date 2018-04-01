@@ -37,7 +37,7 @@ library ArrayUtils {
         uint i;
 
         for (i = 0; i < words; i++) {
-            /* Conceptually: array[i] = (!mask && array[i]) || (mask && desired[i]), bitwise in word chunks. */
+            /* Conceptually: array[i] = (!mask[i] && array[i]) || (mask[i] && desired[i]), bitwise in word chunks. */
             assembly {
                 let commonIndex := mul(0x20, add(1, i))
                 let maskValue := mload(add(mask, commonIndex))
@@ -121,7 +121,7 @@ library ArrayUtils {
 
     /**
      * Unsafe write byte array into a memory location
-     * 
+     *
      * @param index Memory location
      * @param source Byte array to write
      * @return End memory index
@@ -168,7 +168,7 @@ library ArrayUtils {
         }
         return index;
     }
-    
+
     /**
      * Unsafe write uint into a memory location
      *

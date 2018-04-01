@@ -1428,6 +1428,30 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should succeed with successful static call both-side', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return TestToken.deployed().then(tokenInstance => {
+          var buy = makeOrder(exchangeInstance.address, true)
+          var sell = makeOrder(exchangeInstance.address, false)
+          sell.side = 1
+          buy.salt = 404
+          sell.salt = 505
+          return TestStatic.deployed().then(staticInstance => {
+            sell.staticTarget = staticInstance.address
+            const staticInst = new web3.eth.Contract(TestStatic.abi, staticInstance.address)
+            sell.staticExtradata = staticInst.methods.alwaysSucceed().encodeABI()
+            buy.staticTarget = staticInstance.address
+            buy.staticExtradata = staticInst.methods.alwaysSucceed().encodeABI()
+            return matchOrder(buy, sell, () => {}, err => {
+              assert.equal(false, err, 'Orders should have matched')
+            })
+          })
+        })
+      })
+  })
+
   it('should fail with unsuccessful static call', () => {
     return WyvernExchange
       .deployed()
