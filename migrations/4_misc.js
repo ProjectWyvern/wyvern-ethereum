@@ -6,6 +6,7 @@ const WyvernAtomicizer = artifacts.require('./WyvernAtomicizer.sol')
 const { setConfig } = require('./config.js')
 
 module.exports = (deployer, network) => {
+  if (network === 'main') return
   return deployer.deploy(WyvernDAOProxy)
     .then(() => {
       setConfig('deployed.' + network + '.WyvernDAOProxy', WyvernDAOProxy.address)

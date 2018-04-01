@@ -1,328 +1,559 @@
 {
   "contractName": "ReentrancyGuarded",
   "abi": [],
-  "bytecode": "0x60606040526000805460ff191690553415601857600080fd5b60358060256000396000f3006060604052600080fd00a165627a7a723058209e6a70a661a126b4752c5729a2fc01c4e9eb7530b0986a1aacb69afcc6bd4a8f0029",
-  "deployedBytecode": "0x6060604052600080fd00a165627a7a723058209e6a70a661a126b4752c5729a2fc01c4e9eb7530b0986a1aacb69afcc6bd4a8f0029",
-  "sourceMap": "195:306:9:-;;;251:5;229:27;;-1:-1:-1;;229:27:9;;;195:306;;;;;;;;;;;;;;",
-  "deployedSourceMap": "195:306:9:-;;;;;",
-  "source": "/*\n\n  Simple contract extension to provide a contract-global reentrancy guard on functions.\n\n*/\n\npragma solidity 0.4.18;\n\n/**\n * @title ReentrancyGuarded\n * @author Project Wyvern Developers\n */\ncontract ReentrancyGuarded {\n\n    bool reentrancyLock = false;\n\n    /* Prevent a contract function from being reentrant-called. */\n    modifier reentrancyGuard {\n        if (reentrancyLock) {\n            revert();\n        }\n        reentrancyLock = true;\n        _;\n        reentrancyLock = false;\n    }\n\n}\n",
+  "bytecode": "0x60606040526000805460ff191690553415601857600080fd5b60358060256000396000f3006060604052600080fd00a165627a7a7230582076fef0356a1986865f74eee1ba867ba17144841c86fb6083bbbafae54615944d0029",
+  "deployedBytecode": "0x6060604052600080fd00a165627a7a7230582076fef0356a1986865f74eee1ba867ba17144841c86fb6083bbbafae54615944d0029",
+  "sourceMap": "195:306:12:-;;;251:5;229:27;;-1:-1:-1;;229:27:12;;;195:306;;;;;;;;;;;;;;",
+  "deployedSourceMap": "195:306:12:-;;;;;",
+  "source": "/*\n\n  Simple contract extension to provide a contract-global reentrancy guard on functions.\n\n*/\n\npragma solidity 0.4.19;\n\n/**\n * @title ReentrancyGuarded\n * @author Project Wyvern Developers\n */\ncontract ReentrancyGuarded {\n\n    bool reentrancyLock = false;\n\n    /* Prevent a contract function from being reentrant-called. */\n    modifier reentrancyGuard {\n        if (reentrancyLock) {\n            revert();\n        }\n        reentrancyLock = true;\n        _;\n        reentrancyLock = false;\n    }\n\n}\n",
   "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ReentrancyGuarded.sol",
   "ast": {
-    "attributes": {
-      "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ReentrancyGuarded.sol",
-      "exportedSymbols": {
-        "ReentrancyGuarded": [
-          570
-        ]
-      }
+    "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ReentrancyGuarded.sol",
+    "exportedSymbols": {
+      "ReentrancyGuarded": [
+        770
+      ]
     },
-    "children": [
+    "id": 771,
+    "nodeType": "SourceUnit",
+    "nodes": [
       {
-        "attributes": {
-          "literals": [
-            "solidity",
-            "0.4",
-            ".18"
-          ]
-        },
-        "id": 548,
-        "name": "PragmaDirective",
-        "src": "97:23:9"
+        "id": 748,
+        "literals": [
+          "solidity",
+          "0.4",
+          ".19"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "97:23:12"
       },
       {
-        "attributes": {
-          "baseContracts": [
-            null
-          ],
-          "contractDependencies": [
-            null
-          ],
-          "contractKind": "contract",
-          "documentation": "@title ReentrancyGuarded\n@author Project Wyvern Developers",
-          "fullyImplemented": true,
-          "linearizedBaseContracts": [
-            570
-          ],
-          "name": "ReentrancyGuarded",
-          "scope": 571
-        },
-        "children": [
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": "@title ReentrancyGuarded\n@author Project Wyvern Developers",
+        "fullyImplemented": true,
+        "id": 770,
+        "linearizedBaseContracts": [
+          770
+        ],
+        "name": "ReentrancyGuarded",
+        "nodeType": "ContractDefinition",
+        "nodes": [
           {
-            "attributes": {
-              "constant": false,
-              "name": "reentrancyLock",
-              "scope": 570,
-              "stateVariable": true,
-              "storageLocation": "default",
-              "type": "bool",
-              "visibility": "internal"
+            "constant": false,
+            "id": 751,
+            "name": "reentrancyLock",
+            "nodeType": "VariableDeclaration",
+            "scope": 770,
+            "src": "229:27:12",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_bool",
+              "typeString": "bool"
             },
-            "children": [
-              {
-                "attributes": {
-                  "name": "bool",
-                  "type": "bool"
-                },
-                "id": 549,
-                "name": "ElementaryTypeName",
-                "src": "229:4:9"
-              },
-              {
-                "attributes": {
-                  "argumentTypes": null,
-                  "hexvalue": "66616c7365",
-                  "isConstant": false,
-                  "isLValue": false,
-                  "isPure": true,
-                  "lValueRequested": false,
-                  "subdenomination": null,
-                  "token": "bool",
-                  "type": "bool",
-                  "value": "false"
-                },
-                "id": 550,
-                "name": "Literal",
-                "src": "251:5:9"
+            "typeName": {
+              "id": 749,
+              "name": "bool",
+              "nodeType": "ElementaryTypeName",
+              "src": "229:4:12",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bool",
+                "typeString": "bool"
               }
-            ],
-            "id": 551,
-            "name": "VariableDeclaration",
-            "src": "229:27:9"
+            },
+            "value": {
+              "argumentTypes": null,
+              "hexValue": "66616c7365",
+              "id": 750,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "bool",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "251:5:12",
+              "subdenomination": null,
+              "typeDescriptions": {
+                "typeIdentifier": "t_bool",
+                "typeString": "bool"
+              },
+              "value": "false"
+            },
+            "visibility": "internal"
           },
           {
-            "attributes": {
-              "name": "reentrancyGuard",
-              "visibility": "internal"
-            },
-            "children": [
-              {
-                "attributes": {
-                  "parameters": [
-                    null
-                  ]
-                },
-                "children": [],
-                "id": 552,
-                "name": "ParameterList",
-                "src": "355:0:9"
-              },
-              {
-                "children": [
-                  {
-                    "attributes": {
-                      "falseBody": null
-                    },
-                    "children": [
-                      {
-                        "attributes": {
-                          "argumentTypes": null,
-                          "overloadedDeclarations": [
-                            null
-                          ],
-                          "referencedDeclaration": 551,
-                          "type": "bool",
-                          "value": "reentrancyLock"
-                        },
-                        "id": 553,
-                        "name": "Identifier",
-                        "src": "369:14:9"
-                      },
-                      {
-                        "children": [
-                          {
-                            "children": [
-                              {
-                                "attributes": {
-                                  "argumentTypes": null,
-                                  "arguments": [
-                                    null
-                                  ],
-                                  "isConstant": false,
-                                  "isLValue": false,
-                                  "isPure": false,
-                                  "isStructConstructorCall": false,
-                                  "lValueRequested": false,
-                                  "names": [
-                                    null
-                                  ],
-                                  "type": "tuple()",
-                                  "type_conversion": false
-                                },
-                                "children": [
-                                  {
-                                    "attributes": {
-                                      "argumentTypes": [
-                                        null
-                                      ],
-                                      "overloadedDeclarations": [
-                                        null
-                                      ],
-                                      "referencedDeclaration": 6156,
-                                      "type": "function () pure",
-                                      "value": "revert"
-                                    },
-                                    "id": 554,
-                                    "name": "Identifier",
-                                    "src": "399:6:9"
-                                  }
-                                ],
-                                "id": 555,
-                                "name": "FunctionCall",
-                                "src": "399:8:9"
-                              }
-                            ],
-                            "id": 556,
-                            "name": "ExpressionStatement",
-                            "src": "399:8:9"
-                          }
-                        ],
-                        "id": 557,
-                        "name": "Block",
-                        "src": "385:33:9"
-                      }
-                    ],
-                    "id": 558,
-                    "name": "IfStatement",
-                    "src": "365:53:9"
+            "body": {
+              "id": 768,
+              "nodeType": "Block",
+              "src": "355:143:12",
+              "statements": [
+                {
+                  "condition": {
+                    "argumentTypes": null,
+                    "id": 753,
+                    "name": "reentrancyLock",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 751,
+                    "src": "369:14:12",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
                   },
-                  {
-                    "children": [
+                  "falseBody": null,
+                  "id": 758,
+                  "nodeType": "IfStatement",
+                  "src": "365:53:12",
+                  "trueBody": {
+                    "id": 757,
+                    "nodeType": "Block",
+                    "src": "385:33:12",
+                    "statements": [
                       {
-                        "attributes": {
+                        "expression": {
                           "argumentTypes": null,
+                          "arguments": [],
+                          "expression": {
+                            "argumentTypes": [],
+                            "id": 754,
+                            "name": "revert",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 6672,
+                            "src": "399:6:12",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_function_revert_pure$__$returns$__$",
+                              "typeString": "function () pure"
+                            }
+                          },
+                          "id": 755,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
+                          "kind": "functionCall",
                           "lValueRequested": false,
-                          "operator": "=",
-                          "type": "bool"
-                        },
-                        "children": [
-                          {
-                            "attributes": {
-                              "argumentTypes": null,
-                              "overloadedDeclarations": [
-                                null
-                              ],
-                              "referencedDeclaration": 551,
-                              "type": "bool",
-                              "value": "reentrancyLock"
-                            },
-                            "id": 559,
-                            "name": "Identifier",
-                            "src": "427:14:9"
-                          },
-                          {
-                            "attributes": {
-                              "argumentTypes": null,
-                              "hexvalue": "74727565",
-                              "isConstant": false,
-                              "isLValue": false,
-                              "isPure": true,
-                              "lValueRequested": false,
-                              "subdenomination": null,
-                              "token": "bool",
-                              "type": "bool",
-                              "value": "true"
-                            },
-                            "id": 560,
-                            "name": "Literal",
-                            "src": "444:4:9"
+                          "names": [],
+                          "nodeType": "FunctionCall",
+                          "src": "399:8:12",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_tuple$__$",
+                            "typeString": "tuple()"
                           }
-                        ],
-                        "id": 561,
-                        "name": "Assignment",
-                        "src": "427:21:9"
-                      }
-                    ],
-                    "id": 562,
-                    "name": "ExpressionStatement",
-                    "src": "427:21:9"
-                  },
-                  {
-                    "id": 563,
-                    "name": "PlaceholderStatement",
-                    "src": "458:1:9"
-                  },
-                  {
-                    "children": [
-                      {
-                        "attributes": {
-                          "argumentTypes": null,
-                          "isConstant": false,
-                          "isLValue": false,
-                          "isPure": false,
-                          "lValueRequested": false,
-                          "operator": "=",
-                          "type": "bool"
                         },
-                        "children": [
-                          {
-                            "attributes": {
-                              "argumentTypes": null,
-                              "overloadedDeclarations": [
-                                null
-                              ],
-                              "referencedDeclaration": 551,
-                              "type": "bool",
-                              "value": "reentrancyLock"
-                            },
-                            "id": 564,
-                            "name": "Identifier",
-                            "src": "469:14:9"
-                          },
-                          {
-                            "attributes": {
-                              "argumentTypes": null,
-                              "hexvalue": "66616c7365",
-                              "isConstant": false,
-                              "isLValue": false,
-                              "isPure": true,
-                              "lValueRequested": false,
-                              "subdenomination": null,
-                              "token": "bool",
-                              "type": "bool",
-                              "value": "false"
-                            },
-                            "id": 565,
-                            "name": "Literal",
-                            "src": "486:5:9"
-                          }
-                        ],
-                        "id": 566,
-                        "name": "Assignment",
-                        "src": "469:22:9"
+                        "id": 756,
+                        "nodeType": "ExpressionStatement",
+                        "src": "399:8:12"
                       }
-                    ],
-                    "id": 567,
-                    "name": "ExpressionStatement",
-                    "src": "469:22:9"
+                    ]
                   }
-                ],
-                "id": 568,
-                "name": "Block",
-                "src": "355:143:9"
-              }
-            ],
-            "id": 569,
-            "name": "ModifierDefinition",
-            "src": "330:168:9"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 761,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 759,
+                      "name": "reentrancyLock",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 751,
+                      "src": "427:14:12",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "hexValue": "74727565",
+                      "id": 760,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "bool",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "444:4:12",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      },
+                      "value": "true"
+                    },
+                    "src": "427:21:12",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "id": 762,
+                  "nodeType": "ExpressionStatement",
+                  "src": "427:21:12"
+                },
+                {
+                  "id": 763,
+                  "nodeType": "PlaceholderStatement",
+                  "src": "458:1:12"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 766,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 764,
+                      "name": "reentrancyLock",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 751,
+                      "src": "469:14:12",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "hexValue": "66616c7365",
+                      "id": 765,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "bool",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "486:5:12",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      },
+                      "value": "false"
+                    },
+                    "src": "469:22:12",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "id": 767,
+                  "nodeType": "ExpressionStatement",
+                  "src": "469:22:12"
+                }
+              ]
+            },
+            "id": 769,
+            "name": "reentrancyGuard",
+            "nodeType": "ModifierDefinition",
+            "parameters": {
+              "id": 752,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "355:0:12"
+            },
+            "src": "330:168:12",
+            "visibility": "internal"
           }
         ],
-        "id": 570,
-        "name": "ContractDefinition",
-        "src": "195:306:9"
+        "scope": 771,
+        "src": "195:306:12"
       }
     ],
-    "id": 571,
-    "name": "SourceUnit",
-    "src": "97:405:9"
+    "src": "97:405:12"
+  },
+  "legacyAST": {
+    "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ReentrancyGuarded.sol",
+    "exportedSymbols": {
+      "ReentrancyGuarded": [
+        770
+      ]
+    },
+    "id": 771,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 748,
+        "literals": [
+          "solidity",
+          "0.4",
+          ".19"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "97:23:12"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": "@title ReentrancyGuarded\n@author Project Wyvern Developers",
+        "fullyImplemented": true,
+        "id": 770,
+        "linearizedBaseContracts": [
+          770
+        ],
+        "name": "ReentrancyGuarded",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "constant": false,
+            "id": 751,
+            "name": "reentrancyLock",
+            "nodeType": "VariableDeclaration",
+            "scope": 770,
+            "src": "229:27:12",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_bool",
+              "typeString": "bool"
+            },
+            "typeName": {
+              "id": 749,
+              "name": "bool",
+              "nodeType": "ElementaryTypeName",
+              "src": "229:4:12",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bool",
+                "typeString": "bool"
+              }
+            },
+            "value": {
+              "argumentTypes": null,
+              "hexValue": "66616c7365",
+              "id": 750,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "bool",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "251:5:12",
+              "subdenomination": null,
+              "typeDescriptions": {
+                "typeIdentifier": "t_bool",
+                "typeString": "bool"
+              },
+              "value": "false"
+            },
+            "visibility": "internal"
+          },
+          {
+            "body": {
+              "id": 768,
+              "nodeType": "Block",
+              "src": "355:143:12",
+              "statements": [
+                {
+                  "condition": {
+                    "argumentTypes": null,
+                    "id": 753,
+                    "name": "reentrancyLock",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 751,
+                    "src": "369:14:12",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "falseBody": null,
+                  "id": 758,
+                  "nodeType": "IfStatement",
+                  "src": "365:53:12",
+                  "trueBody": {
+                    "id": 757,
+                    "nodeType": "Block",
+                    "src": "385:33:12",
+                    "statements": [
+                      {
+                        "expression": {
+                          "argumentTypes": null,
+                          "arguments": [],
+                          "expression": {
+                            "argumentTypes": [],
+                            "id": 754,
+                            "name": "revert",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 6672,
+                            "src": "399:6:12",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_function_revert_pure$__$returns$__$",
+                              "typeString": "function () pure"
+                            }
+                          },
+                          "id": 755,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "kind": "functionCall",
+                          "lValueRequested": false,
+                          "names": [],
+                          "nodeType": "FunctionCall",
+                          "src": "399:8:12",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_tuple$__$",
+                            "typeString": "tuple()"
+                          }
+                        },
+                        "id": 756,
+                        "nodeType": "ExpressionStatement",
+                        "src": "399:8:12"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 761,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 759,
+                      "name": "reentrancyLock",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 751,
+                      "src": "427:14:12",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "hexValue": "74727565",
+                      "id": 760,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "bool",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "444:4:12",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      },
+                      "value": "true"
+                    },
+                    "src": "427:21:12",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "id": 762,
+                  "nodeType": "ExpressionStatement",
+                  "src": "427:21:12"
+                },
+                {
+                  "id": 763,
+                  "nodeType": "PlaceholderStatement",
+                  "src": "458:1:12"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 766,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 764,
+                      "name": "reentrancyLock",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 751,
+                      "src": "469:14:12",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "hexValue": "66616c7365",
+                      "id": 765,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "bool",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "486:5:12",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      },
+                      "value": "false"
+                    },
+                    "src": "469:22:12",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "id": 767,
+                  "nodeType": "ExpressionStatement",
+                  "src": "469:22:12"
+                }
+              ]
+            },
+            "id": 769,
+            "name": "reentrancyGuard",
+            "nodeType": "ModifierDefinition",
+            "parameters": {
+              "id": 752,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "355:0:12"
+            },
+            "src": "330:168:12",
+            "visibility": "internal"
+          }
+        ],
+        "scope": 771,
+        "src": "195:306:12"
+      }
+    ],
+    "src": "97:405:12"
   },
   "compiler": {
     "name": "solc",
-    "version": "0.4.18+commit.9cf6e910.Emscripten.clang"
+    "version": "0.4.19+commit.c4cbbb05.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "1.0.1",
-  "updatedAt": "2018-03-08T20:08:22.633Z"
+  "schemaVersion": "2.0.0",
+  "updatedAt": "2018-04-01T13:25:20.444Z"
 }
