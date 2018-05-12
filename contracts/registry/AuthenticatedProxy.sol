@@ -4,7 +4,7 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
 import "../common/TokenRecipient.sol";
 import "./ProxyRegistry.sol";
@@ -36,7 +36,7 @@ contract AuthenticatedProxy is TokenRecipient {
      * @param addrUser Address of user on whose behalf this proxy will act
      * @param addrRegistry Address of ProxyRegistry contract which will manage this proxy
      */
-    function AuthenticatedProxy(address addrUser, ProxyRegistry addrRegistry) public {
+    constructor (address addrUser, ProxyRegistry addrRegistry) public {
         user = addrUser;
         registry = addrRegistry;
     }
@@ -52,7 +52,7 @@ contract AuthenticatedProxy is TokenRecipient {
     {
         require(msg.sender == user);
         revoked = revoke;
-        Revoked(revoke);
+        emit Revoked(revoke);
     }
 
     /**

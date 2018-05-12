@@ -42,9 +42,9 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
-import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "../common/TokenRecipient.sol";
 import "../common/TokenLocker.sol";
@@ -163,7 +163,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         delegatesByDelegator[msg.sender] = delegate;
         require(sharesTokenAddress.transferFrom(msg.sender, tokenLocker, tokensToLock));
         require(sharesTokenAddress.balanceOf(tokenLocker) == totalLockedTokens);
-        TokensDelegated(msg.sender, tokensToLock, delegate);
+        emit TokensDelegated(msg.sender, tokensToLock, delegate);
     }
 
     /** 
@@ -187,7 +187,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         delete delegatesByDelegator[msg.sender];
         require(tokenLocker.transfer(msg.sender, lockedTokens));
         require(sharesTokenAddress.balanceOf(tokenLocker) == totalLockedTokens);
-        TokensUndelegated(msg.sender, lockedTokens, delegate);
+        emit TokensUndelegated(msg.sender, lockedTokens, delegate);
         return lockedTokens;
     }
 
@@ -212,7 +212,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         minimumQuorum = minimumSharesToPassAVote;
         debatingPeriodInMinutes = minutesForDebate;
         requiredSharesToBeBoardMember = sharesToBeBoardMember;
-        ChangeOfRules(minimumQuorum, debatingPeriodInMinutes, sharesTokenAddress);
+        emit ChangeOfRules(minimumQuorum, debatingPeriodInMinutes, sharesTokenAddress);
     }
 
     /**
@@ -250,7 +250,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         p.finalized = false;
         p.proposalPassed = false;
         p.numberOfVotes = 0;
-        ProposalAdded(proposalID, beneficiary, weiAmount, jobMetadataHash);
+        emit ProposalAdded(proposalID, beneficiary, weiAmount, jobMetadataHash);
         numProposals = proposalID+1;
         return proposalID;
     }
@@ -301,7 +301,7 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         p.votes[voteID] = Vote({inSupport: supportsProposal, voter: msg.sender});
         p.voted[msg.sender] = true;
         p.numberOfVotes = voteID + 1;
-        Voted(proposalNumber, supportsProposal, msg.sender);
+        emit Voted(proposalNumber, supportsProposal, msg.sender);
         return voteID;
     }
 
@@ -356,7 +356,11 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         require((now >= p.votingDeadline) && !p.finalized && p.proposalHash == keccak256(p.recipient, p.amount, transactionBytecode));
 
         /* Count the votes. */
-        var ( yea, nay, quorum ) = countVotes(proposalNumber);
+        uint yea;
+        uint nay;
+        uint quorum;
+        ( yea, nay, quorum ) = countVotes(proposalNumber);
+        /* Honestly, Solidity... https://github.com/ethereum/solidity/issues/3520 */
 
         /* Assert that a minimum quorum has been reached. */
         require(quorum >= minimumQuorum);
@@ -377,6 +381,6 @@ contract DelegatedShareholderAssociation is TokenRecipient {
         }
 
         /* Log event. */
-        ProposalTallied(proposalNumber, yea, nay, quorum, p.proposalPassed);
+        emit ProposalTallied(proposalNumber, yea, nay, quorum, p.proposalPassed);
     }
 }

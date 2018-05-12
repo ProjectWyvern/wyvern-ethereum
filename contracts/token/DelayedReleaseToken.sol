@@ -6,9 +6,9 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
-import "zeppelin-solidity/contracts/token/StandardToken.sol";
+import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 
 /**
   * @title DelayedReleaseToken
@@ -36,8 +36,8 @@ contract DelayedReleaseToken is StandardToken {
         require((msg.sender == temporaryAdmin) && (!hasBeenReleased));
         hasBeenReleased = true;
         balances[destination] = numberOfDelayedTokens;
-        Transfer(address(0), destination, numberOfDelayedTokens); 
-        TokensReleased(destination, numberOfDelayedTokens);
+        emit Transfer(address(0), destination, numberOfDelayedTokens); 
+        emit TokensReleased(destination, numberOfDelayedTokens);
     }
 
 }

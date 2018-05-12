@@ -4,13 +4,13 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
 import "./registry/TokenTransferProxy.sol";
 
 contract WyvernTokenTransferProxy is TokenTransferProxy {
 
-    function WyvernTokenTransferProxy (ProxyRegistry registryAddr)
+    constructor (ProxyRegistry registryAddr)
         public
     {
         registry = registryAddr;

@@ -4,7 +4,7 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
 import "./dao/DelegatedShareholderAssociation.sol";
 
@@ -19,7 +19,7 @@ contract TestDAO is DelegatedShareholderAssociation {
     uint public constant TOKEN_DECIMALS                     = 18;
     uint public constant REQUIRED_SHARES_TO_BE_BOARD_MEMBER = 2000 * (10 ** 18); // set to ~ 0.1% of supply
 
-    function TestDAO (ERC20 sharesAddress) public {
+    constructor (ERC20 sharesAddress) public {
         sharesTokenAddress = sharesAddress;
         requiredSharesToBeBoardMember = REQUIRED_SHARES_TO_BE_BOARD_MEMBER;
         minimumQuorum = 1000 * (10 ** TOKEN_DECIMALS);

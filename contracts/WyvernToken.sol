@@ -4,9 +4,9 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
-import "zeppelin-solidity/contracts/token/BurnableToken.sol";
+import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 
 import "./token/UTXORedeemableToken.sol";
 import "./token/DelayedReleaseToken.sol";
@@ -35,7 +35,7 @@ contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken 
       * @param merkleRoot Merkle tree root of the UTXO set
       * @param totalUtxoAmount Total satoshis of the UTXO set
       */
-    function WyvernToken (bytes32 merkleRoot, uint totalUtxoAmount) public {
+    constructor (bytes32 merkleRoot, uint totalUtxoAmount) public {
         /* Total number of tokens that can be redeemed from UTXOs. */
         uint utxoTokens = SATS_TO_TOKENS * totalUtxoAmount;
 
@@ -45,7 +45,7 @@ contract WyvernToken is DelayedReleaseToken, UTXORedeemableToken, BurnableToken 
 
         /* Configure UTXORedeemableToken. */
         rootUTXOMerkleTreeHash = merkleRoot;
-        totalSupply = MINT_AMOUNT;
+        totalSupply_ = MINT_AMOUNT;
         maximumRedeemable = utxoTokens;
         multiplier = SATS_TO_TOKENS;
     }

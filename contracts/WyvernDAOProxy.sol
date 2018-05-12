@@ -4,7 +4,7 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
 import "./dao/DelegateProxy.sol";
 
@@ -14,7 +14,7 @@ import "./dao/DelegateProxy.sol";
  */
 contract WyvernDAOProxy is DelegateProxy {
 
-    function WyvernDAOProxy ()
+    constructor ()
         public
     {
         owner = msg.sender;

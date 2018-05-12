@@ -1,11 +1,11 @@
 {
   "contractName": "ReentrancyGuarded",
   "abi": [],
-  "bytecode": "0x60606040526000805460ff191690553415601857600080fd5b60358060256000396000f3006060604052600080fd00a165627a7a7230582076fef0356a1986865f74eee1ba867ba17144841c86fb6083bbbafae54615944d0029",
-  "deployedBytecode": "0x6060604052600080fd00a165627a7a7230582076fef0356a1986865f74eee1ba867ba17144841c86fb6083bbbafae54615944d0029",
-  "sourceMap": "195:306:12:-;;;251:5;229:27;;-1:-1:-1;;229:27:12;;;195:306;;;;;;;;;;;;;;",
+  "bytecode": "0x60806040526000805460ff19169055348015601957600080fd5b5060358060276000396000f3006080604052600080fd00a165627a7a72305820ad63e7c07de20711298fdab08206c9a6d7e75149dc58d49aae0941bc2ab5014a0029",
+  "deployedBytecode": "0x6080604052600080fd00a165627a7a72305820ad63e7c07de20711298fdab08206c9a6d7e75149dc58d49aae0941bc2ab5014a0029",
+  "sourceMap": "195:306:12:-;;;251:5;229:27;;-1:-1:-1;;229:27:12;;;195:306;5:2:-1;;;;30:1;27;20:12;5:2;195:306:12;;;;;;;",
   "deployedSourceMap": "195:306:12:-;;;;;",
-  "source": "/*\n\n  Simple contract extension to provide a contract-global reentrancy guard on functions.\n\n*/\n\npragma solidity 0.4.19;\n\n/**\n * @title ReentrancyGuarded\n * @author Project Wyvern Developers\n */\ncontract ReentrancyGuarded {\n\n    bool reentrancyLock = false;\n\n    /* Prevent a contract function from being reentrant-called. */\n    modifier reentrancyGuard {\n        if (reentrancyLock) {\n            revert();\n        }\n        reentrancyLock = true;\n        _;\n        reentrancyLock = false;\n    }\n\n}\n",
+  "source": "/*\n\n  Simple contract extension to provide a contract-global reentrancy guard on functions.\n\n*/\n\npragma solidity 0.4.23;\n\n/**\n * @title ReentrancyGuarded\n * @author Project Wyvern Developers\n */\ncontract ReentrancyGuarded {\n\n    bool reentrancyLock = false;\n\n    /* Prevent a contract function from being reentrant-called. */\n    modifier reentrancyGuard {\n        if (reentrancyLock) {\n            revert();\n        }\n        reentrancyLock = true;\n        _;\n        reentrancyLock = false;\n    }\n\n}\n",
   "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ReentrancyGuarded.sol",
   "ast": {
     "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/common/ReentrancyGuarded.sol",
@@ -22,7 +22,7 @@
         "literals": [
           "solidity",
           "0.4",
-          ".19"
+          ".23"
         ],
         "nodeType": "PragmaDirective",
         "src": "97:23:12"
@@ -121,8 +121,11 @@
                             "id": 754,
                             "name": "revert",
                             "nodeType": "Identifier",
-                            "overloadedDeclarations": [],
-                            "referencedDeclaration": 6672,
+                            "overloadedDeclarations": [
+                              6704,
+                              6705
+                            ],
+                            "referencedDeclaration": 6704,
                             "src": "399:6:12",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_revert_pure$__$returns$__$",
@@ -259,6 +262,7 @@
                 }
               ]
             },
+            "documentation": null,
             "id": 769,
             "name": "reentrancyGuard",
             "nodeType": "ModifierDefinition",
@@ -293,7 +297,7 @@
         "literals": [
           "solidity",
           "0.4",
-          ".19"
+          ".23"
         ],
         "nodeType": "PragmaDirective",
         "src": "97:23:12"
@@ -392,8 +396,11 @@
                             "id": 754,
                             "name": "revert",
                             "nodeType": "Identifier",
-                            "overloadedDeclarations": [],
-                            "referencedDeclaration": 6672,
+                            "overloadedDeclarations": [
+                              6704,
+                              6705
+                            ],
+                            "referencedDeclaration": 6704,
                             "src": "399:6:12",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_revert_pure$__$returns$__$",
@@ -530,6 +537,7 @@
                 }
               ]
             },
+            "documentation": null,
             "id": 769,
             "name": "reentrancyGuard",
             "nodeType": "ModifierDefinition",
@@ -551,9 +559,9 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.4.19+commit.c4cbbb05.Emscripten.clang"
+    "version": "0.4.23+commit.124ca40d.Emscripten.clang"
   },
   "networks": {},
   "schemaVersion": "2.0.0",
-  "updatedAt": "2018-04-01T13:25:20.444Z"
+  "updatedAt": "2018-05-12T16:08:48.274Z"
 }

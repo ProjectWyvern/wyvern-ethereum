@@ -1,28 +1,28 @@
 {
   "contractName": "SaleKindInterface",
   "abi": [],
-  "bytecode": "0x60606040523415600e57600080fd5b603580601b6000396000f3006060604052600080fd00a165627a7a72305820ca1062efef3e105e1bf390019942e24021cb44d406b2740423df178896bc91b90029",
-  "deployedBytecode": "0x6060604052600080fd00a165627a7a72305820ca1062efef3e105e1bf390019942e24021cb44d406b2740423df178896bc91b90029",
-  "sourceMap": "365:2556:19:-;;;;;;;;;;;;;;;;;",
-  "deployedSourceMap": "365:2556:19:-;;;;;",
-  "source": "/*\n\n  Abstract over fixed-price sales and Dutch auctions, with the intent of easily supporting additional methods of sale later.\n\n  Separated into a library for convenience, all the functions are inlined.\n\n*/\n\npragma solidity 0.4.19;\n\nimport \"zeppelin-solidity/contracts/math/SafeMath.sol\";\n\n/**\n * @title SaleKindInterface\n * @author Project Wyvern Developers\n */\nlibrary SaleKindInterface {\n\n    /**\n     * Side: buy or sell.\n     */\n    enum Side { Buy, Sell }\n\n    /**\n     * Currently supported kinds of sale: fixed price, Dutch auction. \n     * English auctions cannot be supported without stronger escrow guarantees.\n     * Future interesting options: Vickrey auction, nonlinear Dutch auctions.\n     */\n    enum SaleKind { FixedPrice, DutchAuction }\n\n    /**\n     * @dev Check whether the parameters of a sale are valid\n     * @param saleKind Kind of sale\n     * @param expirationTime Order expiration time\n     * @return Whether the parameters were valid\n     */\n    function validateParameters(SaleKind saleKind, uint expirationTime)\n        pure\n        internal\n        returns (bool)\n    {\n        /* Auctions must have a set expiration date. */\n        return (saleKind == SaleKind.FixedPrice || expirationTime > 0);\n    }\n\n    /**\n     * @dev Return whether or not an order can be settled\n     * @dev Precondition: parameters have passed validateParameters\n     * @param listingTime Order listing time\n     * @param expirationTime Order expiration time\n     */\n    function canSettleOrder(uint listingTime, uint expirationTime)\n        view\n        internal\n        returns (bool)\n    {\n        return (listingTime < now) && (expirationTime == 0 || now < expirationTime);\n    }\n\n    /**\n     * @dev Calculate the settlement price of an order\n     * @dev Precondition: parameters have passed validateParameters.\n     * @param side Order side\n     * @param saleKind Method of sale\n     * @param basePrice Order base price\n     * @param extra Order extra price data\n     * @param listingTime Order listing time\n     * @param expirationTime Order expiration time\n     */\n    function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)\n        view\n        internal\n        returns (uint finalPrice)\n    {\n        if (saleKind == SaleKind.FixedPrice) {\n            return basePrice;\n        } else if (saleKind == SaleKind.DutchAuction) {\n            uint diff = SafeMath.div(SafeMath.mul(extra, SafeMath.sub(now, listingTime)), SafeMath.sub(expirationTime, listingTime));\n            if (side == Side.Sell) {\n                /* Sell-side - start price: basePrice. End price: basePrice - extra. */\n                return SafeMath.sub(basePrice, diff);\n            } else {\n                /* Buy-side - start price: basePrice. End price: basePrice + extra. */\n                return SafeMath.add(basePrice, diff);\n            }\n        }\n    }\n\n}\n",
+  "bytecode": "0x604c602c600b82828239805160001a60731460008114601c57601e565bfe5b5030600052607381538281f30073000000000000000000000000000000000000000030146080604052600080fd00a165627a7a72305820c3723ca5bc055c4e0fb566fd18b4b71c36dc9ea221d6c37e4c57be87757f6bc80029",
+  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600080fd00a165627a7a72305820c3723ca5bc055c4e0fb566fd18b4b71c36dc9ea221d6c37e4c57be87757f6bc80029",
+  "sourceMap": "365:2556:19:-;;132:2:-1;166:7;155:9;146:7;137:37;252:7;246:14;243:1;238:23;232:4;229:33;270:1;265:20;;;;222:63;;265:20;274:9;222:63;;298:9;295:1;288:20;328:4;319:7;311:22;352:7;343;336:24",
+  "deployedSourceMap": "365:2556:19:-;;;;;;;;",
+  "source": "/*\n\n  Abstract over fixed-price sales and Dutch auctions, with the intent of easily supporting additional methods of sale later.\n\n  Separated into a library for convenience, all the functions are inlined.\n\n*/\n\npragma solidity 0.4.23;\n\nimport \"zeppelin-solidity/contracts/math/SafeMath.sol\";\n\n/**\n * @title SaleKindInterface\n * @author Project Wyvern Developers\n */\nlibrary SaleKindInterface {\n\n    /**\n     * Side: buy or sell.\n     */\n    enum Side { Buy, Sell }\n\n    /**\n     * Currently supported kinds of sale: fixed price, Dutch auction. \n     * English auctions cannot be supported without stronger escrow guarantees.\n     * Future interesting options: Vickrey auction, nonlinear Dutch auctions.\n     */\n    enum SaleKind { FixedPrice, DutchAuction }\n\n    /**\n     * @dev Check whether the parameters of a sale are valid\n     * @param saleKind Kind of sale\n     * @param expirationTime Order expiration time\n     * @return Whether the parameters were valid\n     */\n    function validateParameters(SaleKind saleKind, uint expirationTime)\n        pure\n        internal\n        returns (bool)\n    {\n        /* Auctions must have a set expiration date. */\n        return (saleKind == SaleKind.FixedPrice || expirationTime > 0);\n    }\n\n    /**\n     * @dev Return whether or not an order can be settled\n     * @dev Precondition: parameters have passed validateParameters\n     * @param listingTime Order listing time\n     * @param expirationTime Order expiration time\n     */\n    function canSettleOrder(uint listingTime, uint expirationTime)\n        view\n        internal\n        returns (bool)\n    {\n        return (listingTime < now) && (expirationTime == 0 || now < expirationTime);\n    }\n\n    /**\n     * @dev Calculate the settlement price of an order\n     * @dev Precondition: parameters have passed validateParameters.\n     * @param side Order side\n     * @param saleKind Method of sale\n     * @param basePrice Order base price\n     * @param extra Order extra price data\n     * @param listingTime Order listing time\n     * @param expirationTime Order expiration time\n     */\n    function calculateFinalPrice(Side side, SaleKind saleKind, uint basePrice, uint extra, uint listingTime, uint expirationTime)\n        view\n        internal\n        returns (uint finalPrice)\n    {\n        if (saleKind == SaleKind.FixedPrice) {\n            return basePrice;\n        } else if (saleKind == SaleKind.DutchAuction) {\n            uint diff = SafeMath.div(SafeMath.mul(extra, SafeMath.sub(now, listingTime)), SafeMath.sub(expirationTime, listingTime));\n            if (side == Side.Sell) {\n                /* Sell-side - start price: basePrice. End price: basePrice - extra. */\n                return SafeMath.sub(basePrice, diff);\n            } else {\n                /* Buy-side - start price: basePrice. End price: basePrice + extra. */\n                return SafeMath.add(basePrice, diff);\n            }\n        }\n    }\n\n}\n",
   "sourcePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/exchange/SaleKindInterface.sol",
   "ast": {
     "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/exchange/SaleKindInterface.sol",
     "exportedSymbols": {
       "SaleKindInterface": [
-        5180
+        5191
       ]
     },
-    "id": 5181,
+    "id": 5192,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 5057,
+        "id": 5068,
         "literals": [
           "solidity",
           "0.4",
-          ".19"
+          ".23"
         ],
         "nodeType": "PragmaDirective",
         "src": "210:23:19"
@@ -30,10 +30,10 @@
       {
         "absolutePath": "zeppelin-solidity/contracts/math/SafeMath.sol",
         "file": "zeppelin-solidity/contracts/math/SafeMath.sol",
-        "id": 5058,
+        "id": 5069,
         "nodeType": "ImportDirective",
-        "scope": 5181,
-        "sourceUnit": 6136,
+        "scope": 5192,
+        "sourceUnit": 6141,
         "src": "235:55:19",
         "symbolAliases": [],
         "unitAlias": ""
@@ -44,25 +44,25 @@
         "contractKind": "library",
         "documentation": "@title SaleKindInterface\n@author Project Wyvern Developers",
         "fullyImplemented": true,
-        "id": 5180,
+        "id": 5191,
         "linearizedBaseContracts": [
-          5180
+          5191
         ],
         "name": "SaleKindInterface",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "canonicalName": "SaleKindInterface.Side",
-            "id": 5061,
+            "id": 5072,
             "members": [
               {
-                "id": 5059,
+                "id": 5070,
                 "name": "Buy",
                 "nodeType": "EnumValue",
                 "src": "452:3:19"
               },
               {
-                "id": 5060,
+                "id": 5071,
                 "name": "Sell",
                 "nodeType": "EnumValue",
                 "src": "457:4:19"
@@ -74,16 +74,16 @@
           },
           {
             "canonicalName": "SaleKindInterface.SaleKind",
-            "id": 5064,
+            "id": 5075,
             "members": [
               {
-                "id": 5062,
+                "id": 5073,
                 "name": "FixedPrice",
                 "nodeType": "EnumValue",
                 "src": "730:10:19"
               },
               {
-                "id": 5063,
+                "id": 5074,
                 "name": "DutchAuction",
                 "nodeType": "EnumValue",
                 "src": "742:12:19"
@@ -95,7 +95,7 @@
           },
           {
             "body": {
-              "id": 5083,
+              "id": 5094,
               "nodeType": "Block",
               "src": "1100:135:19",
               "statements": [
@@ -109,7 +109,7 @@
                           "typeIdentifier": "t_bool",
                           "typeString": "bool"
                         },
-                        "id": 5080,
+                        "id": 5091,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -117,24 +117,24 @@
                         "leftExpression": {
                           "argumentTypes": null,
                           "commonType": {
-                            "typeIdentifier": "t_enum$_SaleKind_$5064",
+                            "typeIdentifier": "t_enum$_SaleKind_$5075",
                             "typeString": "enum SaleKindInterface.SaleKind"
                           },
-                          "id": 5076,
+                          "id": 5087,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftExpression": {
                             "argumentTypes": null,
-                            "id": 5073,
+                            "id": 5084,
                             "name": "saleKind",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 5066,
+                            "referencedDeclaration": 5077,
                             "src": "1174:8:19",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_enum$_SaleKind_$5064",
+                              "typeIdentifier": "t_enum$_SaleKind_$5075",
                               "typeString": "enum SaleKindInterface.SaleKind"
                             }
                           },
@@ -144,18 +144,18 @@
                             "argumentTypes": null,
                             "expression": {
                               "argumentTypes": null,
-                              "id": 5074,
+                              "id": 5085,
                               "name": "SaleKind",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 5064,
+                              "referencedDeclaration": 5075,
                               "src": "1186:8:19",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_type$_t_enum$_SaleKind_$5064_$",
+                                "typeIdentifier": "t_type$_t_enum$_SaleKind_$5075_$",
                                 "typeString": "type(enum SaleKindInterface.SaleKind)"
                               }
                             },
-                            "id": 5075,
+                            "id": 5086,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -165,7 +165,7 @@
                             "referencedDeclaration": null,
                             "src": "1186:19:19",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_enum$_SaleKind_$5064",
+                              "typeIdentifier": "t_enum$_SaleKind_$5075",
                               "typeString": "enum SaleKindInterface.SaleKind"
                             }
                           },
@@ -183,18 +183,18 @@
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
                           },
-                          "id": 5079,
+                          "id": 5090,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftExpression": {
                             "argumentTypes": null,
-                            "id": 5077,
+                            "id": 5088,
                             "name": "expirationTime",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 5068,
+                            "referencedDeclaration": 5079,
                             "src": "1209:14:19",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -206,7 +206,7 @@
                           "rightExpression": {
                             "argumentTypes": null,
                             "hexValue": "30",
-                            "id": 5078,
+                            "id": 5089,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -234,7 +234,7 @@
                         }
                       }
                     ],
-                    "id": 5081,
+                    "id": 5092,
                     "isConstant": false,
                     "isInlineArray": false,
                     "isLValue": false,
@@ -247,14 +247,15 @@
                       "typeString": "bool"
                     }
                   },
-                  "functionReturnParameters": 5072,
-                  "id": 5082,
+                  "functionReturnParameters": 5083,
+                  "id": 5093,
                   "nodeType": "Return",
                   "src": "1166:62:19"
                 }
               ]
             },
-            "id": 5084,
+            "documentation": "@dev Check whether the parameters of a sale are valid\n@param saleKind Kind of sale\n@param expirationTime Order expiration time\n@return Whether the parameters were valid",
+            "id": 5095,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -262,31 +263,31 @@
             "name": "validateParameters",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 5069,
+              "id": 5080,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5066,
+                  "id": 5077,
                   "name": "saleKind",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5084,
+                  "scope": 5095,
                   "src": "1003:17:19",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_SaleKind_$5064",
+                    "typeIdentifier": "t_enum$_SaleKind_$5075",
                     "typeString": "enum SaleKindInterface.SaleKind"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5065,
+                    "id": 5076,
                     "name": "SaleKind",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5064,
+                    "referencedDeclaration": 5075,
                     "src": "1003:8:19",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_SaleKind_$5064",
+                      "typeIdentifier": "t_enum$_SaleKind_$5075",
                       "typeString": "enum SaleKindInterface.SaleKind"
                     }
                   },
@@ -295,10 +296,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5068,
+                  "id": 5079,
                   "name": "expirationTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5084,
+                  "scope": 5095,
                   "src": "1022:19:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -307,7 +308,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5067,
+                    "id": 5078,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1022:4:19",
@@ -324,15 +325,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 5072,
+              "id": 5083,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5071,
+                  "id": 5082,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5084,
+                  "scope": 5095,
                   "src": "1090:4:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -341,7 +342,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 5070,
+                    "id": 5081,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "1090:4:19",
@@ -356,7 +357,7 @@
               ],
               "src": "1089:6:19"
             },
-            "scope": 5180,
+            "scope": 5191,
             "src": "975:260:19",
             "stateMutability": "pure",
             "superFunction": null,
@@ -364,7 +365,7 @@
           },
           {
             "body": {
-              "id": 5107,
+              "id": 5118,
               "nodeType": "Block",
               "src": "1599:92:19",
               "statements": [
@@ -375,7 +376,7 @@
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
                     },
-                    "id": 5105,
+                    "id": 5116,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -389,18 +390,18 @@
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
                           },
-                          "id": 5095,
+                          "id": 5106,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftExpression": {
                             "argumentTypes": null,
-                            "id": 5093,
+                            "id": 5104,
                             "name": "listingTime",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 5086,
+                            "referencedDeclaration": 5097,
                             "src": "1617:11:19",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -411,11 +412,11 @@
                           "operator": "<",
                           "rightExpression": {
                             "argumentTypes": null,
-                            "id": 5094,
+                            "id": 5105,
                             "name": "now",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 6670,
+                            "referencedDeclaration": 6701,
                             "src": "1631:3:19",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -429,7 +430,7 @@
                           }
                         }
                       ],
-                      "id": 5096,
+                      "id": 5107,
                       "isConstant": false,
                       "isInlineArray": false,
                       "isLValue": false,
@@ -453,7 +454,7 @@
                             "typeIdentifier": "t_bool",
                             "typeString": "bool"
                           },
-                          "id": 5103,
+                          "id": 5114,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -464,18 +465,18 @@
                               "typeIdentifier": "t_uint256",
                               "typeString": "uint256"
                             },
-                            "id": 5099,
+                            "id": 5110,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
                             "lValueRequested": false,
                             "leftExpression": {
                               "argumentTypes": null,
-                              "id": 5097,
+                              "id": 5108,
                               "name": "expirationTime",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 5088,
+                              "referencedDeclaration": 5099,
                               "src": "1640:14:19",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -487,7 +488,7 @@
                             "rightExpression": {
                               "argumentTypes": null,
                               "hexValue": "30",
-                              "id": 5098,
+                              "id": 5109,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -516,18 +517,18 @@
                               "typeIdentifier": "t_uint256",
                               "typeString": "uint256"
                             },
-                            "id": 5102,
+                            "id": 5113,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
                             "lValueRequested": false,
                             "leftExpression": {
                               "argumentTypes": null,
-                              "id": 5100,
+                              "id": 5111,
                               "name": "now",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 6670,
+                              "referencedDeclaration": 6701,
                               "src": "1663:3:19",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -538,11 +539,11 @@
                             "operator": "<",
                             "rightExpression": {
                               "argumentTypes": null,
-                              "id": 5101,
+                              "id": 5112,
                               "name": "expirationTime",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 5088,
+                              "referencedDeclaration": 5099,
                               "src": "1669:14:19",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -562,7 +563,7 @@
                           }
                         }
                       ],
-                      "id": 5104,
+                      "id": 5115,
                       "isConstant": false,
                       "isInlineArray": false,
                       "isLValue": false,
@@ -581,14 +582,15 @@
                       "typeString": "bool"
                     }
                   },
-                  "functionReturnParameters": 5092,
-                  "id": 5106,
+                  "functionReturnParameters": 5103,
+                  "id": 5117,
                   "nodeType": "Return",
                   "src": "1609:75:19"
                 }
               ]
             },
-            "id": 5108,
+            "documentation": "@dev Return whether or not an order can be settled\n@dev Precondition: parameters have passed validateParameters\n@param listingTime Order listing time\n@param expirationTime Order expiration time",
+            "id": 5119,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -596,15 +598,15 @@
             "name": "canSettleOrder",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 5089,
+              "id": 5100,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5086,
+                  "id": 5097,
                   "name": "listingTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5108,
+                  "scope": 5119,
                   "src": "1503:16:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -613,7 +615,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5085,
+                    "id": 5096,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1503:4:19",
@@ -627,10 +629,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5088,
+                  "id": 5099,
                   "name": "expirationTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5108,
+                  "scope": 5119,
                   "src": "1521:19:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -639,7 +641,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5087,
+                    "id": 5098,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1521:4:19",
@@ -656,15 +658,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 5092,
+              "id": 5103,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5091,
+                  "id": 5102,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5108,
+                  "scope": 5119,
                   "src": "1589:4:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -673,7 +675,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 5090,
+                    "id": 5101,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "1589:4:19",
@@ -688,7 +690,7 @@
               ],
               "src": "1588:6:19"
             },
-            "scope": 5180,
+            "scope": 5191,
             "src": "1479:212:19",
             "stateMutability": "view",
             "superFunction": null,
@@ -696,7 +698,7 @@
           },
           {
             "body": {
-              "id": 5178,
+              "id": 5189,
               "nodeType": "Block",
               "src": "2279:639:19",
               "statements": [
@@ -704,24 +706,24 @@
                   "condition": {
                     "argumentTypes": null,
                     "commonType": {
-                      "typeIdentifier": "t_enum$_SaleKind_$5064",
+                      "typeIdentifier": "t_enum$_SaleKind_$5075",
                       "typeString": "enum SaleKindInterface.SaleKind"
                     },
-                    "id": 5128,
+                    "id": 5139,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftExpression": {
                       "argumentTypes": null,
-                      "id": 5125,
+                      "id": 5136,
                       "name": "saleKind",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 5112,
+                      "referencedDeclaration": 5123,
                       "src": "2293:8:19",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_enum$_SaleKind_$5064",
+                        "typeIdentifier": "t_enum$_SaleKind_$5075",
                         "typeString": "enum SaleKindInterface.SaleKind"
                       }
                     },
@@ -731,18 +733,18 @@
                       "argumentTypes": null,
                       "expression": {
                         "argumentTypes": null,
-                        "id": 5126,
+                        "id": 5137,
                         "name": "SaleKind",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 5064,
+                        "referencedDeclaration": 5075,
                         "src": "2305:8:19",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_enum$_SaleKind_$5064_$",
+                          "typeIdentifier": "t_type$_t_enum$_SaleKind_$5075_$",
                           "typeString": "type(enum SaleKindInterface.SaleKind)"
                         }
                       },
-                      "id": 5127,
+                      "id": 5138,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
@@ -752,7 +754,7 @@
                       "referencedDeclaration": null,
                       "src": "2305:19:19",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_enum$_SaleKind_$5064",
+                        "typeIdentifier": "t_enum$_SaleKind_$5075",
                         "typeString": "enum SaleKindInterface.SaleKind"
                       }
                     },
@@ -766,24 +768,24 @@
                     "condition": {
                       "argumentTypes": null,
                       "commonType": {
-                        "typeIdentifier": "t_enum$_SaleKind_$5064",
+                        "typeIdentifier": "t_enum$_SaleKind_$5075",
                         "typeString": "enum SaleKindInterface.SaleKind"
                       },
-                      "id": 5135,
+                      "id": 5146,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "leftExpression": {
                         "argumentTypes": null,
-                        "id": 5132,
+                        "id": 5143,
                         "name": "saleKind",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 5112,
+                        "referencedDeclaration": 5123,
                         "src": "2377:8:19",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_enum$_SaleKind_$5064",
+                          "typeIdentifier": "t_enum$_SaleKind_$5075",
                           "typeString": "enum SaleKindInterface.SaleKind"
                         }
                       },
@@ -793,18 +795,18 @@
                         "argumentTypes": null,
                         "expression": {
                           "argumentTypes": null,
-                          "id": 5133,
+                          "id": 5144,
                           "name": "SaleKind",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 5064,
+                          "referencedDeclaration": 5075,
                           "src": "2389:8:19",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_type$_t_enum$_SaleKind_$5064_$",
+                            "typeIdentifier": "t_type$_t_enum$_SaleKind_$5075_$",
                             "typeString": "type(enum SaleKindInterface.SaleKind)"
                           }
                         },
-                        "id": 5134,
+                        "id": 5145,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -814,7 +816,7 @@
                         "referencedDeclaration": null,
                         "src": "2389:21:19",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_enum$_SaleKind_$5064",
+                          "typeIdentifier": "t_enum$_SaleKind_$5075",
                           "typeString": "enum SaleKindInterface.SaleKind"
                         }
                       },
@@ -825,25 +827,25 @@
                       }
                     },
                     "falseBody": null,
-                    "id": 5176,
+                    "id": 5187,
                     "nodeType": "IfStatement",
                     "src": "2373:539:19",
                     "trueBody": {
-                      "id": 5175,
+                      "id": 5186,
                       "nodeType": "Block",
                       "src": "2412:500:19",
                       "statements": [
                         {
                           "assignments": [
-                            5137
+                            5148
                           ],
                           "declarations": [
                             {
                               "constant": false,
-                              "id": 5137,
+                              "id": 5148,
                               "name": "diff",
                               "nodeType": "VariableDeclaration",
-                              "scope": 5179,
+                              "scope": 5190,
                               "src": "2426:9:19",
                               "stateVariable": false,
                               "storageLocation": "default",
@@ -852,7 +854,7 @@
                                 "typeString": "uint256"
                               },
                               "typeName": {
-                                "id": 5136,
+                                "id": 5147,
                                 "name": "uint",
                                 "nodeType": "ElementaryTypeName",
                                 "src": "2426:4:19",
@@ -865,7 +867,7 @@
                               "visibility": "internal"
                             }
                           ],
-                          "id": 5155,
+                          "id": 5166,
                           "initialValue": {
                             "argumentTypes": null,
                             "arguments": [
@@ -874,11 +876,11 @@
                                 "arguments": [
                                   {
                                     "argumentTypes": null,
-                                    "id": 5142,
+                                    "id": 5153,
                                     "name": "extra",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 5116,
+                                    "referencedDeclaration": 5127,
                                     "src": "2464:5:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -890,11 +892,11 @@
                                     "arguments": [
                                       {
                                         "argumentTypes": null,
-                                        "id": 5145,
+                                        "id": 5156,
                                         "name": "now",
                                         "nodeType": "Identifier",
                                         "overloadedDeclarations": [],
-                                        "referencedDeclaration": 6670,
+                                        "referencedDeclaration": 6701,
                                         "src": "2484:3:19",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_uint256",
@@ -903,11 +905,11 @@
                                       },
                                       {
                                         "argumentTypes": null,
-                                        "id": 5146,
+                                        "id": 5157,
                                         "name": "listingTime",
                                         "nodeType": "Identifier",
                                         "overloadedDeclarations": [],
-                                        "referencedDeclaration": 5118,
+                                        "referencedDeclaration": 5129,
                                         "src": "2489:11:19",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_uint256",
@@ -928,32 +930,32 @@
                                       ],
                                       "expression": {
                                         "argumentTypes": null,
-                                        "id": 5143,
+                                        "id": 5154,
                                         "name": "SafeMath",
                                         "nodeType": "Identifier",
                                         "overloadedDeclarations": [],
-                                        "referencedDeclaration": 6135,
+                                        "referencedDeclaration": 6140,
                                         "src": "2471:8:19",
                                         "typeDescriptions": {
-                                          "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                          "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                           "typeString": "type(library SafeMath)"
                                         }
                                       },
-                                      "id": 5144,
+                                      "id": 5155,
                                       "isConstant": false,
                                       "isLValue": false,
                                       "isPure": false,
                                       "lValueRequested": false,
                                       "memberName": "sub",
                                       "nodeType": "MemberAccess",
-                                      "referencedDeclaration": 6110,
+                                      "referencedDeclaration": 6115,
                                       "src": "2471:12:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                         "typeString": "function (uint256,uint256) pure returns (uint256)"
                                       }
                                     },
-                                    "id": 5147,
+                                    "id": 5158,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
@@ -981,32 +983,32 @@
                                   ],
                                   "expression": {
                                     "argumentTypes": null,
-                                    "id": 5140,
+                                    "id": 5151,
                                     "name": "SafeMath",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 6135,
+                                    "referencedDeclaration": 6140,
                                     "src": "2451:8:19",
                                     "typeDescriptions": {
-                                      "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                      "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                       "typeString": "type(library SafeMath)"
                                     }
                                   },
-                                  "id": 5141,
+                                  "id": 5152,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
                                   "lValueRequested": false,
                                   "memberName": "mul",
                                   "nodeType": "MemberAccess",
-                                  "referencedDeclaration": 6072,
+                                  "referencedDeclaration": 6081,
                                   "src": "2451:12:19",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                     "typeString": "function (uint256,uint256) pure returns (uint256)"
                                   }
                                 },
-                                "id": 5148,
+                                "id": 5159,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
@@ -1025,11 +1027,11 @@
                                 "arguments": [
                                   {
                                     "argumentTypes": null,
-                                    "id": 5151,
+                                    "id": 5162,
                                     "name": "expirationTime",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 5120,
+                                    "referencedDeclaration": 5131,
                                     "src": "2517:14:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -1038,11 +1040,11 @@
                                   },
                                   {
                                     "argumentTypes": null,
-                                    "id": 5152,
+                                    "id": 5163,
                                     "name": "listingTime",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 5118,
+                                    "referencedDeclaration": 5129,
                                     "src": "2533:11:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -1063,32 +1065,32 @@
                                   ],
                                   "expression": {
                                     "argumentTypes": null,
-                                    "id": 5149,
+                                    "id": 5160,
                                     "name": "SafeMath",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 6135,
+                                    "referencedDeclaration": 6140,
                                     "src": "2504:8:19",
                                     "typeDescriptions": {
-                                      "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                      "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                       "typeString": "type(library SafeMath)"
                                     }
                                   },
-                                  "id": 5150,
+                                  "id": 5161,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
                                   "lValueRequested": false,
                                   "memberName": "sub",
                                   "nodeType": "MemberAccess",
-                                  "referencedDeclaration": 6110,
+                                  "referencedDeclaration": 6115,
                                   "src": "2504:12:19",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                     "typeString": "function (uint256,uint256) pure returns (uint256)"
                                   }
                                 },
-                                "id": 5153,
+                                "id": 5164,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
@@ -1116,32 +1118,32 @@
                               ],
                               "expression": {
                                 "argumentTypes": null,
-                                "id": 5138,
+                                "id": 5149,
                                 "name": "SafeMath",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 6135,
+                                "referencedDeclaration": 6140,
                                 "src": "2438:8:19",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                  "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                   "typeString": "type(library SafeMath)"
                                 }
                               },
-                              "id": 5139,
+                              "id": 5150,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
                               "lValueRequested": false,
                               "memberName": "div",
                               "nodeType": "MemberAccess",
-                              "referencedDeclaration": 6090,
+                              "referencedDeclaration": 6095,
                               "src": "2438:12:19",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                 "typeString": "function (uint256,uint256) pure returns (uint256)"
                               }
                             },
-                            "id": 5154,
+                            "id": 5165,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -1162,24 +1164,24 @@
                           "condition": {
                             "argumentTypes": null,
                             "commonType": {
-                              "typeIdentifier": "t_enum$_Side_$5061",
+                              "typeIdentifier": "t_enum$_Side_$5072",
                               "typeString": "enum SaleKindInterface.Side"
                             },
-                            "id": 5159,
+                            "id": 5170,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
                             "lValueRequested": false,
                             "leftExpression": {
                               "argumentTypes": null,
-                              "id": 5156,
+                              "id": 5167,
                               "name": "side",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 5110,
+                              "referencedDeclaration": 5121,
                               "src": "2564:4:19",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_enum$_Side_$5061",
+                                "typeIdentifier": "t_enum$_Side_$5072",
                                 "typeString": "enum SaleKindInterface.Side"
                               }
                             },
@@ -1189,18 +1191,18 @@
                               "argumentTypes": null,
                               "expression": {
                                 "argumentTypes": null,
-                                "id": 5157,
+                                "id": 5168,
                                 "name": "Side",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 5061,
+                                "referencedDeclaration": 5072,
                                 "src": "2572:4:19",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_type$_t_enum$_Side_$5061_$",
+                                  "typeIdentifier": "t_type$_t_enum$_Side_$5072_$",
                                   "typeString": "type(enum SaleKindInterface.Side)"
                                 }
                               },
-                              "id": 5158,
+                              "id": 5169,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -1210,7 +1212,7 @@
                               "referencedDeclaration": null,
                               "src": "2572:9:19",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_enum$_Side_$5061",
+                                "typeIdentifier": "t_enum$_Side_$5072",
                                 "typeString": "enum SaleKindInterface.Side"
                               }
                             },
@@ -1221,7 +1223,7 @@
                             }
                           },
                           "falseBody": {
-                            "id": 5173,
+                            "id": 5184,
                             "nodeType": "Block",
                             "src": "2746:156:19",
                             "statements": [
@@ -1231,11 +1233,11 @@
                                   "arguments": [
                                     {
                                       "argumentTypes": null,
-                                      "id": 5169,
+                                      "id": 5180,
                                       "name": "basePrice",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 5114,
+                                      "referencedDeclaration": 5125,
                                       "src": "2871:9:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_uint256",
@@ -1244,11 +1246,11 @@
                                     },
                                     {
                                       "argumentTypes": null,
-                                      "id": 5170,
+                                      "id": 5181,
                                       "name": "diff",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 5137,
+                                      "referencedDeclaration": 5148,
                                       "src": "2882:4:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_uint256",
@@ -1269,32 +1271,32 @@
                                     ],
                                     "expression": {
                                       "argumentTypes": null,
-                                      "id": 5167,
+                                      "id": 5178,
                                       "name": "SafeMath",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 6135,
+                                      "referencedDeclaration": 6140,
                                       "src": "2858:8:19",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                        "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                         "typeString": "type(library SafeMath)"
                                       }
                                     },
-                                    "id": 5168,
+                                    "id": 5179,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "add",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 6134,
+                                    "referencedDeclaration": 6139,
                                     "src": "2858:12:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                       "typeString": "function (uint256,uint256) pure returns (uint256)"
                                     }
                                   },
-                                  "id": 5171,
+                                  "id": 5182,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -1308,18 +1310,18 @@
                                     "typeString": "uint256"
                                   }
                                 },
-                                "functionReturnParameters": 5124,
-                                "id": 5172,
+                                "functionReturnParameters": 5135,
+                                "id": 5183,
                                 "nodeType": "Return",
                                 "src": "2851:36:19"
                               }
                             ]
                           },
-                          "id": 5174,
+                          "id": 5185,
                           "nodeType": "IfStatement",
                           "src": "2560:342:19",
                           "trueBody": {
-                            "id": 5166,
+                            "id": 5177,
                             "nodeType": "Block",
                             "src": "2583:157:19",
                             "statements": [
@@ -1329,11 +1331,11 @@
                                   "arguments": [
                                     {
                                       "argumentTypes": null,
-                                      "id": 5162,
+                                      "id": 5173,
                                       "name": "basePrice",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 5114,
+                                      "referencedDeclaration": 5125,
                                       "src": "2709:9:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_uint256",
@@ -1342,11 +1344,11 @@
                                     },
                                     {
                                       "argumentTypes": null,
-                                      "id": 5163,
+                                      "id": 5174,
                                       "name": "diff",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 5137,
+                                      "referencedDeclaration": 5148,
                                       "src": "2720:4:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_uint256",
@@ -1367,32 +1369,32 @@
                                     ],
                                     "expression": {
                                       "argumentTypes": null,
-                                      "id": 5160,
+                                      "id": 5171,
                                       "name": "SafeMath",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 6135,
+                                      "referencedDeclaration": 6140,
                                       "src": "2696:8:19",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                        "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                         "typeString": "type(library SafeMath)"
                                       }
                                     },
-                                    "id": 5161,
+                                    "id": 5172,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "sub",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 6110,
+                                    "referencedDeclaration": 6115,
                                     "src": "2696:12:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                       "typeString": "function (uint256,uint256) pure returns (uint256)"
                                     }
                                   },
-                                  "id": 5164,
+                                  "id": 5175,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -1406,8 +1408,8 @@
                                     "typeString": "uint256"
                                   }
                                 },
-                                "functionReturnParameters": 5124,
-                                "id": 5165,
+                                "functionReturnParameters": 5135,
+                                "id": 5176,
                                 "nodeType": "Return",
                                 "src": "2689:36:19"
                               }
@@ -1417,30 +1419,30 @@
                       ]
                     }
                   },
-                  "id": 5177,
+                  "id": 5188,
                   "nodeType": "IfStatement",
                   "src": "2289:623:19",
                   "trueBody": {
-                    "id": 5131,
+                    "id": 5142,
                     "nodeType": "Block",
                     "src": "2326:41:19",
                     "statements": [
                       {
                         "expression": {
                           "argumentTypes": null,
-                          "id": 5129,
+                          "id": 5140,
                           "name": "basePrice",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 5114,
+                          "referencedDeclaration": 5125,
                           "src": "2347:9:19",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
                           }
                         },
-                        "functionReturnParameters": 5124,
-                        "id": 5130,
+                        "functionReturnParameters": 5135,
+                        "id": 5141,
                         "nodeType": "Return",
                         "src": "2340:16:19"
                       }
@@ -1449,7 +1451,8 @@
                 }
               ]
             },
-            "id": 5179,
+            "documentation": "@dev Calculate the settlement price of an order\n@dev Precondition: parameters have passed validateParameters.\n@param side Order side\n@param saleKind Method of sale\n@param basePrice Order base price\n@param extra Order extra price data\n@param listingTime Order listing time\n@param expirationTime Order expiration time",
+            "id": 5190,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -1457,31 +1460,31 @@
             "name": "calculateFinalPrice",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 5121,
+              "id": 5132,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5110,
+                  "id": 5121,
                   "name": "side",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2114:9:19",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_Side_$5061",
+                    "typeIdentifier": "t_enum$_Side_$5072",
                     "typeString": "enum SaleKindInterface.Side"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5109,
+                    "id": 5120,
                     "name": "Side",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5061,
+                    "referencedDeclaration": 5072,
                     "src": "2114:4:19",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_Side_$5061",
+                      "typeIdentifier": "t_enum$_Side_$5072",
                       "typeString": "enum SaleKindInterface.Side"
                     }
                   },
@@ -1490,26 +1493,26 @@
                 },
                 {
                   "constant": false,
-                  "id": 5112,
+                  "id": 5123,
                   "name": "saleKind",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2125:17:19",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_SaleKind_$5064",
+                    "typeIdentifier": "t_enum$_SaleKind_$5075",
                     "typeString": "enum SaleKindInterface.SaleKind"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5111,
+                    "id": 5122,
                     "name": "SaleKind",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5064,
+                    "referencedDeclaration": 5075,
                     "src": "2125:8:19",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_SaleKind_$5064",
+                      "typeIdentifier": "t_enum$_SaleKind_$5075",
                       "typeString": "enum SaleKindInterface.SaleKind"
                     }
                   },
@@ -1518,10 +1521,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5114,
+                  "id": 5125,
                   "name": "basePrice",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2144:14:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1530,7 +1533,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5113,
+                    "id": 5124,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2144:4:19",
@@ -1544,10 +1547,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5116,
+                  "id": 5127,
                   "name": "extra",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2160:10:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1556,7 +1559,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5115,
+                    "id": 5126,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2160:4:19",
@@ -1570,10 +1573,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5118,
+                  "id": 5129,
                   "name": "listingTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2172:16:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1582,7 +1585,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5117,
+                    "id": 5128,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2172:4:19",
@@ -1596,10 +1599,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5120,
+                  "id": 5131,
                   "name": "expirationTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2190:19:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1608,7 +1611,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5119,
+                    "id": 5130,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2190:4:19",
@@ -1625,15 +1628,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 5124,
+              "id": 5135,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5123,
+                  "id": 5134,
                   "name": "finalPrice",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2258:15:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1642,7 +1645,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5122,
+                    "id": 5133,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2258:4:19",
@@ -1657,14 +1660,14 @@
               ],
               "src": "2257:17:19"
             },
-            "scope": 5180,
+            "scope": 5191,
             "src": "2085:833:19",
             "stateMutability": "view",
             "superFunction": null,
             "visibility": "internal"
           }
         ],
-        "scope": 5181,
+        "scope": 5192,
         "src": "365:2556:19"
       }
     ],
@@ -1674,18 +1677,18 @@
     "absolutePath": "/home/cwgoes/working/crypto/wyvern/wyvern-ethereum/contracts/exchange/SaleKindInterface.sol",
     "exportedSymbols": {
       "SaleKindInterface": [
-        5180
+        5191
       ]
     },
-    "id": 5181,
+    "id": 5192,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 5057,
+        "id": 5068,
         "literals": [
           "solidity",
           "0.4",
-          ".19"
+          ".23"
         ],
         "nodeType": "PragmaDirective",
         "src": "210:23:19"
@@ -1693,10 +1696,10 @@
       {
         "absolutePath": "zeppelin-solidity/contracts/math/SafeMath.sol",
         "file": "zeppelin-solidity/contracts/math/SafeMath.sol",
-        "id": 5058,
+        "id": 5069,
         "nodeType": "ImportDirective",
-        "scope": 5181,
-        "sourceUnit": 6136,
+        "scope": 5192,
+        "sourceUnit": 6141,
         "src": "235:55:19",
         "symbolAliases": [],
         "unitAlias": ""
@@ -1707,25 +1710,25 @@
         "contractKind": "library",
         "documentation": "@title SaleKindInterface\n@author Project Wyvern Developers",
         "fullyImplemented": true,
-        "id": 5180,
+        "id": 5191,
         "linearizedBaseContracts": [
-          5180
+          5191
         ],
         "name": "SaleKindInterface",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "canonicalName": "SaleKindInterface.Side",
-            "id": 5061,
+            "id": 5072,
             "members": [
               {
-                "id": 5059,
+                "id": 5070,
                 "name": "Buy",
                 "nodeType": "EnumValue",
                 "src": "452:3:19"
               },
               {
-                "id": 5060,
+                "id": 5071,
                 "name": "Sell",
                 "nodeType": "EnumValue",
                 "src": "457:4:19"
@@ -1737,16 +1740,16 @@
           },
           {
             "canonicalName": "SaleKindInterface.SaleKind",
-            "id": 5064,
+            "id": 5075,
             "members": [
               {
-                "id": 5062,
+                "id": 5073,
                 "name": "FixedPrice",
                 "nodeType": "EnumValue",
                 "src": "730:10:19"
               },
               {
-                "id": 5063,
+                "id": 5074,
                 "name": "DutchAuction",
                 "nodeType": "EnumValue",
                 "src": "742:12:19"
@@ -1758,7 +1761,7 @@
           },
           {
             "body": {
-              "id": 5083,
+              "id": 5094,
               "nodeType": "Block",
               "src": "1100:135:19",
               "statements": [
@@ -1772,7 +1775,7 @@
                           "typeIdentifier": "t_bool",
                           "typeString": "bool"
                         },
-                        "id": 5080,
+                        "id": 5091,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -1780,24 +1783,24 @@
                         "leftExpression": {
                           "argumentTypes": null,
                           "commonType": {
-                            "typeIdentifier": "t_enum$_SaleKind_$5064",
+                            "typeIdentifier": "t_enum$_SaleKind_$5075",
                             "typeString": "enum SaleKindInterface.SaleKind"
                           },
-                          "id": 5076,
+                          "id": 5087,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftExpression": {
                             "argumentTypes": null,
-                            "id": 5073,
+                            "id": 5084,
                             "name": "saleKind",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 5066,
+                            "referencedDeclaration": 5077,
                             "src": "1174:8:19",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_enum$_SaleKind_$5064",
+                              "typeIdentifier": "t_enum$_SaleKind_$5075",
                               "typeString": "enum SaleKindInterface.SaleKind"
                             }
                           },
@@ -1807,18 +1810,18 @@
                             "argumentTypes": null,
                             "expression": {
                               "argumentTypes": null,
-                              "id": 5074,
+                              "id": 5085,
                               "name": "SaleKind",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 5064,
+                              "referencedDeclaration": 5075,
                               "src": "1186:8:19",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_type$_t_enum$_SaleKind_$5064_$",
+                                "typeIdentifier": "t_type$_t_enum$_SaleKind_$5075_$",
                                 "typeString": "type(enum SaleKindInterface.SaleKind)"
                               }
                             },
-                            "id": 5075,
+                            "id": 5086,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -1828,7 +1831,7 @@
                             "referencedDeclaration": null,
                             "src": "1186:19:19",
                             "typeDescriptions": {
-                              "typeIdentifier": "t_enum$_SaleKind_$5064",
+                              "typeIdentifier": "t_enum$_SaleKind_$5075",
                               "typeString": "enum SaleKindInterface.SaleKind"
                             }
                           },
@@ -1846,18 +1849,18 @@
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
                           },
-                          "id": 5079,
+                          "id": 5090,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftExpression": {
                             "argumentTypes": null,
-                            "id": 5077,
+                            "id": 5088,
                             "name": "expirationTime",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 5068,
+                            "referencedDeclaration": 5079,
                             "src": "1209:14:19",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -1869,7 +1872,7 @@
                           "rightExpression": {
                             "argumentTypes": null,
                             "hexValue": "30",
-                            "id": 5078,
+                            "id": 5089,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -1897,7 +1900,7 @@
                         }
                       }
                     ],
-                    "id": 5081,
+                    "id": 5092,
                     "isConstant": false,
                     "isInlineArray": false,
                     "isLValue": false,
@@ -1910,14 +1913,15 @@
                       "typeString": "bool"
                     }
                   },
-                  "functionReturnParameters": 5072,
-                  "id": 5082,
+                  "functionReturnParameters": 5083,
+                  "id": 5093,
                   "nodeType": "Return",
                   "src": "1166:62:19"
                 }
               ]
             },
-            "id": 5084,
+            "documentation": "@dev Check whether the parameters of a sale are valid\n@param saleKind Kind of sale\n@param expirationTime Order expiration time\n@return Whether the parameters were valid",
+            "id": 5095,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -1925,31 +1929,31 @@
             "name": "validateParameters",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 5069,
+              "id": 5080,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5066,
+                  "id": 5077,
                   "name": "saleKind",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5084,
+                  "scope": 5095,
                   "src": "1003:17:19",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_SaleKind_$5064",
+                    "typeIdentifier": "t_enum$_SaleKind_$5075",
                     "typeString": "enum SaleKindInterface.SaleKind"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5065,
+                    "id": 5076,
                     "name": "SaleKind",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5064,
+                    "referencedDeclaration": 5075,
                     "src": "1003:8:19",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_SaleKind_$5064",
+                      "typeIdentifier": "t_enum$_SaleKind_$5075",
                       "typeString": "enum SaleKindInterface.SaleKind"
                     }
                   },
@@ -1958,10 +1962,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5068,
+                  "id": 5079,
                   "name": "expirationTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5084,
+                  "scope": 5095,
                   "src": "1022:19:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1970,7 +1974,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5067,
+                    "id": 5078,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1022:4:19",
@@ -1987,15 +1991,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 5072,
+              "id": 5083,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5071,
+                  "id": 5082,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5084,
+                  "scope": 5095,
                   "src": "1090:4:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -2004,7 +2008,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 5070,
+                    "id": 5081,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "1090:4:19",
@@ -2019,7 +2023,7 @@
               ],
               "src": "1089:6:19"
             },
-            "scope": 5180,
+            "scope": 5191,
             "src": "975:260:19",
             "stateMutability": "pure",
             "superFunction": null,
@@ -2027,7 +2031,7 @@
           },
           {
             "body": {
-              "id": 5107,
+              "id": 5118,
               "nodeType": "Block",
               "src": "1599:92:19",
               "statements": [
@@ -2038,7 +2042,7 @@
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
                     },
-                    "id": 5105,
+                    "id": 5116,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -2052,18 +2056,18 @@
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
                           },
-                          "id": 5095,
+                          "id": 5106,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
                           "lValueRequested": false,
                           "leftExpression": {
                             "argumentTypes": null,
-                            "id": 5093,
+                            "id": 5104,
                             "name": "listingTime",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 5086,
+                            "referencedDeclaration": 5097,
                             "src": "1617:11:19",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -2074,11 +2078,11 @@
                           "operator": "<",
                           "rightExpression": {
                             "argumentTypes": null,
-                            "id": 5094,
+                            "id": 5105,
                             "name": "now",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 6670,
+                            "referencedDeclaration": 6701,
                             "src": "1631:3:19",
                             "typeDescriptions": {
                               "typeIdentifier": "t_uint256",
@@ -2092,7 +2096,7 @@
                           }
                         }
                       ],
-                      "id": 5096,
+                      "id": 5107,
                       "isConstant": false,
                       "isInlineArray": false,
                       "isLValue": false,
@@ -2116,7 +2120,7 @@
                             "typeIdentifier": "t_bool",
                             "typeString": "bool"
                           },
-                          "id": 5103,
+                          "id": 5114,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -2127,18 +2131,18 @@
                               "typeIdentifier": "t_uint256",
                               "typeString": "uint256"
                             },
-                            "id": 5099,
+                            "id": 5110,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
                             "lValueRequested": false,
                             "leftExpression": {
                               "argumentTypes": null,
-                              "id": 5097,
+                              "id": 5108,
                               "name": "expirationTime",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 5088,
+                              "referencedDeclaration": 5099,
                               "src": "1640:14:19",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -2150,7 +2154,7 @@
                             "rightExpression": {
                               "argumentTypes": null,
                               "hexValue": "30",
-                              "id": 5098,
+                              "id": 5109,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -2179,18 +2183,18 @@
                               "typeIdentifier": "t_uint256",
                               "typeString": "uint256"
                             },
-                            "id": 5102,
+                            "id": 5113,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
                             "lValueRequested": false,
                             "leftExpression": {
                               "argumentTypes": null,
-                              "id": 5100,
+                              "id": 5111,
                               "name": "now",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 6670,
+                              "referencedDeclaration": 6701,
                               "src": "1663:3:19",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -2201,11 +2205,11 @@
                             "operator": "<",
                             "rightExpression": {
                               "argumentTypes": null,
-                              "id": 5101,
+                              "id": 5112,
                               "name": "expirationTime",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 5088,
+                              "referencedDeclaration": 5099,
                               "src": "1669:14:19",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -2225,7 +2229,7 @@
                           }
                         }
                       ],
-                      "id": 5104,
+                      "id": 5115,
                       "isConstant": false,
                       "isInlineArray": false,
                       "isLValue": false,
@@ -2244,14 +2248,15 @@
                       "typeString": "bool"
                     }
                   },
-                  "functionReturnParameters": 5092,
-                  "id": 5106,
+                  "functionReturnParameters": 5103,
+                  "id": 5117,
                   "nodeType": "Return",
                   "src": "1609:75:19"
                 }
               ]
             },
-            "id": 5108,
+            "documentation": "@dev Return whether or not an order can be settled\n@dev Precondition: parameters have passed validateParameters\n@param listingTime Order listing time\n@param expirationTime Order expiration time",
+            "id": 5119,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -2259,15 +2264,15 @@
             "name": "canSettleOrder",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 5089,
+              "id": 5100,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5086,
+                  "id": 5097,
                   "name": "listingTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5108,
+                  "scope": 5119,
                   "src": "1503:16:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -2276,7 +2281,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5085,
+                    "id": 5096,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1503:4:19",
@@ -2290,10 +2295,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5088,
+                  "id": 5099,
                   "name": "expirationTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5108,
+                  "scope": 5119,
                   "src": "1521:19:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -2302,7 +2307,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5087,
+                    "id": 5098,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1521:4:19",
@@ -2319,15 +2324,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 5092,
+              "id": 5103,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5091,
+                  "id": 5102,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5108,
+                  "scope": 5119,
                   "src": "1589:4:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -2336,7 +2341,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 5090,
+                    "id": 5101,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "1589:4:19",
@@ -2351,7 +2356,7 @@
               ],
               "src": "1588:6:19"
             },
-            "scope": 5180,
+            "scope": 5191,
             "src": "1479:212:19",
             "stateMutability": "view",
             "superFunction": null,
@@ -2359,7 +2364,7 @@
           },
           {
             "body": {
-              "id": 5178,
+              "id": 5189,
               "nodeType": "Block",
               "src": "2279:639:19",
               "statements": [
@@ -2367,24 +2372,24 @@
                   "condition": {
                     "argumentTypes": null,
                     "commonType": {
-                      "typeIdentifier": "t_enum$_SaleKind_$5064",
+                      "typeIdentifier": "t_enum$_SaleKind_$5075",
                       "typeString": "enum SaleKindInterface.SaleKind"
                     },
-                    "id": 5128,
+                    "id": 5139,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftExpression": {
                       "argumentTypes": null,
-                      "id": 5125,
+                      "id": 5136,
                       "name": "saleKind",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 5112,
+                      "referencedDeclaration": 5123,
                       "src": "2293:8:19",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_enum$_SaleKind_$5064",
+                        "typeIdentifier": "t_enum$_SaleKind_$5075",
                         "typeString": "enum SaleKindInterface.SaleKind"
                       }
                     },
@@ -2394,18 +2399,18 @@
                       "argumentTypes": null,
                       "expression": {
                         "argumentTypes": null,
-                        "id": 5126,
+                        "id": 5137,
                         "name": "SaleKind",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 5064,
+                        "referencedDeclaration": 5075,
                         "src": "2305:8:19",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_enum$_SaleKind_$5064_$",
+                          "typeIdentifier": "t_type$_t_enum$_SaleKind_$5075_$",
                           "typeString": "type(enum SaleKindInterface.SaleKind)"
                         }
                       },
-                      "id": 5127,
+                      "id": 5138,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
@@ -2415,7 +2420,7 @@
                       "referencedDeclaration": null,
                       "src": "2305:19:19",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_enum$_SaleKind_$5064",
+                        "typeIdentifier": "t_enum$_SaleKind_$5075",
                         "typeString": "enum SaleKindInterface.SaleKind"
                       }
                     },
@@ -2429,24 +2434,24 @@
                     "condition": {
                       "argumentTypes": null,
                       "commonType": {
-                        "typeIdentifier": "t_enum$_SaleKind_$5064",
+                        "typeIdentifier": "t_enum$_SaleKind_$5075",
                         "typeString": "enum SaleKindInterface.SaleKind"
                       },
-                      "id": 5135,
+                      "id": 5146,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
                       "lValueRequested": false,
                       "leftExpression": {
                         "argumentTypes": null,
-                        "id": 5132,
+                        "id": 5143,
                         "name": "saleKind",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 5112,
+                        "referencedDeclaration": 5123,
                         "src": "2377:8:19",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_enum$_SaleKind_$5064",
+                          "typeIdentifier": "t_enum$_SaleKind_$5075",
                           "typeString": "enum SaleKindInterface.SaleKind"
                         }
                       },
@@ -2456,18 +2461,18 @@
                         "argumentTypes": null,
                         "expression": {
                           "argumentTypes": null,
-                          "id": 5133,
+                          "id": 5144,
                           "name": "SaleKind",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 5064,
+                          "referencedDeclaration": 5075,
                           "src": "2389:8:19",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_type$_t_enum$_SaleKind_$5064_$",
+                            "typeIdentifier": "t_type$_t_enum$_SaleKind_$5075_$",
                             "typeString": "type(enum SaleKindInterface.SaleKind)"
                           }
                         },
-                        "id": 5134,
+                        "id": 5145,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -2477,7 +2482,7 @@
                         "referencedDeclaration": null,
                         "src": "2389:21:19",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_enum$_SaleKind_$5064",
+                          "typeIdentifier": "t_enum$_SaleKind_$5075",
                           "typeString": "enum SaleKindInterface.SaleKind"
                         }
                       },
@@ -2488,25 +2493,25 @@
                       }
                     },
                     "falseBody": null,
-                    "id": 5176,
+                    "id": 5187,
                     "nodeType": "IfStatement",
                     "src": "2373:539:19",
                     "trueBody": {
-                      "id": 5175,
+                      "id": 5186,
                       "nodeType": "Block",
                       "src": "2412:500:19",
                       "statements": [
                         {
                           "assignments": [
-                            5137
+                            5148
                           ],
                           "declarations": [
                             {
                               "constant": false,
-                              "id": 5137,
+                              "id": 5148,
                               "name": "diff",
                               "nodeType": "VariableDeclaration",
-                              "scope": 5179,
+                              "scope": 5190,
                               "src": "2426:9:19",
                               "stateVariable": false,
                               "storageLocation": "default",
@@ -2515,7 +2520,7 @@
                                 "typeString": "uint256"
                               },
                               "typeName": {
-                                "id": 5136,
+                                "id": 5147,
                                 "name": "uint",
                                 "nodeType": "ElementaryTypeName",
                                 "src": "2426:4:19",
@@ -2528,7 +2533,7 @@
                               "visibility": "internal"
                             }
                           ],
-                          "id": 5155,
+                          "id": 5166,
                           "initialValue": {
                             "argumentTypes": null,
                             "arguments": [
@@ -2537,11 +2542,11 @@
                                 "arguments": [
                                   {
                                     "argumentTypes": null,
-                                    "id": 5142,
+                                    "id": 5153,
                                     "name": "extra",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 5116,
+                                    "referencedDeclaration": 5127,
                                     "src": "2464:5:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -2553,11 +2558,11 @@
                                     "arguments": [
                                       {
                                         "argumentTypes": null,
-                                        "id": 5145,
+                                        "id": 5156,
                                         "name": "now",
                                         "nodeType": "Identifier",
                                         "overloadedDeclarations": [],
-                                        "referencedDeclaration": 6670,
+                                        "referencedDeclaration": 6701,
                                         "src": "2484:3:19",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_uint256",
@@ -2566,11 +2571,11 @@
                                       },
                                       {
                                         "argumentTypes": null,
-                                        "id": 5146,
+                                        "id": 5157,
                                         "name": "listingTime",
                                         "nodeType": "Identifier",
                                         "overloadedDeclarations": [],
-                                        "referencedDeclaration": 5118,
+                                        "referencedDeclaration": 5129,
                                         "src": "2489:11:19",
                                         "typeDescriptions": {
                                           "typeIdentifier": "t_uint256",
@@ -2591,32 +2596,32 @@
                                       ],
                                       "expression": {
                                         "argumentTypes": null,
-                                        "id": 5143,
+                                        "id": 5154,
                                         "name": "SafeMath",
                                         "nodeType": "Identifier",
                                         "overloadedDeclarations": [],
-                                        "referencedDeclaration": 6135,
+                                        "referencedDeclaration": 6140,
                                         "src": "2471:8:19",
                                         "typeDescriptions": {
-                                          "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                          "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                           "typeString": "type(library SafeMath)"
                                         }
                                       },
-                                      "id": 5144,
+                                      "id": 5155,
                                       "isConstant": false,
                                       "isLValue": false,
                                       "isPure": false,
                                       "lValueRequested": false,
                                       "memberName": "sub",
                                       "nodeType": "MemberAccess",
-                                      "referencedDeclaration": 6110,
+                                      "referencedDeclaration": 6115,
                                       "src": "2471:12:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                         "typeString": "function (uint256,uint256) pure returns (uint256)"
                                       }
                                     },
-                                    "id": 5147,
+                                    "id": 5158,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
@@ -2644,32 +2649,32 @@
                                   ],
                                   "expression": {
                                     "argumentTypes": null,
-                                    "id": 5140,
+                                    "id": 5151,
                                     "name": "SafeMath",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 6135,
+                                    "referencedDeclaration": 6140,
                                     "src": "2451:8:19",
                                     "typeDescriptions": {
-                                      "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                      "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                       "typeString": "type(library SafeMath)"
                                     }
                                   },
-                                  "id": 5141,
+                                  "id": 5152,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
                                   "lValueRequested": false,
                                   "memberName": "mul",
                                   "nodeType": "MemberAccess",
-                                  "referencedDeclaration": 6072,
+                                  "referencedDeclaration": 6081,
                                   "src": "2451:12:19",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                     "typeString": "function (uint256,uint256) pure returns (uint256)"
                                   }
                                 },
-                                "id": 5148,
+                                "id": 5159,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
@@ -2688,11 +2693,11 @@
                                 "arguments": [
                                   {
                                     "argumentTypes": null,
-                                    "id": 5151,
+                                    "id": 5162,
                                     "name": "expirationTime",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 5120,
+                                    "referencedDeclaration": 5131,
                                     "src": "2517:14:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -2701,11 +2706,11 @@
                                   },
                                   {
                                     "argumentTypes": null,
-                                    "id": 5152,
+                                    "id": 5163,
                                     "name": "listingTime",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 5118,
+                                    "referencedDeclaration": 5129,
                                     "src": "2533:11:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_uint256",
@@ -2726,32 +2731,32 @@
                                   ],
                                   "expression": {
                                     "argumentTypes": null,
-                                    "id": 5149,
+                                    "id": 5160,
                                     "name": "SafeMath",
                                     "nodeType": "Identifier",
                                     "overloadedDeclarations": [],
-                                    "referencedDeclaration": 6135,
+                                    "referencedDeclaration": 6140,
                                     "src": "2504:8:19",
                                     "typeDescriptions": {
-                                      "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                      "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                       "typeString": "type(library SafeMath)"
                                     }
                                   },
-                                  "id": 5150,
+                                  "id": 5161,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
                                   "lValueRequested": false,
                                   "memberName": "sub",
                                   "nodeType": "MemberAccess",
-                                  "referencedDeclaration": 6110,
+                                  "referencedDeclaration": 6115,
                                   "src": "2504:12:19",
                                   "typeDescriptions": {
                                     "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                     "typeString": "function (uint256,uint256) pure returns (uint256)"
                                   }
                                 },
-                                "id": 5153,
+                                "id": 5164,
                                 "isConstant": false,
                                 "isLValue": false,
                                 "isPure": false,
@@ -2779,32 +2784,32 @@
                               ],
                               "expression": {
                                 "argumentTypes": null,
-                                "id": 5138,
+                                "id": 5149,
                                 "name": "SafeMath",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 6135,
+                                "referencedDeclaration": 6140,
                                 "src": "2438:8:19",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                  "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                   "typeString": "type(library SafeMath)"
                                 }
                               },
-                              "id": 5139,
+                              "id": 5150,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
                               "lValueRequested": false,
                               "memberName": "div",
                               "nodeType": "MemberAccess",
-                              "referencedDeclaration": 6090,
+                              "referencedDeclaration": 6095,
                               "src": "2438:12:19",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                 "typeString": "function (uint256,uint256) pure returns (uint256)"
                               }
                             },
-                            "id": 5154,
+                            "id": 5165,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
@@ -2825,24 +2830,24 @@
                           "condition": {
                             "argumentTypes": null,
                             "commonType": {
-                              "typeIdentifier": "t_enum$_Side_$5061",
+                              "typeIdentifier": "t_enum$_Side_$5072",
                               "typeString": "enum SaleKindInterface.Side"
                             },
-                            "id": 5159,
+                            "id": 5170,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": false,
                             "lValueRequested": false,
                             "leftExpression": {
                               "argumentTypes": null,
-                              "id": 5156,
+                              "id": 5167,
                               "name": "side",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 5110,
+                              "referencedDeclaration": 5121,
                               "src": "2564:4:19",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_enum$_Side_$5061",
+                                "typeIdentifier": "t_enum$_Side_$5072",
                                 "typeString": "enum SaleKindInterface.Side"
                               }
                             },
@@ -2852,18 +2857,18 @@
                               "argumentTypes": null,
                               "expression": {
                                 "argumentTypes": null,
-                                "id": 5157,
+                                "id": 5168,
                                 "name": "Side",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 5061,
+                                "referencedDeclaration": 5072,
                                 "src": "2572:4:19",
                                 "typeDescriptions": {
-                                  "typeIdentifier": "t_type$_t_enum$_Side_$5061_$",
+                                  "typeIdentifier": "t_type$_t_enum$_Side_$5072_$",
                                   "typeString": "type(enum SaleKindInterface.Side)"
                                 }
                               },
-                              "id": 5158,
+                              "id": 5169,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": true,
@@ -2873,7 +2878,7 @@
                               "referencedDeclaration": null,
                               "src": "2572:9:19",
                               "typeDescriptions": {
-                                "typeIdentifier": "t_enum$_Side_$5061",
+                                "typeIdentifier": "t_enum$_Side_$5072",
                                 "typeString": "enum SaleKindInterface.Side"
                               }
                             },
@@ -2884,7 +2889,7 @@
                             }
                           },
                           "falseBody": {
-                            "id": 5173,
+                            "id": 5184,
                             "nodeType": "Block",
                             "src": "2746:156:19",
                             "statements": [
@@ -2894,11 +2899,11 @@
                                   "arguments": [
                                     {
                                       "argumentTypes": null,
-                                      "id": 5169,
+                                      "id": 5180,
                                       "name": "basePrice",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 5114,
+                                      "referencedDeclaration": 5125,
                                       "src": "2871:9:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_uint256",
@@ -2907,11 +2912,11 @@
                                     },
                                     {
                                       "argumentTypes": null,
-                                      "id": 5170,
+                                      "id": 5181,
                                       "name": "diff",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 5137,
+                                      "referencedDeclaration": 5148,
                                       "src": "2882:4:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_uint256",
@@ -2932,32 +2937,32 @@
                                     ],
                                     "expression": {
                                       "argumentTypes": null,
-                                      "id": 5167,
+                                      "id": 5178,
                                       "name": "SafeMath",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 6135,
+                                      "referencedDeclaration": 6140,
                                       "src": "2858:8:19",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                        "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                         "typeString": "type(library SafeMath)"
                                       }
                                     },
-                                    "id": 5168,
+                                    "id": 5179,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "add",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 6134,
+                                    "referencedDeclaration": 6139,
                                     "src": "2858:12:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                       "typeString": "function (uint256,uint256) pure returns (uint256)"
                                     }
                                   },
-                                  "id": 5171,
+                                  "id": 5182,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -2971,18 +2976,18 @@
                                     "typeString": "uint256"
                                   }
                                 },
-                                "functionReturnParameters": 5124,
-                                "id": 5172,
+                                "functionReturnParameters": 5135,
+                                "id": 5183,
                                 "nodeType": "Return",
                                 "src": "2851:36:19"
                               }
                             ]
                           },
-                          "id": 5174,
+                          "id": 5185,
                           "nodeType": "IfStatement",
                           "src": "2560:342:19",
                           "trueBody": {
-                            "id": 5166,
+                            "id": 5177,
                             "nodeType": "Block",
                             "src": "2583:157:19",
                             "statements": [
@@ -2992,11 +2997,11 @@
                                   "arguments": [
                                     {
                                       "argumentTypes": null,
-                                      "id": 5162,
+                                      "id": 5173,
                                       "name": "basePrice",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 5114,
+                                      "referencedDeclaration": 5125,
                                       "src": "2709:9:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_uint256",
@@ -3005,11 +3010,11 @@
                                     },
                                     {
                                       "argumentTypes": null,
-                                      "id": 5163,
+                                      "id": 5174,
                                       "name": "diff",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 5137,
+                                      "referencedDeclaration": 5148,
                                       "src": "2720:4:19",
                                       "typeDescriptions": {
                                         "typeIdentifier": "t_uint256",
@@ -3030,32 +3035,32 @@
                                     ],
                                     "expression": {
                                       "argumentTypes": null,
-                                      "id": 5160,
+                                      "id": 5171,
                                       "name": "SafeMath",
                                       "nodeType": "Identifier",
                                       "overloadedDeclarations": [],
-                                      "referencedDeclaration": 6135,
+                                      "referencedDeclaration": 6140,
                                       "src": "2696:8:19",
                                       "typeDescriptions": {
-                                        "typeIdentifier": "t_type$_t_contract$_SafeMath_$6135_$",
+                                        "typeIdentifier": "t_type$_t_contract$_SafeMath_$6140_$",
                                         "typeString": "type(library SafeMath)"
                                       }
                                     },
-                                    "id": 5161,
+                                    "id": 5172,
                                     "isConstant": false,
                                     "isLValue": false,
                                     "isPure": false,
                                     "lValueRequested": false,
                                     "memberName": "sub",
                                     "nodeType": "MemberAccess",
-                                    "referencedDeclaration": 6110,
+                                    "referencedDeclaration": 6115,
                                     "src": "2696:12:19",
                                     "typeDescriptions": {
                                       "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                                       "typeString": "function (uint256,uint256) pure returns (uint256)"
                                     }
                                   },
-                                  "id": 5164,
+                                  "id": 5175,
                                   "isConstant": false,
                                   "isLValue": false,
                                   "isPure": false,
@@ -3069,8 +3074,8 @@
                                     "typeString": "uint256"
                                   }
                                 },
-                                "functionReturnParameters": 5124,
-                                "id": 5165,
+                                "functionReturnParameters": 5135,
+                                "id": 5176,
                                 "nodeType": "Return",
                                 "src": "2689:36:19"
                               }
@@ -3080,30 +3085,30 @@
                       ]
                     }
                   },
-                  "id": 5177,
+                  "id": 5188,
                   "nodeType": "IfStatement",
                   "src": "2289:623:19",
                   "trueBody": {
-                    "id": 5131,
+                    "id": 5142,
                     "nodeType": "Block",
                     "src": "2326:41:19",
                     "statements": [
                       {
                         "expression": {
                           "argumentTypes": null,
-                          "id": 5129,
+                          "id": 5140,
                           "name": "basePrice",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 5114,
+                          "referencedDeclaration": 5125,
                           "src": "2347:9:19",
                           "typeDescriptions": {
                             "typeIdentifier": "t_uint256",
                             "typeString": "uint256"
                           }
                         },
-                        "functionReturnParameters": 5124,
-                        "id": 5130,
+                        "functionReturnParameters": 5135,
+                        "id": 5141,
                         "nodeType": "Return",
                         "src": "2340:16:19"
                       }
@@ -3112,7 +3117,8 @@
                 }
               ]
             },
-            "id": 5179,
+            "documentation": "@dev Calculate the settlement price of an order\n@dev Precondition: parameters have passed validateParameters.\n@param side Order side\n@param saleKind Method of sale\n@param basePrice Order base price\n@param extra Order extra price data\n@param listingTime Order listing time\n@param expirationTime Order expiration time",
+            "id": 5190,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -3120,31 +3126,31 @@
             "name": "calculateFinalPrice",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 5121,
+              "id": 5132,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5110,
+                  "id": 5121,
                   "name": "side",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2114:9:19",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_Side_$5061",
+                    "typeIdentifier": "t_enum$_Side_$5072",
                     "typeString": "enum SaleKindInterface.Side"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5109,
+                    "id": 5120,
                     "name": "Side",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5061,
+                    "referencedDeclaration": 5072,
                     "src": "2114:4:19",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_Side_$5061",
+                      "typeIdentifier": "t_enum$_Side_$5072",
                       "typeString": "enum SaleKindInterface.Side"
                     }
                   },
@@ -3153,26 +3159,26 @@
                 },
                 {
                   "constant": false,
-                  "id": 5112,
+                  "id": 5123,
                   "name": "saleKind",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2125:17:19",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_SaleKind_$5064",
+                    "typeIdentifier": "t_enum$_SaleKind_$5075",
                     "typeString": "enum SaleKindInterface.SaleKind"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5111,
+                    "id": 5122,
                     "name": "SaleKind",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5064,
+                    "referencedDeclaration": 5075,
                     "src": "2125:8:19",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_SaleKind_$5064",
+                      "typeIdentifier": "t_enum$_SaleKind_$5075",
                       "typeString": "enum SaleKindInterface.SaleKind"
                     }
                   },
@@ -3181,10 +3187,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5114,
+                  "id": 5125,
                   "name": "basePrice",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2144:14:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -3193,7 +3199,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5113,
+                    "id": 5124,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2144:4:19",
@@ -3207,10 +3213,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5116,
+                  "id": 5127,
                   "name": "extra",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2160:10:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -3219,7 +3225,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5115,
+                    "id": 5126,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2160:4:19",
@@ -3233,10 +3239,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5118,
+                  "id": 5129,
                   "name": "listingTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2172:16:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -3245,7 +3251,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5117,
+                    "id": 5128,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2172:4:19",
@@ -3259,10 +3265,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5120,
+                  "id": 5131,
                   "name": "expirationTime",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2190:19:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -3271,7 +3277,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5119,
+                    "id": 5130,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2190:4:19",
@@ -3288,15 +3294,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 5124,
+              "id": 5135,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5123,
+                  "id": 5134,
                   "name": "finalPrice",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5179,
+                  "scope": 5190,
                   "src": "2258:15:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -3305,7 +3311,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5122,
+                    "id": 5133,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2258:4:19",
@@ -3320,14 +3326,14 @@
               ],
               "src": "2257:17:19"
             },
-            "scope": 5180,
+            "scope": 5191,
             "src": "2085:833:19",
             "stateMutability": "view",
             "superFunction": null,
             "visibility": "internal"
           }
         ],
-        "scope": 5181,
+        "scope": 5192,
         "src": "365:2556:19"
       }
     ],
@@ -3335,9 +3341,9 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.4.19+commit.c4cbbb05.Emscripten.clang"
+    "version": "0.4.23+commit.124ca40d.Emscripten.clang"
   },
   "networks": {},
   "schemaVersion": "2.0.0",
-  "updatedAt": "2018-04-01T13:25:20.451Z"
+  "updatedAt": "2018-05-12T16:08:48.295Z"
 }

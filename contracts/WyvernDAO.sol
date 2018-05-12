@@ -4,7 +4,7 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
 import "./dao/DelegatedShareholderAssociation.sol";
 
@@ -21,7 +21,7 @@ contract WyvernDAO is DelegatedShareholderAssociation {
     uint public constant MINIMUM_QUORUM                     = 200000 * (10 ** TOKEN_DECIMALS); // set to 10% of supply
     uint public constant DEBATE_PERIOD_MINUTES              = 60 * 24 * 3; // set to 3 days
 
-    function WyvernDAO (ERC20 sharesAddress) public {
+    constructor (ERC20 sharesAddress) public {
         sharesTokenAddress = sharesAddress;
         requiredSharesToBeBoardMember = REQUIRED_SHARES_TO_BE_BOARD_MEMBER;
         minimumQuorum = MINIMUM_QUORUM;

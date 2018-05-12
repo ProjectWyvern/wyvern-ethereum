@@ -4,7 +4,7 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
 /**
   * @title TestStatic
@@ -15,7 +15,7 @@ contract TestStatic {
     /**
       * @dev Initialize contract
       */
-    function TestStatic () public {
+    constructor () public {
     }
 
     function alwaysSucceed()

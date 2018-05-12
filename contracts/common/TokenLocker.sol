@@ -8,9 +8,9 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
-import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 /**
  * @title TokenLocker
@@ -26,7 +26,7 @@ contract TokenLocker {
      * @dev Create a new TokenLocker contract
      * @param tokenAddr ERC20 token this contract will be used to lock
      */
-    function TokenLocker (ERC20 tokenAddr) public {
+    constructor (ERC20 tokenAddr) public {
         owner = msg.sender;
         token = tokenAddr;
     }

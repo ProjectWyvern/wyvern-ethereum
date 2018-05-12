@@ -4,9 +4,9 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.23;
 
-import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 /**
  * @title TokenRecipient
@@ -26,13 +26,13 @@ contract TokenRecipient {
     function receiveApproval(address from, uint256 value, address token, bytes extraData) public {
         ERC20 t = ERC20(token);
         require(t.transferFrom(from, this, value));
-        ReceivedTokens(from, value, token, extraData);
+        emit ReceivedTokens(from, value, token, extraData);
     }
 
     /**
      * @dev Receive Ether and generate a log event
      */
     function () payable public {
-        ReceivedEther(msg.sender, msg.value);
+        emit ReceivedEther(msg.sender, msg.value);
     }
 }
