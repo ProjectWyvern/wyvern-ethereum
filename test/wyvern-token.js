@@ -20,6 +20,15 @@ const range = (start, length) => {
   return arr
 }
 
+const splitProof = (proof) => {
+  proof = proof.slice(2)
+  var arr = []
+  for (var i = 0; i < proof.length; i += 64) {
+    arr.push('0x' + proof.slice(i, i + 64))
+  }
+  return arr
+}
+
 const randomUTXO = () => utxoSet[boundedRandom(0, utxoSet.length - 1)]
 
 contract('WyvernToken', (accounts) => {
@@ -50,7 +59,7 @@ contract('WyvernToken', (accounts) => {
     it('should accept valid Merkle proof of random UTXO (#' + index + ' of 10)', () => {
       const utxo = randomUTXO()
       const hash = hashUTXO(utxo)
-      const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+      const proof = splitProof(utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex')))
 
       return WyvernToken
         .deployed()
@@ -73,7 +82,7 @@ contract('WyvernToken', (accounts) => {
       return WyvernToken
         .deployed()
         .then(instance => {
-          return instance.verifyProof.call(proof, hash)
+          return instance.verifyProof.call(splitProof(proof), hash)
         })
         .then(valid => {
           assert.equal(valid, false, 'Proof was not rejected')
@@ -91,7 +100,7 @@ contract('WyvernToken', (accounts) => {
       return WyvernToken
         .deployed()
         .then(instance => {
-          return instance.canRedeemUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis, proof)
+          return instance.canRedeemUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis, splitProof(proof))
         })
         .then(valid => {
           assert.equal(valid, true, 'UTXO was not accepted')
@@ -109,7 +118,7 @@ contract('WyvernToken', (accounts) => {
       return WyvernToken
         .deployed()
         .then(instance => {
-          return instance.canRedeemUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis + 1, proof)
+          return instance.canRedeemUTXO.call('0x' + utxo.txid, '0x' + rawAddr, utxo.outputIndex, utxo.satoshis + 1, splitProof(proof))
         })
         .then(valid => {
           assert.equal(valid, false, 'UTXO was not rejected')
@@ -132,7 +141,7 @@ contract('WyvernToken', (accounts) => {
     return WyvernToken
       .deployed()
       .then(instance => {
-        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, proof, pubKey, keyPair.compressed, v, r, s)
+        return instance.redeemUTXO.call('0x' + utxo.txid, utxo.outputIndex, utxo.satoshis, splitProof(proof), pubKey, keyPair.compressed, v, r, s)
           .then(amount => {
             assert.equal(false, true, 'Valid UTXO with invalid signature was credited!')
           }).catch(err => {
@@ -144,7 +153,7 @@ contract('WyvernToken', (accounts) => {
   it('should credit valid UTXO, with correct amount, only once', () => {
     const utxo = utxoSet.filter(utxo => utxo.address === 'WexQQptYFHYgSp1c3NSRmgwniBAU7WMHKq')[0]
     const hash = hashUTXO(utxo)
-    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+    const proof = splitProof(utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex')))
     // This is a real private key but the amount is not worth your time to steal.
     const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network)
     const ethAddr = accounts[0].slice(2)
@@ -180,7 +189,7 @@ contract('WyvernToken', (accounts) => {
   it('should not credit invalid UTXO', () => {
     const utxo = utxoSet.filter(utxo => utxo.address === 'WexQQptYFHYgSp1c3NSRmgwniBAU7WMHKq')[0]
     const hash = hashUTXO(utxo)
-    const proof = utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex'))
+    const proof = splitProof(utxoMerkleTree.getHexProof(Buffer.from(hash.slice(2), 'hex')))
     const keyPair = bitcoin.ECPair.fromWIF('WsUAyHvNaCyEcK8bFvzENF8wQe9zumSpJQbqMjmkwtDeYo4cqVsp', network)
     const ethAddr = accounts[0].slice(2)
     const hashBuf = bitcoin.crypto.sha256(Buffer.from(ethAddr, 'hex'))

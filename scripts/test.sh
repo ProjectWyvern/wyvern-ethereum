@@ -1,4 +1,4 @@
 #!/bin/sh
 
 rm -rf build
-truffle test
+truffle test $1
