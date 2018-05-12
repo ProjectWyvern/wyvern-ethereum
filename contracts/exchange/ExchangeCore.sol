@@ -251,6 +251,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         pure
         returns (bytes32 hash)
     {
+        /* Unfortunately abi.encodePacked doesn't work here, stack size constraints. */
         uint size = sizeOf(order);
         bytes memory array = new bytes(size);
         uint index;
