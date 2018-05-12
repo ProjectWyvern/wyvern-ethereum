@@ -26,6 +26,7 @@ library ArrayUtils {
      * @return The updated byte array (the parameter will be modified inplace)
      */
     function guardedArrayReplace(bytes memory array, bytes memory desired, bytes memory mask)
+        pure
         internal
     {
         require(array.length == desired.length);
