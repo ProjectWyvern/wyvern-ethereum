@@ -15,7 +15,7 @@ module.exports = (deployer, network) => {
         setConfig('deployed.' + network + '.WyvernExchange', WyvernExchange.address)
       })
   }
-  if (network === 'development' || network === 'rinkeby') {
+  if (network === 'development' || network === 'rinkeby' || network === 'coverage') {
     return deployer.deploy(WyvernProxyRegistry)
       .then(() => {
         setConfig('deployed.' + network + '.WyvernProxyRegistry', WyvernProxyRegistry.address)
@@ -23,7 +23,7 @@ module.exports = (deployer, network) => {
           return deployer.deploy(WyvernTokenTransferProxy, WyvernProxyRegistry.address).then(() => {
             setConfig('deployed.' + network + '.WyvernTokenTransferProxy', WyvernTokenTransferProxy.address)
             return WyvernDAOProxy.deployed().then(daoProxyInstance => {
-              return deployer.deploy(WyvernExchange, WyvernProxyRegistry.address, WyvernTokenTransferProxy.address, (network === 'development' || network === 'rinkeby') ? tokenInstance.address : '0x056017c55ae7ae32d12aef7c679df83a85ca75ff', daoProxyInstance.address)
+              return deployer.deploy(WyvernExchange, WyvernProxyRegistry.address, WyvernTokenTransferProxy.address, (network === 'development' || network === 'rinkeby' || network === 'coverage') ? tokenInstance.address : '0x056017c55ae7ae32d12aef7c679df83a85ca75ff', daoProxyInstance.address)
                 .then(() => {
                   setConfig('deployed.' + network + '.WyvernExchange', WyvernExchange.address)
                   return WyvernProxyRegistry.deployed().then(proxyRegistry => {
