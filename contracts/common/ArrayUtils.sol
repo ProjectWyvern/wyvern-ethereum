@@ -7,7 +7,7 @@
 
 pragma solidity 0.4.23;
 
-import "zeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title ArrayUtils
@@ -26,14 +26,15 @@ library ArrayUtils {
      * @return The updated byte array (the parameter will be modified inplace)
      */
     function guardedArrayReplace(bytes memory array, bytes memory desired, bytes memory mask)
-        pure
         internal
+        pure
     {
         require(array.length == desired.length);
         require(array.length == mask.length);
 
-        uint words = SafeMath.div(array.length, 0x20);
-        uint index = SafeMath.mul(words, 0x20);
+        uint words = array.length / 0x20;
+        uint index = words * 0x20;
+        assert(index / 0x20 == words);
         uint i;
 
         for (i = 0; i < words; i++) {
@@ -73,8 +74,8 @@ library ArrayUtils {
      * @return Whether or not all bytes in the arrays are equal
      */
     function arrayEq(bytes memory a, bytes memory b)
-        pure
         internal
+        pure
         returns (bool)
     {
         bool success = true;

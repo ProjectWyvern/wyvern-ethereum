@@ -18,9 +18,9 @@
 
 pragma solidity 0.4.23;
 
-import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "zeppelin-solidity/contracts/math/SafeMath.sol";
-import "zeppelin-solidity/contracts/MerkleProof.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/MerkleProof.sol";
 
 /**
   * @title UTXORedeemableToken

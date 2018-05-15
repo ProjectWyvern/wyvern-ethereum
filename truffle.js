@@ -20,6 +20,13 @@ module.exports = {
       gas: 6700000,
       gasPrice: 21000000000
     },
+    coverage: {
+      host: 'localhost',
+      network_id: '*',
+      port: 8545,
+      gas: 0xfffffffffff,
+      gasPrice: 0x01
+    },
     main: {
       host: 'localhost',
       port: 8545,
