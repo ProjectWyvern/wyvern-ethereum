@@ -9,7 +9,7 @@ Versions 1 and 2 of the protocol are operating live on the Ethereum mainnet, and
 
 #### Summary of changes from v2
 
-- Heavy EVM optimization of masked bytecode replacement (mostly: performed word-wise rather than byte-wise) and array comparision. See `contracts/common/ArrayUtils.sol`, mostly rewritten from v2.
+- Heavy EVM optimization of masked bytecode replacement (mostly: performed word-wise rather than byte-wise) and byte array operations. See `contracts/common/ArrayUtils.sol`, mostly rewritten from v2.
 - Updated to solc v0.23 (emit before events, some minor syntax changes)
 - Updated `zeppelin-solidity` dependency
 - Manual (assembly) order hash calculation
@@ -85,19 +85,17 @@ Public interface library, inherits from ExchangeCore. No independent state-modif
 
 Core protocol contract. Facilitates order approval, order validation, order cancellation, and atomic order matching. The ExchangeCore contract holds no tokens or assets itself - ERC20 tokens are held by protocol users (who must call `approve`) and nonfungible assets are held by AuthenticatedProxy contracts (from which the users can withdraw the assets at any time).
 
-{ TODO FIXME }
-
 Deployed contracts on Rinkeby:
 
-[Wyvern Exchange](https://rinkeby.etherscan.io/address/0xdca1fbe9f9469613aa2101b5e797226a9b586297)
+[Wyvern Exchange](https://rinkeby.etherscan.io/address/0x838d2403a061b459e15b494e78acae2bb3333dda)
 
-[Wyvern Atomicizer](https://rinkeby.etherscan.io/address/0x90b0c4d26520be6a941954d565f90ecf2991d8a7)
+[Wyvern Atomicizer](https://rinkeby.etherscan.io/address/0x6bec0bcf2834d34454942964b7b6f0537032546e)
 
-[Wyvern DAO Proxy](https://rinkeby.etherscan.io/address/0x32f51cefe7d1cac49334b7267da6ae7a127526da)
+[Wyvern DAO Proxy](https://rinkeby.etherscan.io/address/0xb44cc6d88168852f77755982936a20b00d971415)
 
-[Wyvern Token Transfer Proxy](https://rinkeby.etherscan.io/address/0xb89f6ac677a7530d9d6649d299350be90a50ad1e)
+[Wyvern Token Transfer Proxy](https://rinkeby.etherscan.io/address/0x03851346f00bc9166623197cce189e68d7f847dc)
 
-[Wyvern Proxy Registry](https://rinkeby.etherscan.io/address/0xeceaa7453a77bfe339b25d9d9e91009cde71c768)
+[Wyvern Proxy Registry](https://rinkeby.etherscan.io/address/0xb7297a9ae13e73e36069413f13d37c79b97db773)
 
 Note that the [wyvern-ethereum](https://github.com/projectwyvern/wyvern-ethereum) repository also contains contracts for the WYV token and the Wyvern DAO. Those contracts have already been deployed and are not within the scope of this audit (nor are they relevant to the functionality or correctness of the Wyvern Protocol).
 
