@@ -465,6 +465,74 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should not validate order with invalid maker protocol fees', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.changeMinimumMakerProtocolFee(1).then(() => {
+          const order = makeOrder(exchangeInstance.address)
+          order.feeMethod = 1
+          order.salt = 213898123
+          const hash = hashOrder(order)
+          return web3.eth.sign(hash, accounts[0]).then(signature => {
+            signature = signature.substr(2)
+            const r = '0x' + signature.slice(0, 64)
+            const s = '0x' + signature.slice(64, 128)
+            const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
+            return exchangeInstance.validateOrder_.call(
+              [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+              [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+              order.feeMethod,
+              order.side,
+              order.saleKind,
+              order.howToCall,
+              order.calldata,
+              order.replacementPattern,
+              order.staticExtradata,
+              v, r, s
+            ).then(ret => {
+              assert.equal(ret, false, 'Order with invalid parameters validated')
+              return exchangeInstance.changeMinimumMakerProtocolFee(0)
+            })
+          })
+        })
+      })
+  })
+
+  it('should not validate order with invalid taker protocol fees', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        return exchangeInstance.changeMinimumTakerProtocolFee(1).then(() => {
+          const order = makeOrder(exchangeInstance.address)
+          order.feeMethod = 1
+          order.salt = 21389812323
+          const hash = hashOrder(order)
+          return web3.eth.sign(hash, accounts[0]).then(signature => {
+            signature = signature.substr(2)
+            const r = '0x' + signature.slice(0, 64)
+            const s = '0x' + signature.slice(64, 128)
+            const v = 27 + parseInt('0x' + signature.slice(128, 130), 16)
+            return exchangeInstance.validateOrder_.call(
+              [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+              [order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+              order.feeMethod,
+              order.side,
+              order.saleKind,
+              order.howToCall,
+              order.calldata,
+              order.replacementPattern,
+              order.staticExtradata,
+              v, r, s
+            ).then(ret => {
+              assert.equal(ret, false, 'Order with invalid parameters validated')
+              return exchangeInstance.changeMinimumTakerProtocolFee(0)
+            })
+          })
+        })
+      })
+  })
+
   const getTime = (cb) => {
     web3.eth.getBlockNumber((err, num) => {
       if (err) throw err
@@ -486,8 +554,12 @@ contract('WyvernExchange', (accounts) => {
           return exchangeInstance.calculateFinalPrice.call(1, 1, 100, 100, time - 100, time).then(async price => {
             assert.equal(price.toNumber(), 0, 'Incorrect price')
             const time = await promisify(getTime)
-            return exchangeInstance.calculateFinalPrice.call(0, 1, 100, 100, time - 50, time + 50).then(price => {
+            return exchangeInstance.calculateFinalPrice.call(0, 1, 100, 100, time - 50, time + 50).then(async price => {
               assert.equal(price.toNumber(), 150, 'Incorrect price')
+              const time = await promisify(getTime)
+              return exchangeInstance.calculateFinalPrice.call(0, 1, 100, 200, time - 50, time + 50).then(price => {
+                assert.equal(price.toNumber(), 200, 'Incorrect price')
+              })
             })
           })
         })
