@@ -22,6 +22,8 @@ These are the Ethereum smart contracts for the Wyvern Protocol, the Wyvern ERC20
 
 [Wyvern Exchange (latest, by ENS)](https://etherscan.io/address/wyvernexchange.eth)
 
+[Wyvern Exchange v2.1](https://etherscan.io/address/0x6c5e18b3f0c243fc345095960fdb0e7aa61cd02b)
+
 [Wyvern Exchange v2](https://etherscan.io/address/0xb5aa1fb7027290d6d5cbbe3b1aecd5317fa582ec)
 
 [Wyvern Exchange v1](https://etherscan.io/address/0xf14f06e227C015b398b8069314F4B8d1d7022c9e)
