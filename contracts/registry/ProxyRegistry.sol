@@ -10,12 +10,15 @@ pragma solidity 0.4.23;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-import "./AuthenticatedProxy.sol";
+import "./OwnableDelegateProxy.sol";
 
 contract ProxyRegistry is Ownable {
 
+    /* DelegateProxy implementation contract. Must be initialized. */
+    address public delegateProxyImplementation;
+
     /* Authenticated proxies by user. */
-    mapping(address => AuthenticatedProxy) public proxies;
+    mapping(address => OwnableDelegateProxy) public proxies;
 
     /* Contracts pending access. */
     mapping(address => uint) public pending;
@@ -80,10 +83,10 @@ contract ProxyRegistry is Ownable {
      */
     function registerProxy()
         public
-        returns (AuthenticatedProxy proxy)
+        returns (OwnableDelegateProxy proxy)
     {
         require(proxies[msg.sender] == address(0));
-        proxy = new AuthenticatedProxy(msg.sender, this);
+        proxy = new OwnableDelegateProxy(msg.sender, delegateProxyImplementation);
         proxies[msg.sender] = proxy;
         return proxy;
     }

@@ -37,6 +37,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "../registry/ProxyRegistry.sol";
 import "../registry/TokenTransferProxy.sol";
+import "../registry/AuthenticatedProxy.sol";
 import "../common/ArrayUtils.sol";
 import "../common/ReentrancyGuarded.sol";
 import "./SaleKindInterface.sol";
@@ -703,8 +704,14 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         }
         require(ArrayUtils.arrayEq(buy.calldata, sell.calldata));
 
-        /* Retrieve proxy (the registry contract is trusted). */
-        AuthenticatedProxy proxy = registry.proxies(sell.maker);
+        /* Retrieve delegateProxy contract. */
+        OwnableDelegateProxy delegateProxy = registry.proxies(sell.maker);
+
+        /* Assert implementation. */
+        require(delegateProxy.implementation() == registry.delegateProxyImplementation());
+
+        /* Access the passthrough AuthenticatedProxy. */
+        AuthenticatedProxy proxy = AuthenticatedProxy(delegateProxy); 
 
         /* Proxy must exist. */
         require(proxy != address(0));

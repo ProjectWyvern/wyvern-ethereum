@@ -42,24 +42,22 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy, OwnedUpgradeabilitySto
   }
 
   /**
-   * @dev Allows the upgradeability owner to upgrade the current version of the proxy.
-   * @param version representing the version name of the new implementation to be set.
+   * @dev Allows the upgradeability owner to upgrade the current implementation of the proxy.
    * @param implementation representing the address of the new implementation to be set.
    */
-  function upgradeTo(string version, address implementation) public onlyProxyOwner {
-    _upgradeTo(version, implementation);
+  function upgradeTo(address implementation) public onlyProxyOwner {
+    _upgradeTo(implementation);
   }
 
   /**
-   * @dev Allows the upgradeability owner to upgrade the current version of the proxy and call the new implementation
+   * @dev Allows the upgradeability owner to upgrade the current implementation of the proxy and call the new implementation
    * to initialize whatever is needed through a low level call.
-   * @param version representing the version name of the new implementation to be set.
    * @param implementation representing the address of the new implementation to be set.
    * @param data represents the msg.data to bet sent in the low level call. This parameter may include the function
    * signature of the implementation to be called with the needed payload
    */
-  function upgradeToAndCall(string version, address implementation, bytes data) payable public onlyProxyOwner {
-    upgradeTo(version, implementation);
+  function upgradeToAndCall(address implementation, bytes data) payable public onlyProxyOwner {
+    upgradeTo(implementation);
     require(address(this).call.value(msg.value)(data));
   }
 }
