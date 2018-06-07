@@ -16,6 +16,7 @@ flatten contracts/WyvernToken.sol --output temp/WyvernTokenFlattened.sol
 flatten contracts/WyvernDAO.sol --output temp/WyvernDAOFlattened.sol
 flatten contracts/WyvernExchange.sol --output temp/WyvernExchangeFlattened.sol
 flatten contracts/WyvernProxyRegistry.sol --output temp/WyvernProxyRegistryFlattened.sol
+flatten contracts/WyvernOwnableDelegateProxy.sol --output temp/WyvernProxyRegistryFlattened.sol
 
 cd contracts
 find . -type f -name "*.sol" -exec sed -i 's/pragma solidity ^0.4.23/pragma solidity 0.4.23/g' {} +
