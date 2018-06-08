@@ -2,6 +2,7 @@
 
 const WyvernProxyRegistry = artifacts.require('WyvernProxyRegistry')
 const WyvernTokenTransferProxy = artifacts.require('WyvernTokenTransferProxy')
+const OwnableDelegateProxy = artifacts.require('OwnableDelegateProxy')
 const TestToken = artifacts.require('TestToken')
 const AuthenticatedProxy = artifacts.require('AuthenticatedProxy')
 const Web3 = require('web3')
@@ -70,6 +71,39 @@ contract('WyvernProxyRegistry', (accounts) => {
               .then(ret => {
                 assert.equal(ret.length, 42, 'Proxy was not created')
               })
+          })
+      })
+  })
+
+  it('should allow proxy update', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(ret => {
+            const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
+            return contract.methods.upgradeTo(registryInstance.address).send({from: accounts[0]}).then(() => {
+              return registryInstance.delegateProxyImplementation().then(impl => {
+                return contract.methods.upgradeTo(impl).send({from: accounts[0]}).then(() => {
+                })
+              })
+            })
+          })
+      })
+  })
+
+  it('should not allow proxy update from another account', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(ret => {
+            const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
+            return contract.methods.upgradeTo(registryInstance.address).send({from: accounts[1]}).then(() => {
+              assert.equal(true, false, 'allowed proxy update from another account')
+            }).catch(err => {
+              assert.equal(err.message, 'Returned error: VM Exception while processing transaction: revert')
+            })
           })
       })
   })
