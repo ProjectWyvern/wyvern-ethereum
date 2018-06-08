@@ -13,6 +13,12 @@ contract Proxy {
   function implementation() public view returns (address);
 
   /**
+  * @dev Tells the type of proxy (EIP 897)
+  * @return Type of proxy, 2 for upgradeable proxy
+  */
+  function proxyType() public pure returns (uint256 proxyTypeId);
+
+  /**
   * @dev Fallback function allowing to perform a delegatecall to the given implementation.
   * This function will return whatever the implementation call returns
   */
