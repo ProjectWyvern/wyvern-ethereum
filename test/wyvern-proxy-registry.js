@@ -92,6 +92,43 @@ contract('WyvernProxyRegistry', (accounts) => {
       })
   })
 
+  it('should return proxy type', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(ret => {
+            const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
+            return contract.methods.proxyType().call().then(ty => {
+              assert.equal(ty, 2, 'Incorrect proxy type')
+            })
+          })
+      })
+  })
+
+  it('should allow ownership transfer', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(ret => {
+            const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
+            return contract.methods.transferProxyOwnership(accounts[1]).send({from: accounts[0]}).then(() => {
+              return contract.methods.proxyOwner().call().then(owner => {
+                assert.equal(owner.toLowerCase(), accounts[1].toLowerCase(), 'Incorrect owner')
+                return contract.methods.transferProxyOwnership(accounts[0]).send({from: accounts[1]}).then(() => {
+                  return contract.methods.transferProxyOwnership(accounts[1]).send({from: accounts[1]}).then(() => {
+                    assert.equal(true, false, 'Allowed ownership transfer from another account')
+                  }).catch(err => {
+                    assert.equal(err.message, 'Returned error: VM Exception while processing transaction: revert')
+                  })
+                })
+              })
+            })
+          })
+      })
+  })
+
   it('should not allow proxy update from another account', () => {
     return WyvernProxyRegistry
       .deployed()
