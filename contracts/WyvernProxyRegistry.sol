@@ -7,6 +7,7 @@
 pragma solidity 0.4.23;
 
 import "./registry/ProxyRegistry.sol";
+import "./registry/AuthenticatedProxy.sol";
 
 /**
  * @title WyvernProxyRegistry
@@ -18,6 +19,12 @@ contract WyvernProxyRegistry is ProxyRegistry {
 
     /* Whether the initial auth address has been set. */
     bool public initialAddressSet = false;
+
+    constructor ()
+        public
+    {
+        delegateProxyImplementation = new AuthenticatedProxy();
+    }
 
     /** 
      * Grant authentication to the initial Exchange protocol contract

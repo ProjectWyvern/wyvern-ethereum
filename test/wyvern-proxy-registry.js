@@ -50,6 +50,16 @@ contract('WyvernProxyRegistry', (accounts) => {
       })
   })
 
+  it('should have a delegateproxyimpl', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.delegateProxyImplementation().then(ret => {
+          assert.equal(ret.length, 42, 'Delegateproxyimpl was not set')
+        })
+      })
+  })
+
   it('should allow proxy creation', () => {
     return WyvernProxyRegistry
       .deployed()

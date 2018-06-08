@@ -6,14 +6,18 @@
 
 pragma solidity 0.4.23;
 
-import "../common/TokenRecipient.sol";
 import "./ProxyRegistry.sol";
+import "../common/TokenRecipient.sol";
+import "./proxy/OwnedUpgradeabilityStorage.sol";
 
 /**
  * @title AuthenticatedProxy
  * @author Project Wyvern Developers
  */
-contract AuthenticatedProxy is TokenRecipient {
+contract AuthenticatedProxy is TokenRecipient, OwnedUpgradeabilityStorage {
+
+    /* Whether initialized. */
+    bool initialized = false;
 
     /* Address which owns this proxy. */
     address public user;
@@ -31,12 +35,16 @@ contract AuthenticatedProxy is TokenRecipient {
     event Revoked(bool revoked);
 
     /**
-     * Create an AuthenticatedProxy
+     * Initialize an AuthenticatedProxy
      *
      * @param addrUser Address of user on whose behalf this proxy will act
      * @param addrRegistry Address of ProxyRegistry contract which will manage this proxy
      */
-    constructor (address addrUser, ProxyRegistry addrRegistry) public {
+    function initialize (address addrUser, ProxyRegistry addrRegistry)
+        public
+    {
+        require(!initialized);
+        initialized = true;
         user = addrUser;
         registry = addrRegistry;
     }
