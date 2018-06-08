@@ -108,6 +108,22 @@ contract('WyvernProxyRegistry', (accounts) => {
       })
   })
 
+  it('should not allow reinitialization', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(proxy => {
+            const proxyInst = new web3.eth.Contract(AuthenticatedProxy.abi, proxy)
+            return proxyInst.methods.initialize(accounts[1], registryInstance.address).send({from: accounts[0]}).then(() => {
+              assert.equal(true, false, 'allowed proxy reinitialization')
+            }).catch(err => {
+              assert.equal(err.message, 'Returned error: VM Exception while processing transaction: revert')
+            })
+          })
+      })
+  })
+
   it('should allow start but not end of authentication process', () => {
     return WyvernProxyRegistry
       .deployed()

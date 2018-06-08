@@ -3,6 +3,7 @@
 const WyvernExchange = artifacts.require('WyvernExchange')
 const WyvernProxyRegistry = artifacts.require('WyvernProxyRegistry')
 const WyvernTokenTransferProxy = artifacts.require('WyvernTokenTransferProxy')
+const OwnableDelegateProxy = artifacts.require('OwnableDelegateProxy')
 const TestToken = artifacts.require('TestToken')
 const TestStatic = artifacts.require('TestStatic')
 const AuthenticatedProxy = artifacts.require('AuthenticatedProxy')
@@ -1162,6 +1163,37 @@ contract('WyvernExchange', (accounts) => {
         }, err => {
           assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
         })
+      })
+  })
+
+  it('should not allow order match if proxy changes', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.salt = 123981
+        sell.salt = 12381980
+        return WyvernProxyRegistry
+          .deployed()
+          .then(registryInstance => {
+            return registryInstance.proxies(accounts[0])
+              .then(ret => {
+                const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
+                return contract.methods.upgradeTo(registryInstance.address).send({from: accounts[0]}).then(() => {
+                  return matchOrder(buy, sell, () => {
+                    assert.equal(true, false, 'Matching was allowed with different proxy')
+                  }, err => {
+                    assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+                    return registryInstance.delegateProxyImplementation().then(impl => {
+                      return contract.methods.upgradeTo(impl).send({from: accounts[0]}).then(() => {
+                      })
+                    })
+                  })
+                })
+              })
+          })
       })
   })
 
