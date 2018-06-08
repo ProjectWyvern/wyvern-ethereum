@@ -1,19 +1,35 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
-import './UpgradeabilityProxy.sol';
+import './Proxy.sol';
 import './OwnedUpgradeabilityStorage.sol';
 
 /**
  * @title OwnedUpgradeabilityProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
-contract OwnedUpgradeabilityProxy is UpgradeabilityProxy, OwnedUpgradeabilityStorage {
+contract OwnedUpgradeabilityProxy is Proxy, OwnedUpgradeabilityStorage {
   /**
   * @dev Event to show ownership has been transferred
   * @param previousOwner representing the address of the previous owner
   * @param newOwner representing the address of the new owner
   */
   event ProxyOwnershipTransferred(address previousOwner, address newOwner);
+
+  /**
+  * @dev This event will be emitted every time the implementation gets upgraded
+  * @param implementation representing the address of the upgraded implementation
+  */
+  event Upgraded(address indexed implementation);
+
+  /**
+  * @dev Upgrades the implementation address
+  * @param implementation representing the address of the new implementation to be set
+  */
+  function _upgradeTo(address implementation) internal {
+    require(_implementation != implementation);
+    _implementation = implementation;
+    emit Upgraded(implementation);
+  }
 
   /**
   * @dev Throws if called by any account other than the owner.

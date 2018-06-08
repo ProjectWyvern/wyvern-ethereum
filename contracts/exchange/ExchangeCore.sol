@@ -711,7 +711,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         require(delegateProxy.implementation() == registry.delegateProxyImplementation());
 
         /* Access the passthrough AuthenticatedProxy. */
-        AuthenticatedProxy proxy = AuthenticatedProxy(delegateProxy); 
+        AuthenticatedProxy proxy = AuthenticatedProxy(delegateProxy);
 
         /* Proxy must exist. */
         require(proxy != address(0));

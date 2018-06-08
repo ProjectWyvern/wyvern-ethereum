@@ -1,12 +1,14 @@
-pragma solidity ^0.4.18;
-
-import "./UpgradeabilityStorage.sol";
+pragma solidity ^0.4.23;
 
 /**
  * @title OwnedUpgradeabilityStorage
  * @dev This contract keeps track of the upgradeability owner
  */
-contract OwnedUpgradeabilityStorage is UpgradeabilityStorage {
+contract OwnedUpgradeabilityStorage {
+
+  // Current implementation
+  address internal _implementation;
+
   // Owner of the contract
   address private _upgradeabilityOwner;
 
@@ -23,5 +25,13 @@ contract OwnedUpgradeabilityStorage is UpgradeabilityStorage {
    */
   function setUpgradeabilityOwner(address newUpgradeabilityOwner) internal {
     _upgradeabilityOwner = newUpgradeabilityOwner;
+  }
+
+  /**
+  * @dev Tells the address of the current implementation
+  * @return address of the current implementation
+  */
+  function implementation() public view returns (address) {
+    return _implementation;
   }
 }
