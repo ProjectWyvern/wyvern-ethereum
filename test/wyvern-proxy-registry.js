@@ -92,6 +92,51 @@ contract('WyvernProxyRegistry', (accounts) => {
       })
   })
 
+  it('should not allow proxy upgrade to same implementation', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(ret => {
+            return registryInstance.delegateProxyImplementation().then(impl => {
+              const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
+              return contract.methods.upgradeTo(impl).send({from: accounts[0]}).then(() => {
+                assert.equal(true, false, 'Allowed upgrade to same implementation')
+              }).catch(err => {
+                assert.equal(err.message, 'Returned error: VM Exception while processing transaction: revert')
+              })
+            })
+          })
+      })
+  })
+
+  it('should allow upgradeAndCall', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(ret => {
+            const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
+            return contract.methods.upgradeTo(registryInstance.address).send({from: accounts[0]}).then(() => {
+              return registryInstance.delegateProxyImplementation().then(impl => {
+                const implContract = new web3.eth.Contract(AuthenticatedProxy.abi, ret)
+                const bytecode = implContract.methods.setRevoke(true).encodeABI()
+                return contract.methods.upgradeToAndCall(impl, bytecode).send({from: accounts[0]}).then(() => {
+                  return implContract.methods.revoked().call().then(revoked => {
+                    assert.equal(revoked, true, 'Revoked was not set')
+                    return implContract.methods.setRevoke(false).send({from: accounts[0]}).then(() => {
+                      return implContract.methods.revoked().call().then(revoked => {
+                        assert.equal(revoked, false, 'Revoked was not set')
+                      })
+                    })
+                  })
+                })
+              })
+            })
+          })
+      })
+  })
+
   it('should return proxy type', () => {
     return WyvernProxyRegistry
       .deployed()
@@ -138,6 +183,22 @@ contract('WyvernProxyRegistry', (accounts) => {
             const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
             return contract.methods.upgradeTo(registryInstance.address).send({from: accounts[1]}).then(() => {
               assert.equal(true, false, 'allowed proxy update from another account')
+            }).catch(err => {
+              assert.equal(err.message, 'Returned error: VM Exception while processing transaction: revert')
+            })
+          })
+      })
+  })
+
+  it('should not allow proxy transfer to a nonexistent account', () => {
+    return WyvernProxyRegistry
+      .deployed()
+      .then(registryInstance => {
+        return registryInstance.proxies(accounts[0])
+          .then(ret => {
+            const contract = new web3.eth.Contract(OwnableDelegateProxy.abi, ret)
+            return contract.methods.transferProxyOwnership('0x0000000000000000000000000000000000000000').send({from: accounts[0]}).then(() => {
+              assert.equal(true, false, 'allowed proxy transfer to a nonexistent account')
             }).catch(err => {
               assert.equal(err.message, 'Returned error: VM Exception while processing transaction: revert')
             })
