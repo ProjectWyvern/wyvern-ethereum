@@ -844,6 +844,44 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
+  it('should not allow match with mismatched calldata', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        buy.calldata = '0x00ff00ff'
+        buy.replacementPattern = '0x00000000'
+        sell.calldata = '0xff00ff00'
+        sell.replacementPattern = '0x00ff00ff'
+        return matchOrder(buy, sell, () => {
+          assert.equal(false, true, 'Orders should not have matched')
+        }, err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
+  it('should not allow match with mismatched calldata, flipped sides', () => {
+    return WyvernExchange
+      .deployed()
+      .then(exchangeInstance => {
+        var buy = makeOrder(exchangeInstance.address, true)
+        var sell = makeOrder(exchangeInstance.address, false)
+        sell.side = 1
+        sell.calldata = '0x00ff00ff'
+        sell.replacementPattern = '0x00000000'
+        buy.calldata = '0xff00ff00'
+        buy.replacementPattern = '0x00ff00ff'
+        return matchOrder(buy, sell, () => {
+          assert.equal(false, true, 'Orders should not have matched')
+        }, err => {
+          assert.equal(err.message, 'VM Exception while processing transaction: revert', 'Incorrect error')
+        })
+      })
+  })
+
   it('should allow simple order matching with special-case Ether', () => {
     return WyvernExchange
       .deployed()
