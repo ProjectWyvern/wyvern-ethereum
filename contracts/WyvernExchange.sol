@@ -16,9 +16,9 @@ contract WyvernExchange is Exchange {
 
     string public constant name = "Project Wyvern Exchange";
 
-    string public constant version = "2";
+    string public constant version = "2.2";
 
-    string public constant codename = "Bakunawa";
+    string public constant codename = "Lambton Worm";
 
     /**
      * @dev Initialize a WyvernExchange instance
