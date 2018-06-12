@@ -33,7 +33,7 @@ module.exports = {
       from: '0x0084a81668B9A978416aBEB88bC1572816cc7cAC',
       network_id: 1,
       gas: 6700000,
-      gasPrice: 11100000000
+      gasPrice: 5110000000
     }
   },
   solc: {
