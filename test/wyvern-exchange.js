@@ -212,8 +212,6 @@ contract('WyvernExchange', (accounts) => {
       })
   })
 
-  return
-
   it('should allow simple calldata match', () => {
     return WyvernExchange
       .deployed()
