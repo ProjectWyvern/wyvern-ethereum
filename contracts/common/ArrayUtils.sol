@@ -42,18 +42,18 @@ library ArrayUtils {
             assembly {
                 let commonIndex := mul(0x20, add(1, i))
                 let maskValue := mload(add(mask, commonIndex))
-                mstore(add(array, commonIndex), or(and(not(maskValue), mload(add(array, commonIndex))), and(maskValue, mload(add(mask, commonIndex)))))
+                mstore(add(array, commonIndex), or(and(not(maskValue), mload(add(array, commonIndex))), and(maskValue, mload(add(desired, commonIndex)))))
             }
         }
 
         /* Deal with the last section of the byte array. */
         if (words > 0) {
             /* This overlaps with bytes already set but is still more efficient than iterating through each of the remaining bytes individually. */
-            i = array.length - 0x20;
+            i = words;
             assembly {
                 let commonIndex := mul(0x20, add(1, i))
                 let maskValue := mload(add(mask, commonIndex))
-                mstore(add(array, commonIndex), or(and(not(maskValue), mload(add(array, commonIndex))), and(maskValue, mload(add(mask, commonIndex)))))
+                mstore(add(array, commonIndex), or(and(not(maskValue), mload(add(array, commonIndex))), and(maskValue, mload(add(desired, commonIndex)))))
             }
         } else {
             /* If the byte array is shorter than a word, we must unfortunately do the whole thing bytewise.
